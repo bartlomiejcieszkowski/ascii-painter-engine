@@ -55,6 +55,36 @@ class WindowsConsole:
         return (consoleMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0
 
 
+class Brush:
+    def __init__(self):
+        self.fgcolor = None
+        self.bgcolor = None
+
+    RESET = '\x1B[0m'
+
+    def FgColor(self, color):
+        return f'\x1B[38;5;{color}m'
+
+    def BgColor(self, color):
+        return f'\x1B[48;5;{color}m'
+
+    def Print(self, *args, sep=' ', end='\n', file=None, fgcolor=None, bgcolor=None):
+        if fgcolor is None and bgcolor is None:
+            print(*args, sep=sep, end=end, file=file)
+        else:
+            color = (self.BgColor(bgcolor) if bgcolor else '') + (self.FgColor(fgcolor) if fgcolor else '')
+            print(color+" ".join(map(str, args))+self.RESET, sep=sep, end=end, file=file)
+
+    def SetFgColor(self, color):
+        print(self.FgColor(color), end='')
+
+    def SetBgColor(self, color):
+        print(self.BgColor(color), end='')
+
+    def Reset(self):
+        print(self.RESET, end='')
+
+
 class Test:
     @staticmethod
     def ColorLine(start, end, text='  ', use_color=False, width=2):
@@ -86,6 +116,18 @@ def test():
         Test.ColorLine(start, end, use_color=True, width=3)
 
     Test.ColorLine(232, 256, use_color=True, width=4)
+
+    brush = Brush()
+
+    brush.SetBgColor(4)
+    brush.SetFgColor(14)
+    print("TEST", end='')
+    brush.Reset()
+    print()
+
+    brush.Print("TEST", fgcolor=14, bgcolor=4)
+    #for i in range(0,255):
+    #   Test.ColorLine24bit(16*i, 16*(i+1),1)
 
 
 if __name__ == '__main__':
