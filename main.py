@@ -44,32 +44,73 @@ class Console:
 
     # TODO: register for console size change
 
+class COORD(ctypes.Structure):
+    _fields_ = [("X", ctypes.wintypes.SHORT),
+                ("Y", ctypes.wintypes.SHORT)]
+
+
+class INPUT_RECORD_Event(ctypes.Union):
+    _fields_ = [("KeyEvent", ctypes.c_uint),
+                ("MouseEvent", ctypes.c_uint),
+                ("WindowBufferSizeEvent", COORD),
+                ("MenuEvent", ctypes.c_uint),
+                ("FocusEvent", ctypes.c_uint),
+                ]
+
+
+class INPUT_RECORD(ctypes.Structure):
+    _fields_ = [("EventType", ctypes.wintypes.WORD),
+                ("Event", INPUT_RECORD_Event)]
+
+
 class WindowsConsole(Console):
     def __init__(self):
         super(WindowsConsole, self).__init__()
         self.kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
-        self.setConsoleModeProto = ctypes.WINFUNCTYPE(
+        setConsoleModeProto = ctypes.WINFUNCTYPE(
             ctypes.wintypes.BOOL,
             ctypes.wintypes.HANDLE,
             ctypes.wintypes.DWORD
         )
-        self.setConsoleModeParams = (1, "hConsoleHandle", 0), (1, "dwMode", 0)
-        self.setConsoleMode = self.setConsoleModeProto(('SetConsoleMode', self.kernel32), self.setConsoleModeParams)
+        setConsoleModeParams = (1, "hConsoleHandle", 0), (1, "dwMode", 0)
+        self.setConsoleMode = setConsoleModeProto(('SetConsoleMode', self.kernel32), setConsoleModeParams)
 
-        self.getConsoleModeProto = ctypes.WINFUNCTYPE(
+        getConsoleModeProto = ctypes.WINFUNCTYPE(
             ctypes.wintypes.BOOL,
             ctypes.wintypes.HANDLE,
             ctypes.wintypes.LPDWORD
         )
-        self.getConsoleModeParams = (1, "hConsoleHandle", 0), (1, "lpMode")
-        self.getConsoleMode = self.getConsoleModeProto(('GetConsoleMode', self.kernel32), self.setConsoleModeParams)
+        getConsoleModeParams = (1, "hConsoleHandle", 0), (1, "lpMode", 0)
+        self.getConsoleMode = getConsoleModeProto(('GetConsoleMode', self.kernel32), getConsoleModeParams)
         self.consoleHandleOut = msvcrt.get_osfhandle(sys.stdout.fileno())
         self.consoleHandleIn = msvcrt.get_osfhandle(sys.stdin.fileno())
 
+        readConsoleInputProto = ctypes.WINFUNCTYPE(
+            ctypes.wintypes.BOOL,
+            ctypes.wintypes.HANDLE,
+            ctypes.wintypes.LPVOID, # PINPUT_RECORD
+            ctypes.wintypes.DWORD,
+            ctypes.wintypes.LPDWORD
+        )
+        readConsoleInputParams = (1, "hConsoleInput", 0), (1, "lpBuffer", 0), (1, "nLength", 0), (1, "lpNumberOfEventsRead", 0)
+        self.readConsoleInput = readConsoleInputProto(('ReadConsoleInputW', self.kernel32), readConsoleInputParams)
+
+    WINDOW_BUFFER_SIZE_EVENT = 0x4
+
+    def ReadConsoleInputParams(self):
+        record = INPUT_RECORD()
+        events = ctypes.wintypes.DWORD(0)
+        ret_val = self.readConsoleInput(self.consoleHandleIn, ctypes.byref(record), 1, ctypes.byref(events))
+        print(f'ret:{ret_val} EventType:{hex(record.EventType)}')
+
+        if record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
+            self.debug_print(f'new size: {record.Event.WindowBufferSizeEvent.X}x{record.Event.WindowBufferSizeEvent.Y}')
+        return True
+
     def GetConsoleMode(self, handle) -> int:
         dwMode = ctypes.wintypes.DWORD(0)
-        lpMode = ctypes.wintypes.LPDWORD(dwMode)
-        self.getConsoleMode(self.consoleHandleOut, lpMode)
+        # lpMode = ctypes.wintypes.LPDWORD(dwMode)
+        self.getConsoleMode(self.consoleHandleOut, ctypes.byref(dwMode))
 
         print(f' dwMode: {hex(dwMode.value)}')
         return dwMode.value
@@ -103,6 +144,9 @@ class WindowsConsole(Console):
         ENABLE_WINDOW_INPUT = 0x8
         return self.SetMode(self.consoleHandleIn, ENABLE_WINDOW_INPUT, enable)
 
+    def SetMouseInput(self, enable: bool) -> bool:
+        ENABLE_MOUSE_INPUT = 0x10
+        return self.SetMode(self.consoleHandleIn, ENABLE_MOUSE_INPUT, enable)
 
 class Brush:
     def __init__(self, console=None):
@@ -179,6 +223,7 @@ def test():
 
     wc.get_size()
     wc.SetWindowChangeSizeEvents(True)
+    wc.SetMouseInput(True)
     i =0
     while wc.ReadConsoleInputParams():
         i += 1
