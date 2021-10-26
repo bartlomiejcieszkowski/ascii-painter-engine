@@ -13,8 +13,9 @@ import sys
 
 
 class Console:
-    def __init__(self):
+    def __init__(self, debug=True):
         self.brush = Brush(self)
+        self.debug = debug
         pass
 
     def size(self):
@@ -22,8 +23,10 @@ class Console:
         self.debug_print(f'{terminal_size[0]}x{terminal_size[1]}')
 
     def debug_print(self, text):
-        self.brush.print("debug:", text, fgcolor=14, bgcolor=4)
+        if self.debug:
+            self.brush.print("debug:", text, fgcolor=14, bgcolor=4)
 
+    # TODO: register for console size change
 
 class WindowsConsole(Console):
     def __init__(self):
