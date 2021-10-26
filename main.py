@@ -57,10 +57,18 @@ class WindowsConsole:
 
 class Test:
     @staticmethod
-    def ColorLine(start, end):
+    def ColorLine(start, end, text='  ', use_color=False, width=2):
         for color in range(start, end):
-            print(f'\x1B[48;5;{color}m  ', end='')
+            print(f'\x1B[48;5;{color}m{("{:"+ str(width) + "}").format(color) if use_color else text}', end='')
         print('\x1B[0m')
+
+    @staticmethod
+    def ColorLine24bit(start,end,step=0):
+        for color in range(start, end, step):
+            print(f'\x1B[48;2;{color};{color};{color}mXD', end='')
+        print('\x1B[0m')
+
+
 
 def test():
     wc = WindowsConsole()
@@ -69,14 +77,16 @@ def test():
     if not success:
         print('Abort')
         return
-    print("\x1B[34m" + 'TEST' + "\x1B[0m")
-    Test.ColorLine(0, 8)
-    Test.ColorLine(8, 16)
+    print("\x1B[34m" + 'TEST 8bit ANSII Codes' + "\x1B[0m")
+    Test.ColorLine(0, 8, use_color=True, width=2)
+    Test.ColorLine(8, 16, use_color=True, width=2)
     for red in range(0, 6):
         start = 16 + 6 * 6 * red
         end = start + 36
-        Test.ColorLine(start, end)
+        Test.ColorLine(start, end, use_color=True, width=3)
 
-    Test.ColorLine(232, 256)
+    Test.ColorLine(232, 256, use_color=True, width=4)
+
+
 if __name__ == '__main__':
     test()
