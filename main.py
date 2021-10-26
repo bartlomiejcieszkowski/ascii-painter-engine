@@ -1,3 +1,6 @@
+import shutil
+
+
 class ConsoleBuffer:
     def __init__(self):
         pass
@@ -9,8 +12,22 @@ import msvcrt
 import sys
 
 
-class WindowsConsole:
+class Console:
     def __init__(self):
+        self.brush = Brush(self)
+        pass
+
+    def size(self):
+        terminal_size = shutil.get_terminal_size(fallback=(0, 0))
+        self.debug_print(f'{terminal_size[0]}x{terminal_size[1]}')
+
+    def debug_print(self, text):
+        self.brush.print("debug:", text, fgcolor=14, bgcolor=4)
+
+
+class WindowsConsole(Console):
+    def __init__(self):
+        super(WindowsConsole, self).__init__()
         self.kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
         self.setConsoleModeProto = ctypes.WINFUNCTYPE(
             ctypes.wintypes.BOOL,
@@ -56,9 +73,10 @@ class WindowsConsole:
 
 
 class Brush:
-    def __init__(self):
+    def __init__(self, console=None):
         self.fgcolor = None
         self.bgcolor = None
+        self.console = console
 
     RESET = '\x1B[0m'
 
@@ -68,7 +86,7 @@ class Brush:
     def BgColor(self, color):
         return f'\x1B[48;5;{color}m'
 
-    def Print(self, *args, sep=' ', end='\n', file=None, fgcolor=None, bgcolor=None):
+    def print(self, *args, sep=' ', end='\n', file=None, fgcolor=None, bgcolor=None):
         if fgcolor is None and bgcolor is None:
             print(*args, sep=sep, end=end, file=file)
         else:
@@ -125,7 +143,9 @@ def test():
     brush.Reset()
     print()
 
-    brush.Print("TEST", fgcolor=14, bgcolor=4)
+    brush.print("TEST", fgcolor=14, bgcolor=4)
+
+    wc.size()
     #for i in range(0,255):
     #   Test.ColorLine24bit(16*i, 16*(i+1),1)
 
