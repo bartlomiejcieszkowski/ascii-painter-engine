@@ -16,15 +16,31 @@ class Console:
     def __init__(self, debug=True):
         self.brush = Brush(self)
         self.debug = debug
+        self.debug_colors = (None, None) # 14, 4
+        # TODO: this would print without vt enabled yet update state if vt enabled in brush?
+        self.size = self.get_size()
+        self.vt_supported = False
+
         pass
 
-    def size(self):
+    def get_size(self):
         terminal_size = shutil.get_terminal_size(fallback=(0, 0))
         self.debug_print(f'{terminal_size[0]}x{terminal_size[1]}')
+        return terminal_size
 
     def debug_print(self, text):
         if self.debug:
-            self.brush.print("debug:", text, fgcolor=14, bgcolor=4)
+            self.brush.print("debug:", text, fgcolor=self.debug_colors[0], bgcolor=self.debug_colors[1])
+
+    def set_color_mode(self, enable:bool):
+        if enable:
+            self.vt_supported = True
+            self.debug_colors = (14, 4)
+        else:
+            self.vt_supported = False
+            self.debug_colors = (None, None)
+        return enable
+
 
     # TODO: register for console size change
 
@@ -75,13 +91,17 @@ class WindowsConsole(Console):
         consoleMode = self.GetConsoleMode(handle)
         return (consoleMode & mask) == expected_value
 
-    def EnableVT(self) -> bool:
+    def SetVirtualTerminalProcessing(self, enable: bool) -> bool:
         ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4
-        return self.SetMode(self.consoleHandleOut, ENABLE_VIRTUAL_TERMINAL_PROCESSING, True)
+        return self.SetMode(self.consoleHandleOut, ENABLE_VIRTUAL_TERMINAL_PROCESSING, enable)
 
-    def EnableWindowChangeSizeEvents(self):
+    def set_color_mode(self, enable: bool) -> bool:
+        success = self.SetVirtualTerminalProcessing(enable)
+        return super().set_color_mode(enable & success)
+
+    def SetWindowChangeSizeEvents(self, enable: bool) -> bool:
         ENABLE_WINDOW_INPUT = 0x8
-        return self.SetMode(self.consoleHandleIn, ENABLE_WINDOW_INPUT, True)
+        return self.SetMode(self.consoleHandleIn, ENABLE_WINDOW_INPUT, enable)
 
 
 class Brush:
@@ -132,7 +152,7 @@ class Test:
 
 def test():
     wc = WindowsConsole()
-    success = wc.EnableVT()
+    success = wc.set_color_mode(True)
     print(f'EnableVT? {success}')
     if not success:
         print('Abort')
@@ -157,7 +177,11 @@ def test():
 
     brush.print("TEST", fgcolor=14, bgcolor=4)
 
-    wc.size()
+    wc.get_size()
+    wc.SetWindowChangeSizeEvents(True)
+    i =0
+    while wc.ReadConsoleInputParams():
+        i += 1
     #for i in range(0,255):
     #   Test.ColorLine24bit(16*i, 16*(i+1),1)
 
