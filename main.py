@@ -252,6 +252,12 @@ def test():
     # CMD - mouse coordinates include a big buffer scroll up, so instead of 30 we get 1300 for y-val
     # Windows Terminal - correct coord
 
+    # BUG Windows Terminal
+    # CMD - generates EventType 0x10 on focus or loss with ENABLE_QUICK_EDIT_MODE
+    # Terminal - nothing
+    # without quick edit mode the event for focus loss is not raised
+    # however this is internal event and should be ignored according to msdn
+
 
 if __name__ == '__main__':
     test()
