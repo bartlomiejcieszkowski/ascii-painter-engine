@@ -8,6 +8,7 @@ import ctypes.wintypes
 import msvcrt
 import sys
 
+
 class WindowsConsole:
     def __init__(self):
         self.kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
@@ -54,6 +55,13 @@ class WindowsConsole:
         return (consoleMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0
 
 
+class Test:
+    @staticmethod
+    def ColorLine(start, end):
+        for color in range(start, end):
+            print(f'\x1B[48;5;{color}m  ', end='')
+        print('\x1B[0m')
+
 def test():
     wc = WindowsConsole()
     success = wc.EnableVT()
@@ -62,6 +70,13 @@ def test():
         print('Abort')
         return
     print("\x1B[34m" + 'TEST' + "\x1B[0m")
+    Test.ColorLine(0, 8)
+    Test.ColorLine(8, 16)
+    for red in range(0, 6):
+        start = 16 + 6 * 6 * red
+        end = start + 36
+        Test.ColorLine(start, end)
 
+    Test.ColorLine(232, 256)
 if __name__ == '__main__':
     test()
