@@ -28,9 +28,9 @@ class Console:
         self.debug_print(f'{terminal_size[0]}x{terminal_size[1]}')
         return terminal_size
 
-    def debug_print(self, text):
+    def debug_print(self, text, end='\n'):
         if self.debug:
-            self.brush.print("debug:", text, fgcolor=self.debug_colors[0], bgcolor=self.debug_colors[1])
+            self.brush.print(text, fgcolor=self.debug_colors[0], bgcolor=self.debug_colors[1], end=end)
 
     def set_color_mode(self, enable:bool):
         if enable:
@@ -48,10 +48,15 @@ class COORD(ctypes.Structure):
     _fields_ = [("X", ctypes.wintypes.SHORT),
                 ("Y", ctypes.wintypes.SHORT)]
 
+class MOUSE_EVENT_RECORD(ctypes.Structure):
+    _fields_ = [("dwMousePosition", COORD),
+                ("dwButtonState", ctypes.wintypes.DWORD),
+                ("dwControlKeyState", ctypes.wintypes.DWORD),
+                ("dwEventFlags", ctypes.wintypes.DWORD)]
 
 class INPUT_RECORD_Event(ctypes.Union):
     _fields_ = [("KeyEvent", ctypes.c_uint),
-                ("MouseEvent", ctypes.c_uint),
+                ("MouseEvent", MOUSE_EVENT_RECORD),
                 ("WindowBufferSizeEvent", COORD),
                 ("MenuEvent", ctypes.c_uint),
                 ("FocusEvent", ctypes.c_uint),
@@ -95,22 +100,27 @@ class WindowsConsole(Console):
         readConsoleInputParams = (1, "hConsoleInput", 0), (1, "lpBuffer", 0), (1, "nLength", 0), (1, "lpNumberOfEventsRead", 0)
         self.readConsoleInput = readConsoleInputProto(('ReadConsoleInputW', self.kernel32), readConsoleInputParams)
 
+    MOUSE_EVENT = 0x2
     WINDOW_BUFFER_SIZE_EVENT = 0x4
+
 
     def ReadConsoleInputParams(self):
         record = INPUT_RECORD()
         events = ctypes.wintypes.DWORD(0)
         ret_val = self.readConsoleInput(self.consoleHandleIn, ctypes.byref(record), 1, ctypes.byref(events))
-        print(f'ret:{ret_val} EventType:{hex(record.EventType)}')
+        # print(f'\rret:{ret_val} EventType:{hex(record.EventType)}', end='')
 
         if record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
-            self.debug_print(f'new size: {record.Event.WindowBufferSizeEvent.X}x{record.Event.WindowBufferSizeEvent.Y}')
+            self.debug_print(f'\rnew size: {record.Event.WindowBufferSizeEvent.X:3}x{record.Event.WindowBufferSizeEvent.Y}', end='')
+        elif record.EventType == self.MOUSE_EVENT:
+            self.debug_print(f'\rmouse coord: x:{record.Event.MouseEvent.dwMousePosition.X:3} y:{record.Event.MouseEvent.dwMousePosition.Y:3}', end='')
         return True
 
     def GetConsoleMode(self, handle) -> int:
         dwMode = ctypes.wintypes.DWORD(0)
         # lpMode = ctypes.wintypes.LPDWORD(dwMode)
-        self.getConsoleMode(self.consoleHandleOut, ctypes.byref(dwMode))
+        # dont create pointer if not going to use it in python, use byref
+        self.getConsoleMode(handle, ctypes.byref(dwMode))
 
         print(f' dwMode: {hex(dwMode.value)}')
         return dwMode.value
@@ -144,7 +154,13 @@ class WindowsConsole(Console):
         ENABLE_WINDOW_INPUT = 0x8
         return self.SetMode(self.consoleHandleIn, ENABLE_WINDOW_INPUT, enable)
 
+    def SetQuickEditMode(self, enable: bool) -> bool:
+        ENABLE_QUICK_EDIT_MODE = 0x40
+        return self.SetMode(self.consoleHandleIn, ENABLE_QUICK_EDIT_MODE, enable)
+
     def SetMouseInput(self, enable: bool) -> bool:
+        # Quick Edit Mode blocks mouse events
+        self.SetQuickEditMode(False)
         ENABLE_MOUSE_INPUT = 0x10
         return self.SetMode(self.consoleHandleIn, ENABLE_MOUSE_INPUT, enable)
 
@@ -226,9 +242,15 @@ def test():
     wc.SetMouseInput(True)
     i =0
     while wc.ReadConsoleInputParams():
+        #print(f'in: {hex(wc.GetConsoleMode(wc.consoleHandleIn))}')
+        #print(f'out: {hex(wc.GetConsoleMode(wc.consoleHandleOut))}')
         i += 1
     #for i in range(0,255):
     #   Test.ColorLine24bit(16*i, 16*(i+1),1)
+
+    # TODO:
+    # CMD - mouse coordinates include a big buffer scroll up, so instead of 30 we get 1300 for y-val
+    # Windows Terminal - correct coord
 
 
 if __name__ == '__main__':
