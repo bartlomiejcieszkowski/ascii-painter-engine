@@ -50,7 +50,7 @@ class WindowsConsole(Console):
         self.consoleHandleOut = msvcrt.get_osfhandle(sys.stdout.fileno())
         self.consoleHandleIn = msvcrt.get_osfhandle(sys.stdin.fileno())
 
-    def GetConsoleModeOut(self) -> int:
+    def GetConsoleMode(self, handle) -> int:
         dwMode = ctypes.wintypes.DWORD(0)
         lpMode = ctypes.wintypes.LPDWORD(dwMode)
         self.getConsoleMode(self.consoleHandleOut, lpMode)
@@ -58,21 +58,30 @@ class WindowsConsole(Console):
         print(f' dwMode: {hex(dwMode.value)}')
         return dwMode.value
 
-    def SetConsoleModeOut(self, mode):
+    def SetConsoleMode(self, handle, mode: int):
         dwMode = ctypes.wintypes.DWORD(mode)
-        self.setConsoleMode(self.consoleHandleOut, dwMode)
+        self.setConsoleMode(handle, dwMode)
         return
+
+    def SetMode(self, handle, mask: int, enable: bool) -> bool:
+        consoleMode = self.GetConsoleMode(handle)
+        other_bits = mask ^ 0xFFFFFFFF
+        expected_value = mask if enable else 0
+        if (consoleMode & mask) == expected_value:
+            return True
+
+        consoleMode = (consoleMode & other_bits) | expected_value
+        self.SetConsoleMode(handle, consoleMode)
+        consoleMode = self.GetConsoleMode(handle)
+        return (consoleMode & mask) == expected_value
 
     def EnableVT(self) -> bool:
         ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4
-        consoleMode = self.GetConsoleModeOut()
-        if consoleMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING:
-            return True
+        return self.SetMode(self.consoleHandleOut, ENABLE_VIRTUAL_TERMINAL_PROCESSING, True)
 
-        consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING
-        self.SetConsoleModeOut(consoleMode)
-        consoleMode = self.GetConsoleModeOut()
-        return (consoleMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0
+    def EnableWindowChangeSizeEvents(self):
+        ENABLE_WINDOW_INPUT = 0x8
+        return self.SetMode(self.consoleHandleIn, ENABLE_WINDOW_INPUT, True)
 
 
 class Brush:
