@@ -34,7 +34,7 @@ class Console:
 
     def get_size(self):
         terminal_size = shutil.get_terminal_size(fallback=(0, 0))
-        self.debug_print(f'{terminal_size[0]}x{terminal_size[1]}')
+        #self.debug_print(f'{terminal_size[0]}x{terminal_size[1]}')
         return terminal_size
 
     def debug_print(self, text, end='\n'):
