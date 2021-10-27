@@ -47,6 +47,14 @@ class ConsoleWidget(ABC):
         pass
 
 
+class ConsoleWidgets:
+    class TextBox(ConsoleWidget):
+        def __init__(self, text: str, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment):
+            super().__init__(x=x, y=y, width=width, height=height, alignment=alignment)
+            self.text = text
+
+        def draw(self):
+            pass
 
 
 class Console:
