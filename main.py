@@ -26,6 +26,9 @@ class Console:
 
         pass
 
+    def update_size(self):
+        self.size = self.get_size()
+
     def get_size(self):
         terminal_size = shutil.get_terminal_size(fallback=(0, 0))
         self.debug_print(f'{terminal_size[0]}x{terminal_size[1]}')
@@ -114,9 +117,11 @@ class WindowsConsole(Console):
         # print(f'\rret:{ret_val} EventType:{hex(record.EventType)}', end='')
 
         if record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
-            self.debug_print(f'\rnew size: {record.Event.WindowBufferSizeEvent.X:3}x{record.Event.WindowBufferSizeEvent.Y}', end='')
+            # we could have new resize event in queue, so get_size could return different val
+            self.update_size()
+            #self.debug_print(f'\rnew size: {record.Event.WindowBufferSizeEvent.X:3}x{record.Event.WindowBufferSizeEvent.Y:3} get_size: {size[0]:3}x{size[1]:3}', end='')
         elif record.EventType == self.MOUSE_EVENT:
-            self.debug_print(f'\rmouse coord: x:{record.Event.MouseEvent.dwMousePosition.X:3} y:{record.Event.MouseEvent.dwMousePosition.Y:3}', end='')
+            self.debug_print(f'\rmouse coord: x:{record.Event.MouseEvent.dwMousePosition.X:3} y:{record.Event.MouseEvent.dwMousePosition.Y:3} size: {self.size[0]:3}x{self.size[1]:3}', end='')
         return True
 
     def GetConsoleMode(self, handle) -> int:
