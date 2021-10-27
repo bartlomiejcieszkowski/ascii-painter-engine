@@ -95,6 +95,10 @@ class Console:
             self.brush.MoveCursor(1, 1)
         print(ConsoleBuffer.fill_buffer(self.size[0], self.size[1], ' '), end='')
 
+    @abstractmethod
+    def interactive_mode(self):
+        pass
+
 
 class LinuxConsole(Console):
     # TODO
@@ -165,7 +169,7 @@ class INPUT_RECORD(ctypes.Structure):
 
 class WindowsConsole(Console):
     def __init__(self):
-        super(WindowsConsole, self).__init__()
+        super().__init__()
         self.kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
         setConsoleModeProto = ctypes.WINFUNCTYPE(
             ctypes.wintypes.BOOL,
@@ -198,6 +202,9 @@ class WindowsConsole(Console):
     MOUSE_EVENT = 0x2
     WINDOW_BUFFER_SIZE_EVENT = 0x4
 
+    def interactive_mode(self):
+        self.SetWindowChangeSizeEvents(True)
+        self.SetMouseInput(True)
 
     def ReadConsoleInputParams(self):
         record = INPUT_RECORD()
