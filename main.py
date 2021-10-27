@@ -99,6 +99,10 @@ class Console:
     def interactive_mode(self):
         pass
 
+    @abstractmethod
+    def read_events(self, callback, callback_ctx) -> list:
+        pass
+
 
 class LinuxConsole(Console):
     # TODO
@@ -114,6 +118,20 @@ class ConsoleView:
         else:
             self.console = LinuxConsole()
         self.widgets = []
+
+    def loop(self) -> int:
+        self.console.update_size()
+
+        # create blank canvas
+        self.console.clear(reuse=False)
+
+        self.console.interactive_mode()
+
+        i = 0
+        while self.console.read_events():
+            # print(f'in: {hex(wc.GetConsoleMode(wc.consoleHandleIn))}')
+            # print(f'out: {hex(wc.GetConsoleMode(wc.consoleHandleOut))}')
+            i += 1
 
     def color_mode(self) -> bool:
         return self.console.set_color_mode(True)
@@ -329,6 +347,15 @@ class Test:
         print('\x1B[0m')
 
 
+def main():
+    console_view = ConsoleView()
+    console_view.color_mode()
+
+    widget = ConsoleWidgets.TextBox(text='Test', x=2, y=2, height=4, width=10, alignment=ConsoleWidgetAlignment.LEFT_TOP)
+
+    console_view.add_widget(widget)
+    console_view.loop()
+
 
 def test():
     wc = WindowsConsole()
@@ -382,4 +409,5 @@ def test():
 
 
 if __name__ == '__main__':
-    test()
+    #test()
+    main()
