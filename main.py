@@ -1,5 +1,8 @@
 import shutil
 
+# Notes:
+# You can have extra line of console, which wont be fully visible - as w/a just dont use last line
+# If new size is greater, then fill with new lines so we wont be drawing in the middle of screen
 
 class ConsoleBuffer:
     def __init__(self):
