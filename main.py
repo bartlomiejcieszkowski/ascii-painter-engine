@@ -119,6 +119,13 @@ class ConsoleView:
             self.console = LinuxConsole()
         self.widgets = []
 
+    @staticmethod
+    def handle_events_callback(ctx, events_list):
+        ctx.handle_events(events_list)
+
+    def handle_events(self, events_list):
+        pass
+
     def loop(self) -> int:
         self.console.update_size()
 
@@ -128,9 +135,7 @@ class ConsoleView:
         self.console.interactive_mode()
 
         i = 0
-        while self.console.read_events():
-            # print(f'in: {hex(wc.GetConsoleMode(wc.consoleHandleIn))}')
-            # print(f'out: {hex(wc.GetConsoleMode(wc.consoleHandleOut))}')
+        while self.console.read_events(self.handle_events_callback, self):
             i += 1
 
     def color_mode(self) -> bool:
