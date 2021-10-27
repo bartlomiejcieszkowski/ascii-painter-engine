@@ -417,20 +417,6 @@ def test():
     print()
 
     brush.print("TEST", fgcolor=14, bgcolor=4)
-
-    wc.update_size()
-    # create blank canvas
-    print(ConsoleBuffer.fill_buffer(wc.size[0], wc.size[1]))
-    wc.SetWindowChangeSizeEvents(True)
-    wc.SetMouseInput(True)
-    i = 0
-    while wc.read_events(None, None):
-        #print(f'in: {hex(wc.GetConsoleMode(wc.consoleHandleIn))}')
-        #print(f'out: {hex(wc.GetConsoleMode(wc.consoleHandleOut))}')
-        i += 1
-    #for i in range(0,255):
-    #   Test.ColorLine24bit(16*i, 16*(i+1),1)
-
     # TODO:
     # CMD - mouse coordinates include a big buffer scroll up, so instead of 30 we get 1300 for y-val
     # Windows Terminal - correct coord
