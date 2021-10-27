@@ -89,6 +89,19 @@ class Console:
             self.debug_colors = (None, None)
         return enable
 
+    def clear(self, reuse=True):
+        self.update_size()
+        if reuse:
+            self.brush.MoveCursor(1, 1)
+        print(ConsoleBuffer.fill_buffer(self.size[0], self.size[1], ' '), end='')
+
+
+class LinuxConsole(Console):
+    # TODO
+    def __init__(self):
+        super().__init__()
+
+
 
     # TODO: register for console size change
 
