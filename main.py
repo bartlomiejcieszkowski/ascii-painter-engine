@@ -185,6 +185,23 @@ class INPUT_RECORD(ctypes.Structure):
                 ("Event", INPUT_RECORD_Event)]
 
 
+class ConsoleEvent(ABC):
+    def __init__(self):
+        pass
+
+class SizeChangeEvent(ConsoleEvent):
+    def __init__(self):
+        super().__init__()
+
+class MouseEvent(ConsoleEvent):
+    def __init__(self, x, y, button_state, control_key_state, event_flags):
+        super().__init__()
+        self.coordinates = (x, y)
+        self.button_state = button_state
+        self.control_key_state = control_key_state
+        self.event_flags = event_flags
+
+
 class WindowsConsole(Console):
     def __init__(self):
         super().__init__()
@@ -224,23 +241,25 @@ class WindowsConsole(Console):
         self.SetWindowChangeSizeEvents(True)
         self.SetMouseInput(True)
 
-    def ReadConsoleInputParams(self):
+    def read_events(self, callback, callback_ctx) -> list:
+        events_list = []
         record = INPUT_RECORD()
         events = ctypes.wintypes.DWORD(0)
         ret_val = self.readConsoleInput(self.consoleHandleIn, ctypes.byref(record), 1, ctypes.byref(events))
         # print(f'\rret:{ret_val} EventType:{hex(record.EventType)}', end='')
 
         if record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
-            # we could have new resize event in queue, so get_size could return different val
-            self.update_size()
-            self.brush.MoveCursor(1, 1)
-            print(ConsoleBuffer.fill_buffer(self.size[0], self.size[1], ' '), end='')
-            #self.debug_print(f'\rnew size: {record.Event.WindowBufferSizeEvent.X:3}x{record.Event.WindowBufferSizeEvent.Y:3} get_size: {size[0]:3}x{size[1]:3}', end='')
+            events_list.append(SizeChangeEvent())
         elif record.EventType == self.MOUSE_EVENT:
-            self.brush.MoveUp(4)
-            self.debug_print(f'mouse coord: x:{record.Event.MouseEvent.dwMousePosition.X:3} y:{record.Event.MouseEvent.dwMousePosition.Y:3}')
-            self.debug_print(f'size: {self.size[0]:3}x{self.size[1]:3}')
-            print()
+            events_list.append(MouseEvent(x=record.Event.MouseEvent.dwMousePosition.X,
+                                          y=record.Event.MouseEvent.dwMousePosition.Y,
+                                          button_state=record.Event.MouseEvent.dwButtonState,
+                                          control_key_state=record.Event.MouseEvent.dwControlKeyState,
+                                          event_flags=record.Event.MouseEvent.dwEventFlags))
+        else:
+            pass
+
+        callback(callback_ctx, events_list)
         return True
 
     def GetConsoleMode(self, handle) -> int:
@@ -390,7 +409,7 @@ def test():
     wc.SetWindowChangeSizeEvents(True)
     wc.SetMouseInput(True)
     i = 0
-    while wc.ReadConsoleInputParams():
+    while wc.read_events(None, None):
         #print(f'in: {hex(wc.GetConsoleMode(wc.consoleHandleIn))}')
         #print(f'out: {hex(wc.GetConsoleMode(wc.consoleHandleOut))}')
         i += 1
