@@ -125,7 +125,10 @@ class WindowsConsole(Console):
             print(ConsoleBuffer.fill_buffer(self.size[0], self.size[1], ' '), end='')
             #self.debug_print(f'\rnew size: {record.Event.WindowBufferSizeEvent.X:3}x{record.Event.WindowBufferSizeEvent.Y:3} get_size: {size[0]:3}x{size[1]:3}', end='')
         elif record.EventType == self.MOUSE_EVENT:
-            self.debug_print(f'\rmouse coord: x:{record.Event.MouseEvent.dwMousePosition.X:3} y:{record.Event.MouseEvent.dwMousePosition.Y:3} size: {self.size[0]:3}x{self.size[1]:3}', end='')
+            self.brush.MoveUp(4)
+            self.debug_print(f'mouse coord: x:{record.Event.MouseEvent.dwMousePosition.X:3} y:{record.Event.MouseEvent.dwMousePosition.Y:3}')
+            self.debug_print(f'size: {self.size[0]:3}x{self.size[1]:3}')
+            print()
         return True
 
     def GetConsoleMode(self, handle) -> int:
@@ -206,6 +209,17 @@ class Brush:
     def Reset(self):
         print(self.RESET, end='')
 
+    def MoveUp(self, lines):
+        print(f'\x1B[{lines}F')
+
+    def MoveDown(self, lines):
+        print(f'\x1B[{lines}E')
+
+    def MoveColumn(self, column):
+        print(f'\x1B[{column}G')
+
+    def MoveCursor(self, row, column):
+        print(f'\x1B[{row};{column}H')
 
 class Test:
     @staticmethod
