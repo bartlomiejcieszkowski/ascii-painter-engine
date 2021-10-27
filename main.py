@@ -27,14 +27,26 @@ class ConsoleBuffer:
         return ('\n' + (symbol*x)) * y
 
 
+class ConsoleWidgetAlignment(Enum):
+    LEFT_TOP = auto()
+    RIGHT_TOP = auto()
+    LEFT_BOTTOM = auto()
+    RIGHT_BOTTOM = auto()
 
 
-class ConsoleForm:
-    def __init__(self, x: int, y: int, width: int, height: int):
+class ConsoleWidget(ABC):
+    def __init__(self, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        self.alignment = alignment
+
+    @abstractmethod
+    def draw(self):
+        pass
+
+
 
 
 class Console:
