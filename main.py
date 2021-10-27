@@ -122,6 +122,7 @@ class WindowsConsole(Console):
         if record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
             # we could have new resize event in queue, so get_size could return different val
             self.update_size()
+            self.brush.MoveCursor(1, 1)
             print(ConsoleBuffer.fill_buffer(self.size[0], self.size[1], ' '), end='')
             #self.debug_print(f'\rnew size: {record.Event.WindowBufferSizeEvent.X:3}x{record.Event.WindowBufferSizeEvent.Y:3} get_size: {size[0]:3}x{size[1]:3}', end='')
         elif record.EventType == self.MOUSE_EVENT:
@@ -137,7 +138,7 @@ class WindowsConsole(Console):
         # dont create pointer if not going to use it in python, use byref
         self.getConsoleMode(handle, ctypes.byref(dwMode))
 
-        print(f' dwMode: {hex(dwMode.value)}')
+        # print(f' dwMode: {hex(dwMode.value)}')
         return dwMode.value
 
     def SetConsoleMode(self, handle, mode: int):
@@ -263,10 +264,12 @@ def test():
 
     brush.print("TEST", fgcolor=14, bgcolor=4)
 
-    wc.get_size()
+    wc.update_size()
+    # create blank canvas
+    print(ConsoleBuffer.fill_buffer(wc.size[0], wc.size[1]))
     wc.SetWindowChangeSizeEvents(True)
     wc.SetMouseInput(True)
-    i =0
+    i = 0
     while wc.ReadConsoleInputParams():
         #print(f'in: {hex(wc.GetConsoleMode(wc.consoleHandleIn))}')
         #print(f'out: {hex(wc.GetConsoleMode(wc.consoleHandleOut))}')
