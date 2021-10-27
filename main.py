@@ -103,6 +103,40 @@ class LinuxConsole(Console):
 
 
 
+class ConsoleView:
+    def __init__(self):
+        if is_windows():
+            self.console = WindowsConsole()
+        else:
+            self.console = LinuxConsole()
+        self.widgets = []
+
+    def color_mode(self) -> bool:
+        return self.console.set_color_mode(True)
+
+    def nocolor_mode(self) -> bool:
+        return self.console.set_color_mode(False)
+
+    def add_widget(self, widget: ConsoleWidget) -> None:
+        self.widgets.append(widget)
+
+    def add_widget_after(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
+        try:
+            idx = self.widgets.index(widget_on_list)
+        except ValueError as e:
+            return False
+
+        self.widgets.insert(idx+1)
+        return True
+
+    def add_widget_before(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
+        try:
+            idx = self.widgets.index(widget_on_list)
+        except ValueError as e:
+            return False
+
+        self.widgets.insert(idx)
+        return True
     # TODO: register for console size change
 
 class COORD(ctypes.Structure):
