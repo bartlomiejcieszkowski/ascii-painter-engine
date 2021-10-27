@@ -124,7 +124,17 @@ class ConsoleView:
         ctx.handle_events(events_list)
 
     def handle_events(self, events_list):
-        pass
+        for event in events_list:
+            if isinstance(event, MouseEvent):
+                self.console.brush.MoveUp(4)
+                self.console.debug_print(
+                    f'mouse coord: x:{event.coordinates[0]} y:{event.coordinates[1]}')
+                self.console.debug_print(f'size: {self.console.size[0]:3}x{self.console.size[1]:3}')
+                print()
+            elif isinstance(event, SizeChangeEvent):
+                self.console.clear()
+            else:
+                pass
 
     def loop(self) -> int:
         self.console.update_size()
