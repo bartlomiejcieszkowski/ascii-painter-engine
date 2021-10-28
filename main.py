@@ -22,7 +22,7 @@ if is_windows():
 from enum import Enum, auto
 from abc import ABC, abstractmethod
 
-
+import signal
 
 class ConsoleBuffer:
     def __init__(self):
@@ -88,7 +88,7 @@ class Console:
         pass
 
     @abstractmethod
-    def read_events(self, callback, callback_ctx) -> list:
+    def read_events(self, callback, callback_ctx) -> bool:
         pass
 
 
@@ -96,7 +96,34 @@ class LinuxConsole(Console):
     # TODO
     def __init__(self):
         super().__init__()
+        self.window_changed = False
 
+
+    window_change_event_ctx = None
+
+    @staticmethod
+    def window_change_handler(signum, frame):
+        LinuxConsole.window_change_event_ctx.window_change_event()
+
+    def window_change_event(self):
+        # inject special input on stdin?
+        self.window_changed = True
+
+    def interactive_mode(self):
+        LinuxConsole.window_change_event_ctx = self
+        signal.signal(signal.SIGWINCH, self.window_change_handler)
+
+    def read_events(self, callback, callback_ctx) -> bool:
+        events_list = []
+
+        if self.window_changed:
+            self.window_changed = False
+            events_list.append(SizeChangeEvent())
+        else:
+            pass
+
+        callback(callback_ctx, events_list)
+        return True
 
 
 class ConsoleView:
@@ -135,6 +162,9 @@ class ConsoleView:
                 print()
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
+                self.brush.MoveUp(3)
+                self.debug_print(f'size: {self.console.size[0]:3}x{self.console.size[1]:3}')
+                print()
             else:
                 pass
 
@@ -264,7 +294,7 @@ class WindowsConsole(Console):
         self.SetWindowChangeSizeEvents(True)
         self.SetMouseInput(True)
 
-    def read_events(self, callback, callback_ctx) -> list:
+    def read_events(self, callback, callback_ctx) -> bool:
         events_list = []
         # TODO: N events
         record = INPUT_RECORD()
