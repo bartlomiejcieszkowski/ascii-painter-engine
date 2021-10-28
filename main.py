@@ -59,9 +59,6 @@ class ConsoleWidgets:
 
 class Console:
     def __init__(self, debug=True):
-        self.brush = Brush(self)
-        self.debug = debug
-        self.debug_colors = (None, None) # 14, 4
         # TODO: this would print without vt enabled yet update state if vt enabled in brush?
         self.size = self.get_size()
         self.vt_supported = False
@@ -76,24 +73,9 @@ class Console:
         #self.debug_print(f'{terminal_size[0]}x{terminal_size[1]}')
         return terminal_size
 
-    def debug_print(self, text, end='\n'):
-        if self.debug:
-            self.brush.print(text, fgcolor=self.debug_colors[0], bgcolor=self.debug_colors[1], end=end)
-
-    def set_color_mode(self, enable:bool):
-        if enable:
-            self.vt_supported = True
-            self.debug_colors = (14, 4)
-        else:
-            self.vt_supported = False
-            self.debug_colors = (None, None)
+    def set_color_mode(self, enable: bool) -> bool:
+        self.vt_supported = enable
         return enable
-
-    def clear(self, reuse=True):
-        self.update_size()
-        if reuse:
-            self.brush.MoveCursor(1, 1)
-        print(ConsoleBuffer.fill_buffer(self.size[0], self.size[1], ' '), end='')
 
     @abstractmethod
     def interactive_mode(self):
@@ -112,12 +94,26 @@ class LinuxConsole(Console):
 
 
 class ConsoleView:
-    def __init__(self):
+    def __init__(self, debug=False):
         if is_windows():
             self.console = WindowsConsole()
         else:
             self.console = LinuxConsole()
         self.widgets = []
+        self.brush = Brush(self.console.vt_supported)
+        self.debug = debug
+        self.debug_colors = (None, None) # 14, 4
+
+    def debug_print(self, text, end='\n'):
+        if self.debug:
+            self.brush.print(text, fgcolor=self.debug_colors[0], bgcolor=self.debug_colors[1], end=end)
+
+    def clear(self, reuse=True):
+        self.console.update_size()
+        if reuse:
+            self.brush.MoveCursor(1, 1)
+        print(ConsoleBuffer.fill_buffer(self.console.size[0], self.console.size[1], ' '), end='')
+
 
     @staticmethod
     def handle_events_callback(ctx, events_list):
@@ -126,13 +122,13 @@ class ConsoleView:
     def handle_events(self, events_list):
         for event in events_list:
             if isinstance(event, MouseEvent):
-                self.console.brush.MoveUp(4)
-                self.console.debug_print(
-                    f'mouse coord: x:{event.coordinates[0]} y:{event.coordinates[1]}')
-                self.console.debug_print(f'size: {self.console.size[0]:3}x{self.console.size[1]:3}')
+                self.brush.MoveUp(4)
+                self.debug_print(
+                    f'mouse coord: x:{event.coordinates[0]:3} y:{event.coordinates[1]:3}')
+                self.debug_print(f'size: {self.console.size[0]:3}x{self.console.size[1]:3}')
                 print()
             elif isinstance(event, SizeChangeEvent):
-                self.console.clear()
+                self.clear()
             else:
                 pass
 
@@ -140,7 +136,7 @@ class ConsoleView:
         self.console.update_size()
 
         # create blank canvas
-        self.console.clear(reuse=False)
+        self.clear(reuse=False)
 
         self.console.interactive_mode()
 
@@ -149,9 +145,15 @@ class ConsoleView:
             i += 1
 
     def color_mode(self) -> bool:
-        return self.console.set_color_mode(True)
+        success = self.console.set_color_mode(True)
+        if success:
+            self.brush.color_mode()
+            self.debug_colors = (14, 4)
+        return success
 
     def nocolor_mode(self) -> bool:
+        self.debug_colors = (None, None)
+        self.brush.nocolor_mode()
         return self.console.set_color_mode(False)
 
     def add_widget(self, widget: ConsoleWidget) -> None:
@@ -258,6 +260,7 @@ class WindowsConsole(Console):
 
     def read_events(self, callback, callback_ctx) -> list:
         events_list = []
+        # TODO: N events
         record = INPUT_RECORD()
         events = ctypes.wintypes.DWORD(0)
         ret_val = self.readConsoleInput(self.consoleHandleIn, ctypes.byref(record), 1, ctypes.byref(events))
@@ -326,12 +329,18 @@ class WindowsConsole(Console):
         return self.SetMode(self.consoleHandleIn, ENABLE_MOUSE_INPUT, enable)
 
 class Brush:
-    def __init__(self, console=None):
+    def __init__(self, color=True):
         self.fgcolor = None
         self.bgcolor = None
-        self.console = console
+        self.color = color
 
     RESET = '\x1B[0m'
+
+    def color_mode(self):
+        self.color = True
+
+    def nocolor_mode(self):
+        self.color = False
 
     def FgColor(self, color):
         return f'\x1B[38;5;{color}m'
@@ -382,7 +391,7 @@ class Test:
 
 
 def main():
-    console_view = ConsoleView()
+    console_view = ConsoleView(debug=True)
     console_view.color_mode()
 
     widget = ConsoleWidgets.TextBox(text='Test', x=2, y=2, height=4, width=10, alignment=ConsoleWidgetAlignment.LEFT_TOP)
