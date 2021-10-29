@@ -41,12 +41,13 @@ class ConsoleWidgetAlignment(Enum):
 
 
 class ConsoleWidget(ABC):
-    def __init__(self, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment):
+    def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.alignment = alignment
+        self.console_view = console_view
 
     @abstractmethod
     def draw(self):
@@ -55,8 +56,8 @@ class ConsoleWidget(ABC):
 
 class ConsoleWidgets:
     class TextBox(ConsoleWidget):
-        def __init__(self, text: str, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment):
-            super().__init__(x=x, y=y, width=width, height=height, alignment=alignment)
+        def __init__(self, console_view, text: str, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment):
+            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment)
             self.text = text
 
         def draw(self):
@@ -430,7 +431,7 @@ def main():
     console_view = ConsoleView(debug=True)
     console_view.color_mode()
 
-    widget = ConsoleWidgets.TextBox(text='Test', x=2, y=2, height=4, width=10, alignment=ConsoleWidgetAlignment.LEFT_TOP)
+    widget = ConsoleWidgets.TextBox(console_view=console_view, text='Test', x=2, y=2, height=4, width=10, alignment=ConsoleWidgetAlignment.LEFT_TOP)
 
     console_view.add_widget(widget)
     console_view.loop()
