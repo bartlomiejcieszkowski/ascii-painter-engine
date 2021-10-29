@@ -62,7 +62,7 @@ class ConsoleWidgets:
 
         def draw(self):
             self.console_view.brush.MoveCursor(row=self.y, column=1) #self.x)
-            self.console_view.brush.MoveColumnAbsolute(2)
+            #self.console_view.brush.MoveColumnAbsolute(2)
             self.console_view.brush.print('+'+('-'*(self.width - 2))+'+', end='')
             text = self.text
             for h in range(1, self.height-1):
@@ -201,6 +201,7 @@ class ConsoleView:
 
         self.console.interactive_mode()
 
+        self.brush.HideCursor()
         self.handle_events([SizeChangeEvent()])
         i = 0
         while self.console.read_events(self.handle_events_callback, self):
@@ -494,6 +495,12 @@ class Brush:
 
     def HorizontalVerticalPosition(self, row: int = 1, column: int = 1):
         print(f'\x1B[{row};{column}f')
+
+    def HideCursor(self):
+        print('\x1b[?25l')
+
+    def ShowCursor(self):
+        print('\x1b[?25h')
 
 class Test:
     @staticmethod
