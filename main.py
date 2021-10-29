@@ -29,7 +29,9 @@ class ConsoleBuffer:
         pass
 
     @staticmethod
-    def fill_buffer(x, y, symbol=' '):
+    def fill_buffer(x, y, symbol=' ', border=True):
+        if border:
+            return ('\n' + '.' + (symbol * (x - 2)) + '.') * y
         return ('\n' + (symbol*x)) * y
 
 
