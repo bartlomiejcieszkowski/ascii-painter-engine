@@ -61,6 +61,26 @@ class ConsoleWidgets:
             self.text = text
 
         def draw(self):
+            self.console_view.brush.MoveCursor(row=self.y, column=1) #self.x)
+            self.console_view.brush.MoveColumnAbsolute(2)
+            self.console_view.brush.print('+'+('-'*(self.width - 2))+'+', end='')
+            text = self.text
+            for h in range(1, self.height-1):
+                self.console_view.brush.MoveCursor(row=self.y + h, column=self.x)
+                # split string ?
+                print_text = text
+                if len(text) > (self.width - 2):
+                    # split
+                    print_text = text[0:(self.width - 2)]
+                    text = text[(self.width - 2):]
+                else:
+                    text = ''
+                leftover = (self.width - 2) - (len(print_text))
+                self.console_view.brush.print('|' + print_text + ' '*leftover + '|', end='')
+                #self.console_view.brush.MoveLeft(self.width)
+                #self.console_view.brush.MoveDown()
+            self.console_view.brush.MoveCursor(row=self.y + self.height - 1, column=self.x)
+            self.console_view.brush.print('+' + ('-' * (self.width - 2)) + '+', end='\n')
             pass
 
 
@@ -154,18 +174,22 @@ class ConsoleView:
         ctx.handle_events(events_list)
 
     def handle_events(self, events_list):
+        off = -2
+        # with -1 - we lines 2 near end of screen overwrite each other
         for event in events_list:
             if isinstance(event, MouseEvent):
-                self.brush.MoveUp(4)
+                self.brush.MoveCursor(row=(self.console.size[1] + off) - 1)
                 self.debug_print(
                     f'mouse coord: x:{event.coordinates[0]:3} y:{event.coordinates[1]:3}')
-                self.debug_print(f'size: {self.console.size[0]:3}x{self.console.size[1]:3}')
-                print()
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
-                self.brush.MoveUp(3)
+                self.brush.MoveCursor(row=(self.console.size[1] + off) - 0)
                 self.debug_print(f'size: {self.console.size[0]:3}x{self.console.size[1]:3}')
-                print()
+            elif isinstance(event, KeyEvent):
+                self.brush.MoveCursor(row=(self.console.size[1] + off) - 2)
+                self.debug_print(
+                    f'vk_code: {hex(event.vk_code)} pressed? {event.key_down}'
+                )
             else:
                 pass
 
@@ -177,8 +201,12 @@ class ConsoleView:
 
         self.console.interactive_mode()
 
+        self.handle_events([SizeChangeEvent()])
         i = 0
         while self.console.read_events(self.handle_events_callback, self):
+            for widget in self.widgets:
+                widget.draw()
+            self.brush.MoveCursor(row=self.console.size[1]-1)
             i += 1
 
     def color_mode(self) -> bool:
@@ -215,9 +243,25 @@ class ConsoleView:
         return True
     # TODO: register for console size change
 
+
 class COORD(ctypes.Structure):
     _fields_ = [("X", ctypes.wintypes.SHORT),
                 ("Y", ctypes.wintypes.SHORT)]
+
+
+class KEY_EVENT_RECORD_Char(ctypes.Union):
+    _fields_ = [("UnicodeChar", ctypes.wintypes.WCHAR),
+                ("AsciiChar", ctypes.wintypes.CHAR)]
+
+
+class KEY_EVENT_RECORD(ctypes.Structure):
+    _fields_ = [("bKeyDown", ctypes.wintypes.BOOL),
+                ("wRepeatCount", ctypes.wintypes.WORD),
+                ("wVirtualKeyCode", ctypes.wintypes.WORD),
+                ("wVirtualScanCode", ctypes.wintypes.WORD),
+                ("uChar", KEY_EVENT_RECORD_Char),
+                ("dwControlKeyState", ctypes.wintypes.DWORD)]
+
 
 class MOUSE_EVENT_RECORD(ctypes.Structure):
     _fields_ = [("dwMousePosition", COORD),
@@ -225,8 +269,9 @@ class MOUSE_EVENT_RECORD(ctypes.Structure):
                 ("dwControlKeyState", ctypes.wintypes.DWORD),
                 ("dwEventFlags", ctypes.wintypes.DWORD)]
 
+
 class INPUT_RECORD_Event(ctypes.Union):
-    _fields_ = [("KeyEvent", ctypes.c_uint),
+    _fields_ = [("KeyEvent", KEY_EVENT_RECORD),
                 ("MouseEvent", MOUSE_EVENT_RECORD),
                 ("WindowBufferSizeEvent", COORD),
                 ("MenuEvent", ctypes.c_uint),
@@ -243,9 +288,11 @@ class ConsoleEvent(ABC):
     def __init__(self):
         pass
 
+
 class SizeChangeEvent(ConsoleEvent):
     def __init__(self):
         super().__init__()
+
 
 class MouseEvent(ConsoleEvent):
     def __init__(self, x, y, button_state, control_key_state, event_flags):
@@ -254,6 +301,17 @@ class MouseEvent(ConsoleEvent):
         self.button_state = button_state
         self.control_key_state = control_key_state
         self.event_flags = event_flags
+
+
+class KeyEvent(ConsoleEvent):
+    def __init__(self, key_down: bool, repeat_count: int, vk_code: int, vs_code: int, char, control_key_state):
+        super().__init__()
+        self.key_down = key_down
+        self.repeat_count = repeat_count
+        self.vk_code = vk_code
+        self.vs_code = vs_code
+        self.char = char
+        self.control_key_state = control_key_state
 
 
 class WindowsConsole(Console):
@@ -288,6 +346,7 @@ class WindowsConsole(Console):
         readConsoleInputParams = (1, "hConsoleInput", 0), (1, "lpBuffer", 0), (1, "nLength", 0), (1, "lpNumberOfEventsRead", 0)
         self.readConsoleInput = readConsoleInputProto(('ReadConsoleInputW', self.kernel32), readConsoleInputParams)
 
+    KEY_EVENT = 0x1
     MOUSE_EVENT = 0x2
     WINDOW_BUFFER_SIZE_EVENT = 0x4
 
@@ -311,6 +370,13 @@ class WindowsConsole(Console):
                                           button_state=record.Event.MouseEvent.dwButtonState,
                                           control_key_state=record.Event.MouseEvent.dwControlKeyState,
                                           event_flags=record.Event.MouseEvent.dwEventFlags))
+        elif record.EventType == self.KEY_EVENT:
+            events_list.append(KeyEvent(key_down=record.Event.KeyEvent.bKeyDown,
+                                        repeat_count=record.Event.KeyEvent.wRepeatCount,
+                                        vk_code=record.Event.KeyEvent.wVirtualKeyCode,
+                                        vs_code=record.Event.KeyEvent.wVirtualScanCode,
+                                        char=record.Event.KeyEvent.uChar.AsciiChar,
+                                        control_key_state=record.Event.KeyEvent.dwControlKeyState))
         else:
             pass
 
@@ -365,6 +431,7 @@ class WindowsConsole(Console):
         ENABLE_MOUSE_INPUT = 0x10
         return self.SetMode(self.consoleHandleIn, ENABLE_MOUSE_INPUT, enable)
 
+
 class Brush:
     def __init__(self, color=True):
         self.fgcolor = None
@@ -385,7 +452,7 @@ class Brush:
     def BgColor(self, color):
         return f'\x1B[48;5;{color}m'
 
-    def print(self, *args, sep=' ', end='\n', file=None, fgcolor=None, bgcolor=None):
+    def print(self, *args, sep=' ', end='', file=None, fgcolor=None, bgcolor=None):
         if fgcolor is None and bgcolor is None:
             print(*args, sep=sep, end=end, file=file)
         else:
@@ -401,17 +468,32 @@ class Brush:
     def Reset(self):
         print(self.RESET, end='')
 
-    def MoveUp(self, lines):
-        print(f'\x1B[{lines}F')
+    def MoveUp(self, cells: int = 1):
+        print(f'\x1B[{cells}A')
 
-    def MoveDown(self, lines):
-        print(f'\x1B[{lines}E')
+    def MoveDown(self, cells: int = 1):
+        print(f'\x1B[{cells}B')
 
-    def MoveColumn(self, column):
-        print(f'\x1B[{column}G')
+    def MoveRight(self, cells: int = 1):
+        print(f'\x1B[{cells}C')
 
-    def MoveCursor(self, row, column):
+    def MoveLeft(self, cells: int = 1):
+        print(f'\x1B[{cells}D')
+
+    def MoveLineDown(self, lines: int = 1):
+        print(f'\x1B[{lines}E') # not ANSI.SYS
+
+    def MoveLineUp(self, lines: int = 1):
+        print(f'\x1B[{lines}F') # not ANSI.SYS
+
+    def MoveColumnAbsolute(self, column: int = 1):
+        print(f'\x1B[{column}G') # not ANSI.SYS
+
+    def MoveCursor(self, row: int=1, column: int = 1):
         print(f'\x1B[{row};{column}H')
+
+    def HorizontalVerticalPosition(self, row: int = 1, column: int = 1):
+        print(f'\x1B[{row};{column}f')
 
 class Test:
     @staticmethod
@@ -431,7 +513,7 @@ def main():
     console_view = ConsoleView(debug=True)
     console_view.color_mode()
 
-    widget = ConsoleWidgets.TextBox(console_view=console_view, text='Test', x=2, y=2, height=4, width=10, alignment=ConsoleWidgetAlignment.LEFT_TOP)
+    widget = ConsoleWidgets.TextBox(console_view=console_view, text='Test', x=2, y=2, height=4, width=20, alignment=ConsoleWidgetAlignment.LEFT_TOP)
 
     console_view.add_widget(widget)
     console_view.loop()
