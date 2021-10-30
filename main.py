@@ -63,12 +63,13 @@ class ConsoleWidgets:
             self.text = text
 
         def draw(self):
-            self.console_view.brush.MoveCursor(row=self.y, column=1) #self.x)
+            self.console_view.brush.MoveCursor(row=self.y)
             #self.console_view.brush.MoveColumnAbsolute(2)
-            self.console_view.brush.print('+'+('-'*(self.width - 2))+'+', end='')
+            offset_str = self.console_view.brush.MoveRight(self.x)
+            self.console_view.brush.print(offset_str + '+'+('-'*(self.width - 2))+'+', end='')
             text = self.text
             for h in range(1, self.height-1):
-                self.console_view.brush.MoveCursor(row=self.y + h, column=self.x)
+                self.console_view.brush.MoveCursor(row=self.y + h)
                 # split string ?
                 print_text = text
                 if len(text) > (self.width - 2):
@@ -78,11 +79,9 @@ class ConsoleWidgets:
                 else:
                     text = ''
                 leftover = (self.width - 2) - (len(print_text))
-                self.console_view.brush.print('|' + print_text + ' '*leftover + '|', end='')
-                #self.console_view.brush.MoveLeft(self.width)
-                #self.console_view.brush.MoveDown()
-            self.console_view.brush.MoveCursor(row=self.y + self.height - 1, column=self.x)
-            self.console_view.brush.print('+' + ('-' * (self.width - 2)) + '+', end='\n')
+                self.console_view.brush.print(offset_str + '|' + print_text + ' '*leftover + '|', end='')
+            self.console_view.brush.MoveCursor(row=self.y + self.height - 1)
+            self.console_view.brush.print(offset_str + '+' + ('-' * (self.width - 2)) + '+', end='\n')
             pass
 
 
@@ -206,10 +205,12 @@ class ConsoleView:
         self.brush.HideCursor()
         self.handle_events([SizeChangeEvent()])
         i = 0
-        while self.console.read_events(self.handle_events_callback, self):
+        while True:
             for widget in self.widgets:
                 widget.draw()
             self.brush.MoveCursor(row=self.console.size[1]-1)
+            if not self.console.read_events(self.handle_events_callback, self):
+                break
             i += 1
 
     def color_mode(self) -> bool:
@@ -477,11 +478,11 @@ class Brush:
     def MoveDown(self, cells: int = 1):
         print(f'\x1B[{cells}B')
 
-    def MoveRight(self, cells: int = 1):
-        print(f'\x1B[{cells}C')
+    def MoveRight(self, cells: int = 1) -> str:
+        return f'\x1B[{cells}C'
 
-    def MoveLeft(self, cells: int = 1):
-        print(f'\x1B[{cells}D')
+    def MoveLeft(self, cells: int = 1) -> str:
+        return f'\x1B[{cells}D'
 
     def MoveLineDown(self, lines: int = 1):
         print(f'\x1B[{lines}E') # not ANSI.SYS
