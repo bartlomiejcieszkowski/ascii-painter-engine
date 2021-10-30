@@ -58,15 +58,15 @@ class ConsoleWidget(ABC):
 
 class ConsoleWidgets:
     class TextBox(ConsoleWidget):
-        def __init__(self, console_view, text: str, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment):
+        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment, text: str=''):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment)
             self.text = text
 
         def draw(self):
             self.console_view.brush.MoveCursor(row=self.y)
-            #self.console_view.brush.MoveColumnAbsolute(2)
             offset_str = self.console_view.brush.MoveRight(self.x)
-            self.console_view.brush.print(offset_str + '+'+('-'*(self.width - 2))+'+', end='')
+            border = offset_str + '+' + ('-' * (self.width - 2)) + '+'
+            self.console_view.brush.print(border, end='')
             text = self.text
             for h in range(1, self.height-1):
                 self.console_view.brush.MoveCursor(row=self.y + h)
@@ -81,9 +81,41 @@ class ConsoleWidgets:
                 leftover = (self.width - 2) - (len(print_text))
                 self.console_view.brush.print(offset_str + '|' + print_text + ' '*leftover + '|', end='')
             self.console_view.brush.MoveCursor(row=self.y + self.height - 1)
-            self.console_view.brush.print(offset_str + '+' + ('-' * (self.width - 2)) + '+', end='\n')
+            self.console_view.brush.print(border, end='\n')
             pass
 
+
+    class Pane(ConsoleWidget):
+        def __init__(self, console_view, text: str, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment):
+            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment)
+            self.widgets = []
+            self.title = ''
+
+        def draw(self):
+            self.console_view.brush.MoveCursor(row=self.y)
+            offset_str = self.console_view.brush.MoveRight(self.x)
+            width_middle = self.width - 2
+            border_title = offset_str + '+' + ((self.title[:width_middle-2] + '..') if len(self.title) > width_middle else self.title) + ('-' * (width_middle - len(self.title))) + '+'
+            border = offset_str + '+' + ('-' * (self.width - 2)) + '+' if len(self.title) > 0 else border_title
+            self.console_view.brush.print(border_title, end='')
+            skip = self.console_view.brush.MoveRight(self.width - 2)
+            for h in range(1, self.height - 1):
+                self.console_view.brush.MoveCursor(row=self.y + h)
+                self.console_view.brush.print(offset_str + '|' + skip + '|', end='')
+            self.console_view.brush.MoveCursor(row=self.y + self.height - 1)
+            self.console_view.brush.print(border, end='\n')
+            for widget in self.widgets:
+                widget.draw()
+
+            pass
+
+        def add_widget(self, widget):
+            # TODO widget should take offset from parent
+            # right now we will adjust it when adding
+            # +1 to account for border
+            widget.x += self.x + 1
+            widget.y += self.y + 1
+            self.widgets.append(widget)
 
 class Console:
     def __init__(self, debug=True):
@@ -526,8 +558,21 @@ def main():
     console_view.color_mode()
 
     widget = ConsoleWidgets.TextBox(console_view=console_view, text='Test', x=2, y=2, height=4, width=20, alignment=ConsoleWidgetAlignment.LEFT_TOP)
-
     console_view.add_widget(widget)
+
+    widget = ConsoleWidgets.Pane(console_view=console_view, text='Test', x=2, y=8, height=4, width=8, alignment=ConsoleWidgetAlignment.LEFT_TOP)
+    widget.title = 'Little Pane'
+    console_view.add_widget(widget)
+
+    pane = ConsoleWidgets.Pane(console_view=console_view, text='Test', x=11, y=8, height=5, width=20,
+                                 alignment=ConsoleWidgetAlignment.LEFT_TOP)
+    pane.title = 'Bigger Pane'
+    console_view.add_widget(pane)
+
+    widget = ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=3, width=10, alignment=ConsoleWidgetAlignment.LEFT_TOP)
+    widget.text = 'Sample text in pane'
+    pane.add_widget(widget)
+
     console_view.loop()
 
 
