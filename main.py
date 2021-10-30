@@ -501,6 +501,8 @@ class Brush:
 
     def HideCursor(self):
         print('\x1b[?25l')
+        # alternative on windows without vt:
+        # https://docs.microsoft.com/en-us/windows/console/setconsolecursorinfo?redirectedfrom=MSDN
 
     def ShowCursor(self):
         print('\x1b[?25h')
