@@ -62,6 +62,14 @@ class ConsoleWidgets:
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment)
             self.text = ''
             self.borderless = False
+            # border string
+            # 044441
+            # 588886
+            # 588886
+            # 277773
+            # where the string is in form
+            # '012345678'
+            self.border = '++++-||- '
 
         def draw_borderless(self):
             # TODO: this can be merged with draw_border we have a lot in common
@@ -87,8 +95,9 @@ class ConsoleWidgets:
             width_middle = self.width - 2
             self.console_view.brush.MoveCursor(row=self.y)
             offset_str = self.console_view.brush.MoveRight(self.x)
-            border = offset_str + '+' + ('-' * width_middle) + '+'
-            self.console_view.brush.print(border, end='')
+            border_top = offset_str + self.border[0] + (self.border[4] * width_middle) + self.border[1]
+            border_bottom = offset_str + self.border[2] + (self.border[7] * width_middle) + self.border[3]
+            self.console_view.brush.print(border_top, end='')
             text = self.text
             for h in range(1, self.height-1):
                 self.console_view.brush.MoveCursor(row=self.y + h)
@@ -101,9 +110,9 @@ class ConsoleWidgets:
                 else:
                     text = ''
                 leftover = width_middle - len(print_text)
-                self.console_view.brush.print(offset_str + '|' + print_text + ' '*leftover + '|', end='')
+                self.console_view.brush.print(offset_str + self.border[5] + print_text + self.border[8]*leftover + self.border[6], end='')
             self.console_view.brush.MoveCursor(row=self.y + self.height - 1)
-            self.console_view.brush.print(border, end='\n')
+            self.console_view.brush.print(border_bottom, end='\n')
             pass
 
         def draw(self):
@@ -600,6 +609,7 @@ def main():
 
     widget = ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=3, width=10, alignment=ConsoleWidgetAlignment.LEFT_TOP)
     widget.text = 'Sample text in pane'
+    widget.border = '/\\\\/-||- '
     pane.add_widget(widget)
 
     widget = ConsoleWidgets.TextBox(console_view=console_view, x=10, y=0, height=3, width=25, alignment=ConsoleWidgetAlignment.LEFT_TOP)
