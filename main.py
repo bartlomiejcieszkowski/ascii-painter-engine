@@ -56,6 +56,12 @@ class ConsoleWidget(ABC):
         pass
 
 
+class BorderPoint:
+    def __init__(self, c: str = ' ', color=(None, None)):
+        self.c = c
+        self.color = color
+
+
 class ConsoleWidgets:
     class TextBox(ConsoleWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment):
@@ -63,13 +69,38 @@ class ConsoleWidgets:
             self.text = ''
             self.borderless = False
             # border string
-            # 044441
-            # 588886
-            # 588886
-            # 277773
+            # 155552
+            # 600007
+            # 600007
+            # 388884
             # where the string is in form
             # '012345678'
-            self.border = '++++-||- '
+            self.border = [
+                BorderPoint(' '),
+                BorderPoint('+'),
+                BorderPoint('+'),
+                BorderPoint('+'),
+                BorderPoint('+'),
+                BorderPoint('+'),
+                BorderPoint('-'),
+                BorderPoint('|'),
+                BorderPoint('|'),
+                BorderPoint('-'),
+
+            ]
+
+        def border_from_str(self, border_str: str):
+            if len(border_str) < 9:
+                raise Exception(f'border_str must have at least len of 9 - got {len(border_str)}')
+            for i in range(0, 9):
+                self.border[i] = BorderPoint(border_str[i])
+
+        def border_set_color(self, color):
+            for i in range(1, 9):
+                self.border[i].color = color
+
+        def border_inside_set_color(self, color):
+            self.border[0].color = color
 
         def draw_borderless(self):
             # TODO: this can be merged with draw_border we have a lot in common
@@ -95,8 +126,14 @@ class ConsoleWidgets:
             width_middle = self.width - 2
             self.console_view.brush.MoveCursor(row=self.y)
             offset_str = self.console_view.brush.MoveRight(self.x)
-            border_top = offset_str + self.border[0] + (self.border[4] * width_middle) + self.border[1]
-            border_bottom = offset_str + self.border[2] + (self.border[7] * width_middle) + self.border[3]
+            border_top = offset_str +\
+                         self.console_view.brush.FgBgColor(self.border[1].color) +\
+                         self.border[1].c +\
+                         self.console_view.brush.FgBgColor(self.border[5].color) +\
+                         (self.border[5].c * width_middle) +\
+                         self.console_view.brush.FgBgColor(self.border[2].color) +\
+                         self.border[2].c + \
+                        self.console_view.brush.ResetColor()
             self.console_view.brush.print(border_top, end='')
             text = self.text
             for h in range(1, self.height-1):
@@ -110,8 +147,27 @@ class ConsoleWidgets:
                 else:
                     text = ''
                 leftover = width_middle - len(print_text)
-                self.console_view.brush.print(offset_str + self.border[5] + print_text + self.border[8]*leftover + self.border[6], end='')
+                line = offset_str + \
+                       self.console_view.brush.FgBgColor(self.border[6].color) + \
+                       self.border[6].c + \
+                       self.console_view.brush.FgBgColor(self.border[0].color) + \
+                       print_text +\
+                       (self.border[0].c*leftover) + \
+                       self.console_view.brush.FgBgColor(self.border[7].color) + \
+                       self.border[7].c +\
+                       self.console_view.brush.ResetColor()
+
+                self.console_view.brush.print(line, end='')
+
             self.console_view.brush.MoveCursor(row=self.y + self.height - 1)
+            border_bottom = offset_str + \
+                            self.console_view.brush.FgBgColor(self.border[3].color) + \
+                            self.border[3].c + \
+                            self.console_view.brush.FgBgColor(self.border[8].color) + \
+                            (self.border[8].c * width_middle) + \
+                            self.console_view.brush.FgBgColor(self.border[4].color) + \
+                            self.border[4].c + \
+                            self.console_view.brush.ResetColor()
             self.console_view.brush.print(border_bottom, end='\n')
             pass
 
@@ -519,11 +575,31 @@ class Brush:
     def nocolor_mode(self):
         self.color = False
 
-    def FgColor(self, color):
+    def FgColor(self, color, check_last=False):
+        if check_last:
+            if self.fgcolor == color:
+                return ''
+        self.fgcolor = color
+        if color is None:
+            return ''
         return f'\x1B[38;5;{color}m'
 
-    def BgColor(self, color):
+    def BgColor(self, color, check_last=False):
+        if check_last:
+            if self.bgcolor == color:
+                return ''
+        self.bgcolor = color
+        if color is None:
+            return ''
         return f'\x1B[48;5;{color}m'
+
+    def FgBgColor(self, color, check_last=False):
+        ret_val = ''
+        if (color[0] is None and self.fgcolor != color[0]) or (color[1] is None and self.bgcolor != color[1]):
+            ret_val = self.ResetColor()
+        ret_val += self.FgColor(color[0], check_last)
+        ret_val += self.BgColor(color[1], check_last)
+        return ret_val
 
     def print(self, *args, sep=' ', end='', file=None, fgcolor=None, bgcolor=None):
         if fgcolor is None and bgcolor is None:
@@ -537,6 +613,11 @@ class Brush:
 
     def SetBgColor(self, color):
         print(self.BgColor(color), end='')
+
+    def ResetColor(self):
+        self.bgcolor = -1
+        self.fgcolor = -1
+        return self.RESET
 
     def Reset(self):
         print(self.RESET, end='')
@@ -609,7 +690,8 @@ def main():
 
     widget = ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=3, width=10, alignment=ConsoleWidgetAlignment.LEFT_TOP)
     widget.text = 'Sample text in pane'
-    widget.border = '/\\\\/-||- '
+    widget.border_from_str(' /\\\\/-||-')
+    widget.border_set_color((14, 4))
     pane.add_widget(widget)
 
     widget = ConsoleWidgets.TextBox(console_view=console_view, x=10, y=0, height=3, width=25, alignment=ConsoleWidgetAlignment.LEFT_TOP)
