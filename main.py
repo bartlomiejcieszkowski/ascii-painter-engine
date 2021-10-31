@@ -178,7 +178,7 @@ class ConsoleWidgets:
                 self.draw_border()
 
     class Pane(ConsoleWidget):
-        def __init__(self, console_view, text: str, x: int, y: int, width: int, height: int,
+        def __init__(self, console_view, x: int, y: int, width: int, height: int,
                      alignment: ConsoleWidgetAlignment):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment)
             self.widgets = []
@@ -706,12 +706,12 @@ def main(handle_sigint=True):
     widget.text = 'Test'
     console_view.add_widget(widget)
 
-    widget = ConsoleWidgets.Pane(console_view=console_view, text='Test', x=2, y=8, height=4, width=8,
+    widget = ConsoleWidgets.Pane(console_view=console_view, x=2, y=8, height=4, width=8,
                                  alignment=ConsoleWidgetAlignment.LEFT_TOP)
     widget.title = 'Little Pane'
     console_view.add_widget(widget)
 
-    pane = ConsoleWidgets.Pane(console_view=console_view, text='Test', x=11, y=8, height=5, width=40,
+    pane = ConsoleWidgets.Pane(console_view=console_view, x=11, y=8, height=5, width=40,
                                alignment=ConsoleWidgetAlignment.LEFT_TOP)
     pane.title = 'Bigger Pane'
     console_view.add_widget(pane)
