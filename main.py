@@ -285,6 +285,7 @@ class ConsoleView:
         self.brush = Brush(self.console.vt_supported)
         self.debug = debug
         self.debug_colors = (None, None)  # 14, 4
+        self.run = True
 
     def debug_print(self, text, end='\n'):
         if self.debug:
@@ -320,7 +321,27 @@ class ConsoleView:
             else:
                 pass
 
-    def loop(self) -> int:
+    signal_sigint_ctx = None
+
+    @staticmethod
+    def signal_sigint_handler(signum, frame):
+        ConsoleView.signal_sigint_ctx.signal_sigint()
+
+    def signal_sigint(self):
+        self.run = False
+        # TODO: read_events is blocking, sos this one needs to be somehow inject, otherwise we wait for first new event
+        # works accidentally - as releasing ctrl-c cause key event ;)
+
+    def interactive_mode(self):
+        LinuxConsole.window_change_event_ctx = self
+        signal.signal(signal.SIGWINCH, self.window_change_handler)
+
+    def loop(self, handle_sigint) -> int:
+        if handle_sigint:
+            ConsoleView.signal_sigint_ctx = self
+            signal.signal(signal.SIGINT, ConsoleView.signal_sigint_handler)
+
+        self.run = True
         self.console.update_size()
 
         # create blank canvas
@@ -331,13 +352,16 @@ class ConsoleView:
         self.brush.HideCursor()
         self.handle_events([SizeChangeEvent()])
         i = 0
-        while True:
+        while self.run:
             for widget in self.widgets:
                 widget.draw()
             self.brush.MoveCursor(row=self.console.size[1] - 1)
+            # this is blocking
             if not self.console.read_events(self.handle_events_callback, self):
                 break
             i += 1
+        # Move to the end, so we wont end up writing in middle of screen
+        self.brush.MoveCursor(self.console.size[1] - 1)
 
     def color_mode(self) -> bool:
         success = self.console.set_color_mode(True)
@@ -673,8 +697,7 @@ class Test:
             print(f'\x1B[48;2;{color};{color};{color}mXD', end='')
         print('\x1B[0m')
 
-
-def main():
+def main(handle_sigint=True):
     console_view = ConsoleView(debug=True)
     console_view.color_mode()
 
@@ -706,7 +729,7 @@ def main():
     widget.borderless = True
     pane.add_widget(widget)
 
-    console_view.loop()
+    console_view.loop(handle_sigint)
 
 
 def test():
