@@ -45,17 +45,24 @@ class ConsoleWidgetAlignment(Enum):
 
 
 class ConsoleWidget(ABC):
-    def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment):
+    def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment, percent: bool = False):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.alignment = alignment
         self.console_view = console_view
+        self.percent = percent
 
     @abstractmethod
     def draw(self):
         pass
+
+    def width_calculated(self):
+        return ((self.width * self.console_view.console.size[0]) // 100) if self.percent else self.width
+
+    def height_calculated(self):
+        return ((self.height * self.console_view.console.size[1]) // 100) if self.percent else self.height
 
 
 class BorderPoint:
@@ -65,10 +72,9 @@ class BorderPoint:
 
 
 class ConsoleWidgets:
-    class TextBox(ConsoleWidget):
-        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment):
-            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment)
-            self.text = ''
+    class BorderWidget(ConsoleWidget):
+        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment, percent: bool=False):
+            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment, percent=percent)
             self.borderless = False
             # border string
             # 155552
@@ -87,7 +93,6 @@ class ConsoleWidgets:
                 BorderPoint('|'),
                 BorderPoint('|'),
                 BorderPoint('-'),
-
             ]
 
         def border_from_str(self, border_str: str):
@@ -103,102 +108,91 @@ class ConsoleWidgets:
         def border_inside_set_color(self, color):
             self.border[0].color = color
 
-        def draw_borderless(self):
-            # TODO: this can be merged with draw_border we have a lot in common
-            width_middle = self.width
-            self.console_view.brush.MoveCursor(row=self.y)
-            offset_str = self.console_view.brush.MoveRight(self.x)
-            text = self.text
-            for h in range(0, self.height):
-                self.console_view.brush.MoveCursor(row=self.y + h)
-                # split string ?
-                print_text = text
-                if len(text) > width_middle:
-                    # split
-                    print_text = text[0:width_middle]
-                    text = text[width_middle:]
-                else:
-                    text = ''
-                leftover = width_middle - len(print_text)
-                self.console_view.brush.print(offset_str + print_text + ' ' * leftover, end='')
-            pass
-
-        def draw_border(self):
-            width_middle = self.width - 2
-            self.console_view.brush.MoveCursor(row=self.y)
-            offset_str = self.console_view.brush.MoveRight(self.x)
-            border_top = offset_str + \
-                         self.console_view.brush.FgBgColor(self.border[1].color) + \
+        def border_get_top(self, width_middle):
+            return self.console_view.brush.FgBgColor(self.border[1].color) + \
                          self.border[1].c + \
                          self.console_view.brush.FgBgColor(self.border[5].color) + \
-                         (self.border[5].c * width_middle) + \
+                         ((self.title[:width_middle - 2] + '..') if len(self.title) > width_middle else self.title) + \
+                         (self.border[5].c * (width_middle - len(self.title))) + \
                          self.console_view.brush.FgBgColor(self.border[2].color) + \
                          self.border[2].c +\
                          self.console_view.brush.ResetColor()
-            self.console_view.brush.print(border_top, end='')
-            text = self.text
-            for h in range(1, self.height - 1):
+
+        def border_get_bottom(self, width_middle):
+            return self.console_view.brush.FgBgColor(self.border[3].color) + \
+                        self.border[3].c + \
+                        self.console_view.brush.FgBgColor(self.border[8].color) + \
+                        (self.border[8].c * width_middle) + \
+                        self.console_view.brush.FgBgColor(self.border[4].color) + \
+                        self.border[4].c + \
+                        self.console_view.brush.ResetColor()
+
+        def draw_bordered(self, inside_text: str = '', title: str = ''):
+            width = self.width_calculated() - 2
+            height = self.height_calculated() - 2
+            width_middle = width
+            if self.borderless is False:
+                width_middle -= 2
+            self.console_view.brush.MoveCursor(row=self.y)
+            offset_str = self.console_view.brush.MoveRight(self.x)
+            if self.borderless is False:
+                self.console_view.brush.print(offset_str + self.border_get_top(width_middle), end='')
+            text = inside_text
+            start = 0 if self.borderless else 1
+            end = height if self.borderless else (height - 1)
+            for h in range(start, end):
                 self.console_view.brush.MoveCursor(row=self.y + h)
                 # split string ?
                 print_text = text
-                if len(text) > width_middle:
+                if len(text) > width_middle and len(text) != 0:
                     # split
                     print_text = text[0:width_middle]
                     text = text[width_middle:]
                 else:
                     text = ''
                 leftover = width_middle - len(print_text)
-                line = offset_str + \
-                       self.console_view.brush.FgBgColor(self.border[6].color) + \
-                       self.border[6].c + \
-                       self.console_view.brush.FgBgColor(self.border[0].color) + \
-                       print_text + \
-                       (self.border[0].c * leftover) + \
-                       self.console_view.brush.FgBgColor(self.border[7].color) + \
-                       self.border[7].c +\
-                       self.console_view.brush.ResetColor()
+                line = offset_str
+
+                if self.borderless is False:
+                    line += self.console_view.brush.FgBgColor(self.border[6].color) + \
+                            self.border[6].c
+
+                line += self.console_view.brush.FgBgColor(self.border[0].color) + \
+                        print_text + \
+                        (self.border[0].c * leftover)
+
+                if self.borderless is False:
+                    line += self.console_view.brush.FgBgColor(self.border[7].color) + \
+                            self.border[7].c
+
+                line += self.console_view.brush.ResetColor()
                 self.console_view.brush.print(line, end='')
 
-            self.console_view.brush.MoveCursor(row=self.y + self.height - 1)
-            border_bottom = offset_str + \
-                            self.console_view.brush.FgBgColor(self.border[3].color) + \
-                            self.border[3].c + \
-                            self.console_view.brush.FgBgColor(self.border[8].color) + \
-                            (self.border[8].c * width_middle) + \
-                            self.console_view.brush.FgBgColor(self.border[4].color) + \
-                            self.border[4].c + \
-                            self.console_view.brush.ResetColor()
-            self.console_view.brush.print(border_bottom, end='\n')
+            if self.borderless is False:
+                self.console_view.brush.MoveCursor(row=self.y + height - 1)
+                self.console_view.brush.print(offset_str + self.border_get_bottom(width_middle), end='\n')
             pass
 
-        def draw(self):
-            if self.borderless:
-                self.draw_borderless()
-            else:
-                self.draw_border()
 
-    class Pane(ConsoleWidget):
+    class TextBox(BorderWidget):
+        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment, percent: bool=False):
+            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment, percent=percent)
+            self.text = ''
+            self.title = ''
+
+        def draw(self):
+            return self.draw_bordered(inside_text=self.text, title=self.title)
+
+
+    class Pane(BorderWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int,
-                     alignment: ConsoleWidgetAlignment):
-            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment)
+                     alignment: ConsoleWidgetAlignment, percent: bool=False):
+            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment, percent=percent)
             self.widgets = []
             self.title = ''
 
         def draw(self):
-            self.console_view.brush.MoveCursor(row=self.y)
-            offset_str = self.console_view.brush.MoveRight(self.x)
-            width_middle = self.width - 2
-            border_title = offset_str + '+' + (
-                (self.title[:width_middle - 2] + '..') if len(self.title) > width_middle else self.title) + (
-                                   '-' * (width_middle - len(self.title))) + '+'
-            border = offset_str + '+' + ('-' * (self.width - 2)) + '+' if len(self.title) > 0 else border_title
-            self.console_view.brush.print(border_title, end='')
-            skip = self.console_view.brush.MoveRight(self.width - 2)
-            for h in range(1, self.height - 1):
-                self.console_view.brush.MoveCursor(row=self.y + h)
-                self.console_view.brush.print(offset_str + '|' + skip + '|', end='')
-            self.console_view.brush.MoveCursor(row=self.y + self.height - 1)
-            self.console_view.brush.print(border, end='\n')
+            self.draw_bordered(inside_text='', title=self.title)
             for widget in self.widgets:
                 widget.draw()
 
