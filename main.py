@@ -59,10 +59,10 @@ class ConsoleWidget(ABC):
         pass
 
     def width_calculated(self):
-        return ((self.width * self.console_view.console.size[0]) // 100) if self.percent else self.width
+        return ((self.width * (self.console_view.console.size[0]-1)) // 100) if self.percent else self.width
 
     def height_calculated(self):
-        return ((self.height * self.console_view.console.size[1]) // 100) if self.percent else self.height
+        return ((self.height * (self.console_view.console.size[1]-2)) // 100) if self.percent else self.height
 
 
 class BorderPoint:
@@ -128,8 +128,8 @@ class ConsoleWidgets:
                         self.console_view.brush.ResetColor()
 
         def draw_bordered(self, inside_text: str = '', title: str = ''):
-            width = self.width_calculated() - 2
-            height = self.height_calculated() - 2
+            width = self.width_calculated()
+            height = self.height_calculated()
             width_middle = width
             if self.borderless is False:
                 width_middle -= 2
