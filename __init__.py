@@ -59,7 +59,7 @@ class ConsoleWidget(ABC):
         pass
 
     def width_calculated(self):
-        return ((self.width * (self.console_view.console.size[0]-1)) // 100) if self.percent else self.width
+        return ((self.width * (self.console_view.console.size[0])) // 100) if self.percent else self.width
 
     def height_calculated(self):
         return ((self.height * (self.console_view.console.size[1]-2)) // 100) if self.percent else self.height
@@ -639,42 +639,58 @@ class Brush:
         self.fgcolor = None
         return self.RESET
 
-    def Reset(self):
-        print(self.RESET, end='')
+    @staticmethod
+    def Reset():
+        print(Brush.RESET, end='')
 
-    def MoveUp(self, cells: int = 1):
+    @staticmethod
+    def MoveUp(cells: int = 1):
         print(f'\x1B[{cells}A')
 
-    def MoveDown(self, cells: int = 1):
+    @staticmethod
+    def MoveDown(cells: int = 1):
         print(f'\x1B[{cells}B')
 
-    def MoveRight(self, cells: int = 1) -> str:
-        return f'\x1B[{cells}C'
+    @staticmethod
+    def MoveRight(cells: int = 1) -> str:
+        if cells != 0:
+            return f'\x1B[{cells}C'
+        return ''
 
-    def MoveLeft(self, cells: int = 1) -> str:
-        return f'\x1B[{cells}D'
+    @staticmethod
+    def MoveLeft(cells: int = 1) -> str:
+        if cells != 0:
+            return f'\x1B[{cells}D'
+        return ''
 
-    def MoveLineDown(self, lines: int = 1):
+    @staticmethod
+    def MoveLineDown(lines: int = 1):
         print(f'\x1B[{lines}E')  # not ANSI.SYS
 
-    def MoveLineUp(self, lines: int = 1):
+    @staticmethod
+    def MoveLineUp(lines: int = 1):
         print(f'\x1B[{lines}F')  # not ANSI.SYS
 
-    def MoveColumnAbsolute(self, column: int = 1):
+    @staticmethod
+    def MoveColumnAbsolute(column: int = 1):
         print(f'\x1B[{column}G')  # not ANSI.SYS
 
-    def MoveCursor(self, row: int = 1, column: int = 1):
+    @staticmethod
+    def MoveCursor(row: int = 1, column: int = 0):
         print(f'\x1B[{row};{column}H')
 
-    def HorizontalVerticalPosition(self, row: int = 1, column: int = 1):
+    @staticmethod
+    def HorizontalVerticalPosition(row: int = 1, column: int = 1):
         print(f'\x1B[{row};{column}f')
 
-    def HideCursor(self):
+    @staticmethod
+    def HideCursor():
         print('\x1b[?25l')
         # alternative on windows without vt:
         # https://docs.microsoft.com/en-us/windows/console/setconsolecursorinfo?redirectedfrom=MSDN
 
-    def ShowCursor(self):
+    @staticmethod
+    def ShowCursor():
         print('\x1b[?25h')
 
 
