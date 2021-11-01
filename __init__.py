@@ -691,78 +691,14 @@ class Test:
             print(f'\x1B[48;2;{color};{color};{color}mXD', end='')
         print('\x1B[0m')
 
-def main(handle_sigint=True):
-    console_view = ConsoleView(debug=True)
-    console_view.color_mode()
 
-    widget = ConsoleWidgets.TextBox(console_view=console_view, x=2, y=2, height=4, width=20,
-                                    alignment=ConsoleWidgetAlignment.LEFT_TOP)
-    widget.text = 'Test'
-    console_view.add_widget(widget)
+# TODO:
+# CMD - mouse coordinates include a big buffer scroll up, so instead of 30 we get 1300 for y-val
+# Windows Terminal - correct coord
 
-    widget = ConsoleWidgets.Pane(console_view=console_view, x=2, y=8, height=4, width=8,
-                                 alignment=ConsoleWidgetAlignment.LEFT_TOP)
-    widget.title = 'Little Pane'
-    console_view.add_widget(widget)
+# BUG Windows Terminal
+# CMD - generates EventType 0x10 on focus or loss with ENABLE_QUICK_EDIT_MODE
+# Terminal - nothing
+# without quick edit mode the event for focus loss is not raised
+# however this is internal event and should be ignored according to msdn
 
-    pane = ConsoleWidgets.Pane(console_view=console_view, x=11, y=8, height=5, width=40,
-                               alignment=ConsoleWidgetAlignment.LEFT_TOP)
-    pane.title = 'Bigger Pane'
-    console_view.add_widget(pane)
-
-    widget = ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=3, width=10,
-                                    alignment=ConsoleWidgetAlignment.LEFT_TOP)
-    widget.text = 'Sample text in pane'
-    widget.border_from_str(' /\\\\/-||-')
-    widget.border_set_color((14, 4))
-    pane.add_widget(widget)
-
-    widget = ConsoleWidgets.TextBox(console_view=console_view, x=10, y=0, height=3, width=25,
-                                    alignment=ConsoleWidgetAlignment.LEFT_TOP)
-    widget.text = 'TextBox without borders'
-    widget.borderless = True
-    pane.add_widget(widget)
-
-    console_view.loop(handle_sigint)
-
-
-def test():
-    wc = WindowsConsole()
-    success = wc.set_color_mode(True)
-    print(f'EnableVT? {success}')
-    if not success:
-        print('Abort')
-        return
-    print("\x1B[34m" + 'TEST 8bit ANSII Codes' + "\x1B[0m")
-    Test.ColorLine(0, 8, use_color=True, width=2)
-    Test.ColorLine(8, 16, use_color=True, width=2)
-    for red in range(0, 6):
-        start = 16 + 6 * 6 * red
-        end = start + 36
-        Test.ColorLine(start, end, use_color=True, width=3)
-
-    Test.ColorLine(232, 256, use_color=True, width=4)
-
-    brush = Brush()
-
-    brush.SetBgColor(4)
-    brush.SetFgColor(14)
-    print("TEST", end='')
-    brush.Reset()
-    print()
-
-    brush.print("TEST", fgcolor=14, bgcolor=4)
-    # TODO:
-    # CMD - mouse coordinates include a big buffer scroll up, so instead of 30 we get 1300 for y-val
-    # Windows Terminal - correct coord
-
-    # BUG Windows Terminal
-    # CMD - generates EventType 0x10 on focus or loss with ENABLE_QUICK_EDIT_MODE
-    # Terminal - nothing
-    # without quick edit mode the event for focus loss is not raised
-    # however this is internal event and should be ignored according to msdn
-
-
-if __name__ == '__main__':
-    # test()
-    main()
