@@ -1,29 +1,38 @@
 #!/usr/bin/env python3
 
-import shutil
 
 # Notes:
-# You can have extra line of console, which wont be fully visible - as w/a just dont use last line
+# You can have extra line of console, which wont be fully visible - as w/a just don't use last line
 # If new size is greater, then fill with new lines so we wont be drawing in the middle of screen
 
+# TASK LIST:
+# TODO: Percent - current impl allows only specifying percent for both dimensions
+# TODO: alignment - current impl always assumes alignment is LEFT_TOP, - handle other cases
+# TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
+# TODO: Float layout support
+# TODO: Check if whole layout fits console - complain if not
+# TODO: Keys and mouse support under Linux
+# TODO: Handlers - when clicking given point - pass the event to the widget underneath - required for color selection
+
+
+import shutil
 import os
+import ctypes
+import ctypes.wintypes
+import sys
+
+from enum import Enum, auto
+from abc import ABC, abstractmethod
+
+import signal
 
 
 def is_windows() -> bool:
     return os.name == 'nt'
 
 
-import ctypes
-import ctypes.wintypes
-import sys
-
 if is_windows():
     import msvcrt
-
-from enum import Enum, auto
-from abc import ABC, abstractmethod
-
-import signal
 
 
 class ConsoleBuffer:
@@ -45,7 +54,8 @@ class ConsoleWidgetAlignment(Enum):
 
 
 class ConsoleWidget(ABC):
-    def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment, percent: bool = False):
+    def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment,
+                 percent: bool = False):
         self.x = x
         self.y = y
         self.width = width
@@ -62,7 +72,7 @@ class ConsoleWidget(ABC):
         return ((self.width * (self.console_view.console.size[0])) // 100) if self.percent else self.width
 
     def height_calculated(self):
-        return ((self.height * (self.console_view.console.size[1]-2)) // 100) if self.percent else self.height
+        return ((self.height * (self.console_view.console.size[1] - 2)) // 100) if self.percent else self.height
 
 
 class BorderPoint:
@@ -73,9 +83,12 @@ class BorderPoint:
 
 class ConsoleWidgets:
     class BorderWidget(ConsoleWidget):
-        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment, percent: bool=False):
-            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment, percent=percent)
+        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment,
+                     percent: bool = False):
+            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
+                             percent=percent)
             self.borderless = False
+            self.title = ''
             # border string
             # 155552
             # 600007
@@ -108,24 +121,24 @@ class ConsoleWidgets:
         def border_inside_set_color(self, color):
             self.border[0].color = color
 
-        def border_get_top(self, width_middle):
+        def border_get_top(self, width_middle, title):
             return self.console_view.brush.FgBgColor(self.border[1].color) + \
-                         self.border[1].c + \
-                         self.console_view.brush.FgBgColor(self.border[5].color) + \
-                         ((self.title[:width_middle - 2] + '..') if len(self.title) > width_middle else self.title) + \
-                         (self.border[5].c * (width_middle - len(self.title))) + \
-                         self.console_view.brush.FgBgColor(self.border[2].color) + \
-                         self.border[2].c +\
-                         self.console_view.brush.ResetColor()
+                   self.border[1].c + \
+                   self.console_view.brush.FgBgColor(self.border[5].color) + \
+                   ((title[:width_middle - 2] + '..') if len(title) > width_middle else title) + \
+                   (self.border[5].c * (width_middle - len(self.title))) + \
+                   self.console_view.brush.FgBgColor(self.border[2].color) + \
+                   self.border[2].c + \
+                   self.console_view.brush.ResetColor()
 
         def border_get_bottom(self, width_middle):
             return self.console_view.brush.FgBgColor(self.border[3].color) + \
-                        self.border[3].c + \
-                        self.console_view.brush.FgBgColor(self.border[8].color) + \
-                        (self.border[8].c * width_middle) + \
-                        self.console_view.brush.FgBgColor(self.border[4].color) + \
-                        self.border[4].c + \
-                        self.console_view.brush.ResetColor()
+                   self.border[3].c + \
+                   self.console_view.brush.FgBgColor(self.border[8].color) + \
+                   (self.border[8].c * width_middle) + \
+                   self.console_view.brush.FgBgColor(self.border[4].color) + \
+                   self.border[4].c + \
+                   self.console_view.brush.ResetColor()
 
         def draw_bordered(self, inside_text: str = '', title: str = ''):
             width = self.width_calculated()
@@ -136,7 +149,7 @@ class ConsoleWidgets:
             self.console_view.brush.MoveCursor(row=self.y)
             offset_str = self.console_view.brush.MoveRight(self.x)
             if self.borderless is False:
-                self.console_view.brush.print(offset_str + self.border_get_top(width_middle), end='')
+                self.console_view.brush.print(offset_str + self.border_get_top(width_middle, title), end='')
             text = inside_text
             start = 0 if self.borderless else 1
             end = height if self.borderless else (height - 1)
@@ -157,9 +170,8 @@ class ConsoleWidgets:
                     line += self.console_view.brush.FgBgColor(self.border[6].color) + \
                             self.border[6].c
 
-                line += self.console_view.brush.FgBgColor(self.border[0].color) + \
-                        print_text + \
-                        (self.border[0].c * leftover)
+                line += self.console_view.brush.FgBgColor(self.border[0].color) + print_text + \
+                    (self.border[0].c * leftover)
 
                 if self.borderless is False:
                     line += self.console_view.brush.FgBgColor(self.border[7].color) + \
@@ -173,23 +185,22 @@ class ConsoleWidgets:
                 self.console_view.brush.print(offset_str + self.border_get_bottom(width_middle), end='\n')
             pass
 
-
     class TextBox(BorderWidget):
-        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment, percent: bool=False):
-            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment, percent=percent)
+        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment,
+                     percent: bool = False):
+            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
+                             percent=percent)
             self.text = ''
-            self.title = ''
 
         def draw(self):
             return self.draw_bordered(inside_text=self.text, title=self.title)
 
-
     class Pane(BorderWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int,
-                     alignment: ConsoleWidgetAlignment, percent: bool=False):
-            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment, percent=percent)
+                     alignment: ConsoleWidgetAlignment, percent: bool = False):
+            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
+                             percent=percent)
             self.widgets = []
-            self.title = ''
 
         def draw(self):
             self.draw_bordered(inside_text='', title=self.title)
@@ -212,13 +223,14 @@ class Console:
         # TODO: this would print without vt enabled yet update state if vt enabled in brush?
         self.size = self.get_size()
         self.vt_supported = False
-
+        self.debug = debug
         pass
 
     def update_size(self):
         self.size = self.get_size()
 
-    def get_size(self):
+    @staticmethod
+    def get_size():
         terminal_size = shutil.get_terminal_size(fallback=(0, 0))
         # self.debug_print(f'{terminal_size[0]}x{terminal_size[1]}')
         return terminal_size
@@ -254,7 +266,7 @@ class LinuxConsole(Console):
 
     def interactive_mode(self):
         LinuxConsole.window_change_event_ctx = self
-        signal.signal(signal.SIGWINCH, self.window_change_handler)
+        signal.signal(signal.SIGWINCH, LinuxConsole.window_change_handler)
 
     def read_events(self, callback, callback_ctx) -> bool:
         events_list = []
@@ -326,10 +338,6 @@ class ConsoleView:
         # TODO: read_events is blocking, sos this one needs to be somehow inject, otherwise we wait for first new event
         # works accidentally - as releasing ctrl-c cause key event ;)
 
-    def interactive_mode(self):
-        LinuxConsole.window_change_event_ctx = self
-        signal.signal(signal.SIGWINCH, self.window_change_handler)
-
     def loop(self, handle_sigint) -> int:
         if handle_sigint:
             ConsoleView.signal_sigint_ctx = self
@@ -356,6 +364,7 @@ class ConsoleView:
             i += 1
         # Move to the end, so we wont end up writing in middle of screen
         self.brush.MoveCursor(self.console.size[1] - 1)
+        return 0
 
     def color_mode(self) -> bool:
         success = self.console.set_color_mode(True)
@@ -378,7 +387,7 @@ class ConsoleView:
         except ValueError as e:
             return False
 
-        self.widgets.insert(idx + 1)
+        self.widgets.insert(idx + 1, widget)
         return True
 
     def add_widget_before(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
@@ -387,7 +396,7 @@ class ConsoleView:
         except ValueError as e:
             return False
 
-        self.widgets.insert(idx)
+        self.widgets.insert(idx, widget)
         return True
     # TODO: register for console size change
 
@@ -466,34 +475,34 @@ class WindowsConsole(Console):
     def __init__(self):
         super().__init__()
         self.kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
-        setConsoleModeProto = ctypes.WINFUNCTYPE(
+        set_console_mode_proto = ctypes.WINFUNCTYPE(
             ctypes.wintypes.BOOL,
             ctypes.wintypes.HANDLE,
             ctypes.wintypes.DWORD
         )
-        setConsoleModeParams = (1, "hConsoleHandle", 0), (1, "dwMode", 0)
-        self.setConsoleMode = setConsoleModeProto(('SetConsoleMode', self.kernel32), setConsoleModeParams)
+        set_console_mode_params = (1, "hConsoleHandle", 0), (1, "dwMode", 0)
+        self.setConsoleMode = set_console_mode_proto(('SetConsoleMode', self.kernel32), set_console_mode_params)
 
-        getConsoleModeProto = ctypes.WINFUNCTYPE(
+        get_console_mode_proto = ctypes.WINFUNCTYPE(
             ctypes.wintypes.BOOL,
             ctypes.wintypes.HANDLE,
             ctypes.wintypes.LPDWORD
         )
-        getConsoleModeParams = (1, "hConsoleHandle", 0), (1, "lpMode", 0)
-        self.getConsoleMode = getConsoleModeProto(('GetConsoleMode', self.kernel32), getConsoleModeParams)
+        get_console_mode_params = (1, "hConsoleHandle", 0), (1, "lpMode", 0)
+        self.getConsoleMode = get_console_mode_proto(('GetConsoleMode', self.kernel32), get_console_mode_params)
         self.consoleHandleOut = msvcrt.get_osfhandle(sys.stdout.fileno())
         self.consoleHandleIn = msvcrt.get_osfhandle(sys.stdin.fileno())
 
-        readConsoleInputProto = ctypes.WINFUNCTYPE(
+        read_console_input_proto = ctypes.WINFUNCTYPE(
             ctypes.wintypes.BOOL,
             ctypes.wintypes.HANDLE,
             ctypes.wintypes.LPVOID,  # PINPUT_RECORD
             ctypes.wintypes.DWORD,
             ctypes.wintypes.LPDWORD
         )
-        readConsoleInputParams = (1, "hConsoleInput", 0), (1, "lpBuffer", 0), (1, "nLength", 0), (
+        read_console_input_params = (1, "hConsoleInput", 0), (1, "lpBuffer", 0), (1, "nLength", 0), (
             1, "lpNumberOfEventsRead", 0)
-        self.readConsoleInput = readConsoleInputProto(('ReadConsoleInputW', self.kernel32), readConsoleInputParams)
+        self.readConsoleInput = read_console_input_proto(('ReadConsoleInputW', self.kernel32), read_console_input_params)
 
     KEY_EVENT = 0x1
     MOUSE_EVENT = 0x2
@@ -535,7 +544,7 @@ class WindowsConsole(Console):
     def GetConsoleMode(self, handle) -> int:
         dwMode = ctypes.wintypes.DWORD(0)
         # lpMode = ctypes.wintypes.LPDWORD(dwMode)
-        # dont create pointer if not going to use it in python, use byref
+        # don't create pointer if not going to use it in python, use byref
         self.getConsoleMode(handle, ctypes.byref(dwMode))
 
         # print(f' dwMode: {hex(dwMode.value)}')
@@ -547,16 +556,16 @@ class WindowsConsole(Console):
         return
 
     def SetMode(self, handle, mask: int, enable: bool) -> bool:
-        consoleMode = self.GetConsoleMode(handle)
+        console_mode = self.GetConsoleMode(handle)
         other_bits = mask ^ 0xFFFFFFFF
         expected_value = mask if enable else 0
-        if (consoleMode & mask) == expected_value:
+        if (console_mode & mask) == expected_value:
             return True
 
-        consoleMode = (consoleMode & other_bits) | expected_value
-        self.SetConsoleMode(handle, consoleMode)
-        consoleMode = self.GetConsoleMode(handle)
-        return (consoleMode & mask) == expected_value
+        console_mode = (console_mode & other_bits) | expected_value
+        self.SetConsoleMode(handle, console_mode)
+        console_mode = self.GetConsoleMode(handle)
+        return (console_mode & mask) == expected_value
 
     def SetVirtualTerminalProcessing(self, enable: bool) -> bool:
         ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4
@@ -707,7 +716,6 @@ class Test:
             print(f'\x1B[48;2;{color};{color};{color}mXD', end='')
         print('\x1B[0m')
 
-
 # TODO:
 # CMD - mouse coordinates include a big buffer scroll up, so instead of 30 we get 1300 for y-val
 # Windows Terminal - correct coord
@@ -717,4 +725,3 @@ class Test:
 # Terminal - nothing
 # without quick edit mode the event for focus loss is not raised
 # however this is internal event and should be ignored according to msdn
-
