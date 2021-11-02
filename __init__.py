@@ -6,6 +6,7 @@
 # If new size is greater, then fill with new lines so we wont be drawing in the middle of screen
 
 # TASK LIST:
+# TODO: Redraw only when covered - blinking over ssh in tmux
 # TODO: Percent - current impl allows only specifying percent for both dimensions
 # TODO: alignment - current impl always assumes alignment is LEFT_TOP, - handle other cases
 # TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
