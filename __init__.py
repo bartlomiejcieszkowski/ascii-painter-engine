@@ -73,7 +73,7 @@ class ConsoleWidget(ABC):
         return ((self.width * (self.console_view.console.columns)) // 100) if self.percent else self.width
 
     def height_calculated(self):
-        return ((self.height * (self.console_view.console.rows - 2)) // 100) if self.percent else self.height
+        return ((self.height * (self.console_view.console.rows - 1)) // 100) if self.percent else self.height
 
 
 class BorderPoint:
