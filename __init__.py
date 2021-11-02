@@ -64,6 +64,7 @@ class ConsoleWidget(ABC):
         self.alignment = alignment
         self.console_view = console_view
         self.percent = percent
+        self.parent = None
 
     @abstractmethod
     def draw(self):
@@ -214,8 +215,8 @@ class ConsoleWidgets:
             # TODO widget should take offset from parent
             # right now we will adjust it when adding
             # +1 to account for border
-            widget.x += self.x + 1
-            widget.y += self.y + 1
+            # TODO: fit check
+            widget.parent = self
             self.widgets.append(widget)
 
 
@@ -384,6 +385,7 @@ class ConsoleView:
         return self.console.set_color_mode(False)
 
     def add_widget(self, widget: ConsoleWidget) -> None:
+        widget.parent = self
         self.widgets.append(widget)
 
     def add_widget_after(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
@@ -392,6 +394,7 @@ class ConsoleView:
         except ValueError as e:
             return False
 
+        widget.parent = self
         self.widgets.insert(idx + 1, widget)
         return True
 
@@ -401,6 +404,7 @@ class ConsoleView:
         except ValueError as e:
             return False
 
+        widget.parent = self
         self.widgets.insert(idx, widget)
         return True
 
