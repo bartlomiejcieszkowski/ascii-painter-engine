@@ -6,7 +6,7 @@
 # If new size is greater, then fill with new lines so we wont be drawing in the middle of screen
 
 # TASK LIST:
-# TODO: Redraw only when covered - blinking over ssh in tmux
+# TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
 # TODO: Percent - current impl allows only specifying percent for both dimensions
 # TODO: alignment - current impl always assumes alignment is LEFT_TOP, - handle other cases
 # TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
@@ -293,6 +293,7 @@ class ConsoleView:
         self.debug = debug
         self.debug_colors = (None, None)  # 14, 4
         self.run = True
+        self.requires_draw = False
 
     def debug_print(self, text, end='\n'):
         if self.debug:
@@ -303,6 +304,7 @@ class ConsoleView:
         if reuse:
             self.brush.MoveCursor(1, 1)
         print(ConsoleBuffer.fill_buffer(self.console.size[0], self.console.size[1], ' '), end='')
+        self.requires_draw = True
 
     @staticmethod
     def handle_events_callback(ctx, events_list):
@@ -356,9 +358,11 @@ class ConsoleView:
         self.handle_events([SizeChangeEvent()])
         i = 0
         while self.run:
-            for widget in self.widgets:
-                widget.draw()
-            self.brush.MoveCursor(row=self.console.size[1] - 1)
+            if self.requires_draw:
+                for widget in self.widgets:
+                    widget.draw()
+                self.brush.MoveCursor(row=self.console.size[1] - 1)
+                self.requires_draw = False
             # this is blocking
             if not self.console.read_events(self.handle_events_callback, self):
                 break
@@ -399,7 +403,6 @@ class ConsoleView:
 
         self.widgets.insert(idx, widget)
         return True
-    # TODO: register for console size change
 
 
 class COORD(ctypes.Structure):
