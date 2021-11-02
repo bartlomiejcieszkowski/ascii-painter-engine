@@ -27,7 +27,7 @@ def test() -> int:
     brush.Reset()
     print()
 
-    brush.print("TEST", fgcolor=14, bgcolor=4)
+    brush.print("TEST", fgcolor=14, bgcolor=4, end='\n')
 
 
 if __name__ == '__main__':
