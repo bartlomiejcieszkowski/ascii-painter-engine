@@ -312,7 +312,7 @@ class ConsoleView:
 
     def handle_events(self, events_list):
         off = -2
-        # with -1 - we lines 2 near end of screen overwrite each other
+        # with -1 - 2 lines nearest end of screen overwrite each other
         for event in events_list:
             if isinstance(event, MouseEvent):
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
