@@ -41,9 +41,17 @@ class ConsoleBuffer:
         pass
 
     @staticmethod
-    def fill_buffer(x, y, symbol=' ', border=True):
+    def fill_buffer(x, y, symbol=' ', border=True, debug=True):
+        if debug:
+            # print numbered border
+            buffer = '\n'
+            for col in range(0, x):
+                buffer += str(col % 10)
+            for row in range(1, y):
+                buffer += '\n' + str(row % 10) + (symbol * (x - 2)) + str(row % 10)
+            return buffer
         if border:
-            return ('\n' + '.' + (symbol * (x - 2)) + '.') * y
+            return ('\n' + (symbol * x)) * y
         return ('\n' + (symbol * x)) * y
 
 
@@ -110,6 +118,16 @@ class ConsoleWidgets:
                 BorderPoint('-'),
             ]
 
+        def x_child(self):
+            if self.borderless:
+                return self.x
+            return self.x + 1
+
+        def y_child(self):
+            if self.borderless:
+                return self.y
+            return self.y + 1
+
         def border_from_str(self, border_str: str):
             if len(border_str) < 9:
                 raise Exception(f'border_str must have at least len of 9 - got {len(border_str)}')
@@ -143,20 +161,22 @@ class ConsoleWidgets:
                    self.console_view.brush.ResetColor()
 
         def draw_bordered(self, inside_text: str = '', title: str = ''):
+            offset_rows = self.parent.y_child() + self.y
+            offset_cols = self.parent.x_child() + self.x
             width = self.width_calculated()
             height = self.height_calculated()
             width_middle = width
             if self.borderless is False:
                 width_middle -= 2
-            self.console_view.brush.MoveCursor(row=self.y)
-            offset_str = self.console_view.brush.MoveRight(self.x)
+            self.console_view.brush.MoveCursor(row=offset_rows)
+            offset_str = self.console_view.brush.MoveRight(offset_cols)
             if self.borderless is False:
                 self.console_view.brush.print(offset_str + self.border_get_top(width_middle, title), end='')
             text = inside_text
             start = 0 if self.borderless else 1
             end = height if self.borderless else (height - 1)
             for h in range(start, end):
-                self.console_view.brush.MoveCursor(row=self.y + h)
+                self.console_view.brush.MoveCursor(row=offset_rows + h)
                 # split string ?
                 print_text = text
                 if len(text) > width_middle and len(text) != 0:
@@ -183,7 +203,7 @@ class ConsoleWidgets:
                 self.console_view.brush.print(line, end='')
 
             if self.borderless is False:
-                self.console_view.brush.MoveCursor(row=self.y + height - 1)
+                self.console_view.brush.MoveCursor(row=offset_rows + height - 1)
                 self.console_view.brush.print(offset_str + self.border_get_bottom(width_middle), end='\n')
             pass
 
@@ -295,6 +315,12 @@ class ConsoleView:
         self.debug_colors = (None, None)  # 14, 4
         self.run = True
         self.requires_draw = False
+
+    def x_child(self):
+        return 0
+
+    def y_child(self):
+        return 0
 
     def debug_print(self, text, end='\n'):
         if self.debug:
