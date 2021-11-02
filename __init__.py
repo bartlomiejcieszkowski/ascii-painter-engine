@@ -70,10 +70,10 @@ class ConsoleWidget(ABC):
         pass
 
     def width_calculated(self):
-        return ((self.width * (self.console_view.console.size[0])) // 100) if self.percent else self.width
+        return ((self.width * (self.console_view.console.columns)) // 100) if self.percent else self.width
 
     def height_calculated(self):
-        return ((self.height * (self.console_view.console.size[1] - 2)) // 100) if self.percent else self.height
+        return ((self.height * (self.console_view.console.rows - 2)) // 100) if self.percent else self.height
 
 
 class BorderPoint:
@@ -222,19 +222,19 @@ class ConsoleWidgets:
 class Console:
     def __init__(self, debug=True):
         # TODO: this would print without vt enabled yet update state if vt enabled in brush?
-        self.size = self.get_size()
+        self.columns, self.rows = self.get_size()
         self.vt_supported = False
         self.debug = debug
         pass
 
     def update_size(self):
-        self.size = self.get_size()
+        self.columns, self.rows = self.get_size()
 
     @staticmethod
     def get_size():
-        terminal_size = shutil.get_terminal_size(fallback=(0, 0))
-        # self.debug_print(f'{terminal_size[0]}x{terminal_size[1]}')
-        return terminal_size
+        columns, rows = shutil.get_terminal_size(fallback=(0, 0))
+        # self.debug_print(f'{columns}x{rows}')
+        return columns, rows
 
     def set_color_mode(self, enable: bool) -> bool:
         self.vt_supported = enable
@@ -303,7 +303,7 @@ class ConsoleView:
         self.console.update_size()
         if reuse:
             self.brush.MoveCursor(1, 1)
-        print(ConsoleBuffer.fill_buffer(self.console.size[0], self.console.size[1], ' '), end='')
+        print(ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' '), end='')
         self.requires_draw = True
 
     @staticmethod
@@ -315,15 +315,15 @@ class ConsoleView:
         # with -1 - we lines 2 near end of screen overwrite each other
         for event in events_list:
             if isinstance(event, MouseEvent):
-                self.brush.MoveCursor(row=(self.console.size[1] + off) - 1)
+                self.brush.MoveCursor(row=(self.console.rows + off) - 1)
                 self.debug_print(
                     f'mouse coord: x:{event.coordinates[0]:3} y:{event.coordinates[1]:3}')
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
-                self.brush.MoveCursor(row=(self.console.size[1] + off) - 0)
-                self.debug_print(f'size: {self.console.size[0]:3}x{self.console.size[1]:3}')
+                self.brush.MoveCursor(row=(self.console.rows + off) - 0)
+                self.debug_print(f'size: {self.console.columns:3}x{self.console.rows:3}')
             elif isinstance(event, KeyEvent):
-                self.brush.MoveCursor(row=(self.console.size[1] + off) - 2)
+                self.brush.MoveCursor(row=(self.console.rows + off) - 2)
                 self.debug_print(
                     f'vk_code: {hex(event.vk_code)} pressed? {event.key_down}'
                 )
@@ -361,14 +361,14 @@ class ConsoleView:
             if self.requires_draw:
                 for widget in self.widgets:
                     widget.draw()
-                self.brush.MoveCursor(row=self.console.size[1] - 1)
+                self.brush.MoveCursor(row=self.console.rows - 1)
                 self.requires_draw = False
             # this is blocking
             if not self.console.read_events(self.handle_events_callback, self):
                 break
             i += 1
         # Move to the end, so we wont end up writing in middle of screen
-        self.brush.MoveCursor(self.console.size[1] - 1)
+        self.brush.MoveCursor(self.console.rows - 1)
         return 0
 
     def color_mode(self) -> bool:
