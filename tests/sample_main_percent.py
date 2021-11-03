@@ -7,7 +7,7 @@ def test():
 
     # TODO: Percent of window, fill
     pane = ape.ConsoleWidgets.Pane(console_view=console_view, x=0, y=1, height=80, width=100,
-                                   alignment=ape.ConsoleWidgetAlignment.LeftTop, percent=True)
+                                   alignment=ape.Alignment.LeftTop, percent=True)
     pane.title = 'Test'
 
     console_view.add_widget(pane)

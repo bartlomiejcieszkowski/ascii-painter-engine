@@ -54,8 +54,8 @@ class ConsoleBuffer:
         return ('\n' + (symbol * x)) * y
 
 
-class ConsoleWidgetAlignment(Flag):
-    Fill = 0
+class Alignment(Flag):
+    Center = 0
     Left = 1
     Right = 2
     Top = 4
@@ -80,10 +80,11 @@ class DimensionsFlag(Flag):
     RelativeWidth = 1
     RelativeHeight = 2
     Relative = RelativeWidth | RelativeHeight
+    Fill = 4
 
 
 class ConsoleWidget(ABC):
-    def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment,
+    def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
                  dimensions: DimensionsFlag = DimensionsFlag.Absolute):
         self.x = x
         self.y = y
@@ -99,12 +100,21 @@ class ConsoleWidget(ABC):
         pass
 
     def width_calculated(self):
-        return ((self.width * self.console_view.console.columns) // 100) if (
-                    DimensionsFlag.RelativeWidth in self.dimensions) else self.width
+        if DimensionsFlag.RelativeWidth in self.dimensions:
+            return (self.width * self.parent.columns) // 100
+        elif DimensionsFlag.Fill == self.dimensions:
+            return self.parent.columns
+        else:
+            return self.width
 
     def height_calculated(self):
-        return ((self.height * (self.console_view.console.rows - 1)) // 100) if (
-                    DimensionsFlag.RelativeHeight in self.dimensions) else self.height
+        if DimensionsFlag.RelativeHeight in self.dimensions:
+            # concern about rows - 1
+            return (self.height * self.parent.rows) // 100
+        elif DimensionsFlag.Fill == self.dimensions:
+            return self.parent.rows
+        else:
+            return self.height
 
 
 class BorderPoint:
@@ -115,7 +125,7 @@ class BorderPoint:
 
 class ConsoleWidgets:
     class BorderWidget(ConsoleWidget):
-        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment,
+        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
                      dimensions: DimensionsFlag = DimensionsFlag.Absolute):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
                              dimensions=dimensions)
@@ -230,7 +240,7 @@ class ConsoleWidgets:
             pass
 
     class TextBox(BorderWidget):
-        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment,
+        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
                      dimensions: DimensionsFlag = DimensionsFlag.Absolute):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
                              dimensions=dimensions)
@@ -241,7 +251,7 @@ class ConsoleWidgets:
 
     class Pane(BorderWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int,
-                     alignment: ConsoleWidgetAlignment, dimensions: DimensionsFlag = DimensionsFlag.Absolute):
+                     alignment: Alignment, dimensions: DimensionsFlag = DimensionsFlag.Absolute):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
                              dimensions=dimensions)
             self.widgets = []
@@ -272,6 +282,7 @@ class Console:
 
     def update_size(self):
         self.columns, self.rows = self.get_size()
+        return self.columns, self.rows
 
     @staticmethod
     def get_size():
@@ -337,6 +348,9 @@ class ConsoleView:
         self.debug_colors = (None, None)  # 14, 4
         self.run = True
         self.requires_draw = False
+        self.rows = 0
+        self.columns = 0
+
 
     def x_child(self):
         return 0
@@ -349,7 +363,8 @@ class ConsoleView:
             self.brush.print(text, fgcolor=self.debug_colors[0], bgcolor=self.debug_colors[1], end=end)
 
     def clear(self, reuse=True):
-        self.console.update_size()
+        self.columns, self.rows = self.console.update_size()
+        self.rows -= 1
         if reuse:
             self.brush.MoveCursor(1, 1)
         print(ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' '), end='')
@@ -396,7 +411,8 @@ class ConsoleView:
             signal.signal(signal.SIGINT, ConsoleView.signal_sigint_handler)
 
         self.run = True
-        self.console.update_size()
+        self.columns, self.rows = self.console.update_size()
+        self.rows -= 1
 
         # create blank canvas
         self.clear(reuse=False)

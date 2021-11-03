@@ -6,10 +6,10 @@ def test():
     console_view.color_mode()
 
     pane = ape.ConsoleWidgets.Pane(console_view=console_view, x=0, y=1, height=80, width=100,
-                                   alignment=ape.ConsoleWidgetAlignment.LeftTop)
+                                   alignment=ape.Alignment.LeftTop)
     pane.title = 'Test'
 
-    widget = ape.ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=20, width=40, alignment=ape.ConsoleWidgetAlignment.FloatLeftTop)
+    widget = ape.ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=20, width=40, alignment=ape.Alignment.FloatLeftTop)
     widget.text = '1st float'
     pane.add_widget(widget)
 
@@ -21,7 +21,7 @@ def test():
 
 
     widget = ape.ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=30, width=60,
-                                        alignment=ape.ConsoleWidgetAlignment.FloatLeftTop)
+                                        alignment=ape.Alignment.FloatLeftTop)
     widget.text = '2nd float'
     pane.add_widget(widget)
 
@@ -32,7 +32,7 @@ def test():
     #
 
     widget = ape.ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=20, width=30,
-                                        alignment=ape.ConsoleWidgetAlignment.FloatLeftTop)
+                                        alignment=ape.Alignment.FloatLeftTop)
     widget.text = '3rd float'
     pane.add_widget(widget)
 

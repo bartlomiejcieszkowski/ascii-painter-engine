@@ -5,8 +5,8 @@ def test():
     console_view = ape.ConsoleView(debug=True)
     console_view.color_mode()
 
-    pane = ape.ConsoleWidgets.Pane(console_view=console_view, x=0, y=1, height=80, width=100,
-                                   alignment=ape.ConsoleWidgetAlignment.Fill, dimensions=ape.DimensionsFlag.RelativeWidth)
+    pane = ape.ConsoleWidgets.Pane(console_view=console_view, x=0, y=0, height=80, width=100,
+                                   alignment=ape.Alignment.Center, dimensions=ape.DimensionsFlag.Fill)
     # dimensions should be ignored for Fill
     pane.title = 'Test'
 
