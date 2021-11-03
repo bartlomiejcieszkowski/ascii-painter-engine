@@ -6,14 +6,13 @@
 # If new size is greater, then fill with new lines so we wont be drawing in the middle of screen
 
 # TASK LIST:
-# TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
-# TODO: Percent - current impl allows only specifying percent for both dimensions
 # TODO: alignment - current impl always assumes alignment is LEFT_TOP, - handle other cases
 # TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
 # TODO: Float layout support
 # TODO: Check if whole layout fits console - complain if not
 # TODO: Keys and mouse support under Linux
 # TODO: Handlers - when clicking given point - pass the event to the widget underneath - required for color selection
+# TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
 
 
 import shutil
@@ -22,7 +21,7 @@ import ctypes
 import ctypes.wintypes
 import sys
 
-from enum import Enum, auto
+from enum import Flag
 from abc import ABC, abstractmethod
 
 import signal
@@ -55,23 +54,44 @@ class ConsoleBuffer:
         return ('\n' + (symbol * x)) * y
 
 
-class ConsoleWidgetAlignment(Enum):
-    LEFT_TOP = auto()
-    RIGHT_TOP = auto()
-    LEFT_BOTTOM = auto()
-    RIGHT_BOTTOM = auto()
+class ConsoleWidgetAlignment(Flag):
+    Fill = 0
+    Left = 1
+    Right = 2
+    Top = 4
+    Bottom = 8
+    LeftTop = Left | Top
+    RightTop = Right | Top
+    LeftBottom = Left | Bottom
+    RightBottom = Right | Bottom
+    Float = 16
+    FloatLeftTop = Float | LeftTop
+    FloatRightTop = Float | RightTop
+    FloatLeftBottom = Float | LeftBottom
+    FloatRightBottom = Float | LeftTop
+    FloatLeft = Float | Left
+    FloatRight = Float | Right
+    FloatTop = Float | Top
+    FloatBottom = Float | Bottom
+
+
+class DimensionsFlag(Flag):
+    Absolute = 0
+    RelativeWidth = 1
+    RelativeHeight = 2
+    Relative = RelativeWidth | RelativeHeight
 
 
 class ConsoleWidget(ABC):
     def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment,
-                 percent: bool = False):
+                 dimensions: DimensionsFlag = DimensionsFlag.Absolute):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.alignment = alignment
         self.console_view = console_view
-        self.percent = percent
+        self.dimensions = dimensions
         self.parent = None
 
     @abstractmethod
@@ -79,10 +99,12 @@ class ConsoleWidget(ABC):
         pass
 
     def width_calculated(self):
-        return ((self.width * (self.console_view.console.columns)) // 100) if self.percent else self.width
+        return ((self.width * self.console_view.console.columns) // 100) if (
+                    DimensionsFlag.RelativeWidth in self.dimensions) else self.width
 
     def height_calculated(self):
-        return ((self.height * (self.console_view.console.rows - 1)) // 100) if self.percent else self.height
+        return ((self.height * (self.console_view.console.rows - 1)) // 100) if (
+                    DimensionsFlag.RelativeHeight in self.dimensions) else self.height
 
 
 class BorderPoint:
@@ -94,9 +116,9 @@ class BorderPoint:
 class ConsoleWidgets:
     class BorderWidget(ConsoleWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment,
-                     percent: bool = False):
+                     dimensions: DimensionsFlag = DimensionsFlag.Absolute):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
-                             percent=percent)
+                             dimensions=dimensions)
             self.borderless = False
             self.title = ''
             # border string
@@ -193,7 +215,7 @@ class ConsoleWidgets:
                             self.border[6].c
 
                 line += self.console_view.brush.FgBgColor(self.border[0].color) + print_text + \
-                    (self.border[0].c * leftover)
+                        (self.border[0].c * leftover)
 
                 if self.borderless is False:
                     line += self.console_view.brush.FgBgColor(self.border[7].color) + \
@@ -209,9 +231,9 @@ class ConsoleWidgets:
 
     class TextBox(BorderWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: ConsoleWidgetAlignment,
-                     percent: bool = False):
+                     dimensions: DimensionsFlag = DimensionsFlag.Absolute):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
-                             percent=percent)
+                             dimensions=dimensions)
             self.text = ''
 
         def draw(self):
@@ -219,9 +241,9 @@ class ConsoleWidgets:
 
     class Pane(BorderWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int,
-                     alignment: ConsoleWidgetAlignment, percent: bool = False):
+                     alignment: ConsoleWidgetAlignment, dimensions: DimensionsFlag = DimensionsFlag.Absolute):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
-                             percent=percent)
+                             dimensions=dimensions)
             self.widgets = []
 
         def draw(self):
@@ -536,7 +558,8 @@ class WindowsConsole(Console):
         )
         read_console_input_params = (1, "hConsoleInput", 0), (1, "lpBuffer", 0), (1, "nLength", 0), (
             1, "lpNumberOfEventsRead", 0)
-        self.readConsoleInput = read_console_input_proto(('ReadConsoleInputW', self.kernel32), read_console_input_params)
+        self.readConsoleInput = read_console_input_proto(('ReadConsoleInputW', self.kernel32),
+                                                         read_console_input_params)
 
     KEY_EVENT = 0x1
     MOUSE_EVENT = 0x2
