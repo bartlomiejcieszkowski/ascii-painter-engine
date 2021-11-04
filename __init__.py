@@ -21,7 +21,7 @@ import ctypes
 import ctypes.wintypes
 import sys
 
-from enum import Flag
+from enum import Flag, Enum, auto
 from abc import ABC, abstractmethod
 
 import signal
@@ -84,6 +84,10 @@ class DimensionsFlag(Flag):
     Fill = 4
 
 
+class Event(Enum):
+    MouseClick = auto()
+
+
 class Rectangle:
     def __init__(self, column: int, row: int, width: int, height: int):
         self.column = column
@@ -125,11 +129,31 @@ class ConsoleWidget(ABC):
         # iterate in reverse order on widgets - the order on widget list determines Z order - higher idx covers lower one
         self.last_dimensions = Rectangle(0, 0, 0, 0)
 
+    def update_dimensions(self):
+        # update dimensions is separate, so we separate drawing logic, so if one implement own widget
+        # doesn't have to remember to call update_dimensions every time or do it incorrectly
+        self.last_dimensions.update(
+            self.parent.x_child() + self.x,
+            self.parent.y_child() + self.y,
+            self.width_calculated(),
+            self.height_calculated()
+        )
+        pass
+
+    def get_widget(self, column: int, row: int) -> Union['ConsoleWidget', None]:
+        return self if self.contains_point(column, row) else None
+
+    def handle(self, event: Event, coords: Tuple[int, int]):
+        # guess we should pass also unknown args
+        #raise Exception('handle')
+        pass
+
     @abstractmethod
     def draw(self):
         pass
 
     def width_calculated(self):
+        # TODO: self.parent.columns is unavailable in Pane, we need to return it based on width of border (fixed 1)
         if DimensionsFlag.RelativeWidth in self.dimensions:
             return (self.width * self.parent.columns) // 100
         elif DimensionsFlag.Fill == self.dimensions:
@@ -226,10 +250,10 @@ class ConsoleWidgets:
                    self.console_view.brush.ResetColor()
 
         def draw_bordered(self, inside_text: str = '', title: str = ''):
-            offset_rows = self.parent.y_child() + self.y
-            offset_cols = self.parent.x_child() + self.x
-            width = self.width_calculated()
-            height = self.height_calculated()
+            offset_rows = self.last_dimensions.row
+            offset_cols = self.last_dimensions.column
+            width = self.last_dimensions.width
+            height = self.last_dimensions.height
             width_middle = width
             if self.borderless is False:
                 width_middle -= 2
@@ -303,6 +327,19 @@ class ConsoleWidgets:
             # TODO: fit check
             widget.parent = self
             self.widgets.append(widget)
+
+        def update_dimensions(self):
+            super().update_dimensions()
+            for widget in self.widgets:
+                widget.update_dimensions()
+
+        def get_widget(self, column: int, row: int) -> Union['ConsoleWidget', None]:
+            for idx in range(len(self.widgets) - 1, -1, -1):
+                widget = self.widgets[idx].get_widget(column, row)
+                if widget:
+                    return widget
+
+            return super().get_widget(column, row)
 
 
 class Console:
@@ -384,6 +421,8 @@ class ConsoleView:
         self.rows = 0
         self.columns = 0
 
+        self.mouse_lbutton_state = 0
+
     def x_child(self):
         return 0
 
@@ -402,6 +441,19 @@ class ConsoleView:
         print(ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' '), end='')
         self.requires_draw = True
 
+    def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
+        for idx in range(len(self.widgets)-1, -1, -1):
+            widget = self.widgets[idx].get_widget(column, row)
+            if widget:
+                return widget
+        return None
+
+    def handle_click(self, column: int, row: int):
+        widget = self.get_widget(column, row)
+        if widget:
+            widget.handle(Event.MouseClick, (row, column))
+        return widget
+
     @staticmethod
     def handle_events_callback(ctx, events_list):
         ctx.handle_events(events_list)
@@ -411,9 +463,22 @@ class ConsoleView:
         # with -1 - 2 lines nearest end of screen overwrite each other
         for event in events_list:
             if isinstance(event, MouseEvent):
+                # we could use mask here, but then we will handle holding right button and
+                # pressing/releasing left button and other combinations and frankly i don't want to
+                # if (event.button_state & 0x1) == 0x1 and event.event_flags == 0:
+                release = False
+                widget = None
+                if event.button_state == 0x1 and event.event_flags == 0:
+                    self.mouse_lbutton_state = 1 # pressed
+                elif self.mouse_lbutton_state == 1 and event.event_flags == 0:
+                    self.mouse_lbutton_state = 0
+                    release = True
+                    widget = self.handle_click(event.coordinates[0], event.coordinates[1])
+                    # release
+
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
                 self.debug_print(
-                    f'mouse coord: x:{event.coordinates[0]:3} y:{event.coordinates[1]:3}')
+                    f'mouse coord: x:{event.coordinates[0]:3} y:{event.coordinates[1]:3} release:{release} widget:{widget}')
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
                 self.brush.MoveCursor(row=(self.console.rows + off) - 0)
@@ -456,6 +521,8 @@ class ConsoleView:
         i = 0
         while self.run:
             if self.requires_draw:
+                for widget in self.widgets:
+                    widget.update_dimensions()
                 for widget in self.widgets:
                     widget.draw()
                 self.brush.MoveCursor(row=self.console.rows - 1)
