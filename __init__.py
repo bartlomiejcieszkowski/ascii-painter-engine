@@ -25,6 +25,7 @@ from enum import Flag
 from abc import ABC, abstractmethod
 
 import signal
+from typing import Tuple, Union, List
 
 
 def is_windows() -> bool:
@@ -83,6 +84,30 @@ class DimensionsFlag(Flag):
     Fill = 4
 
 
+class Rectangle:
+    def __init__(self, column: int, row: int, width: int, height: int):
+        self.column = column
+        self.row = row
+        self.width = width
+        self.height = height
+
+    def update(self, column: int, row: int, width: int, height: int):
+        self.column = column
+        self.row = row
+        self.width = width
+        self.height = height
+
+    def update_tuple(self, dimensions: Union[Tuple[int, int, int, int], List]):
+        self.column = dimensions[0]
+        self.row = dimensions[1]
+        self.width = dimensions[2]
+        self.height = dimensions[3]
+
+    def contains_point(self, column: int, row: int):
+        return not ((self.row > row) or (self.row + self.height < row) or (self.column > column) or (
+                    self.column + self.width < column))
+
+
 class ConsoleWidget(ABC):
     def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
                  dimensions: DimensionsFlag = DimensionsFlag.Absolute):
@@ -98,6 +123,7 @@ class ConsoleWidget(ABC):
         # register handlers here
         # when handling click - cache what was there to speed up lookup - invalidate on re-draw
         # iterate in reverse order on widgets - the order on widget list determines Z order - higher idx covers lower one
+        self.last_dimensions = Rectangle(0, 0, 0, 0)
 
     @abstractmethod
     def draw(self):
@@ -119,6 +145,9 @@ class ConsoleWidget(ABC):
             return self.parent.rows
         else:
             return self.height
+
+    def contains_point(self, column: int, row: int):
+        return self.last_dimensions.contains_point(column, row)
 
 
 class BorderPoint:
@@ -354,7 +383,6 @@ class ConsoleView:
         self.requires_draw = False
         self.rows = 0
         self.columns = 0
-
 
     def x_child(self):
         return 0
