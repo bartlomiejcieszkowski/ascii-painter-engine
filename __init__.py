@@ -94,6 +94,10 @@ class ConsoleWidget(ABC):
         self.console_view = console_view
         self.dimensions = dimensions
         self.parent = None
+        self.handlers = {}
+        # register handlers here
+        # when handling click - cache what was there to speed up lookup - invalidate on re-draw
+        # iterate in reverse order on widgets - the order on widget list determines Z order - higher idx covers lower one
 
     @abstractmethod
     def draw(self):
