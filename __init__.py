@@ -183,10 +183,10 @@ class BorderPoint:
 class ConsoleWidgets:
     class BorderWidget(ConsoleWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
-                     dimensions: DimensionsFlag = DimensionsFlag.Absolute):
+                     dimensions: DimensionsFlag = DimensionsFlag.Absolute, borderless: bool = False):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
                              dimensions=dimensions)
-            self.borderless = False
+            self.borderless = borderless
             self.title = ''
             # border string
             # 155552
@@ -206,6 +206,17 @@ class ConsoleWidgets:
                 BorderPoint('|'),
                 BorderPoint('-'),
             ]
+            # self.border = [
+            #     BorderPoint(' '),
+            #     BorderPoint(' '),
+            #     BorderPoint(' '),
+            #     BorderPoint('|'),
+            #     BorderPoint('|'),
+            #     BorderPoint('_'),
+            #     BorderPoint('|'),
+            #     BorderPoint('|'),
+            #     BorderPoint('_'),
+            # ]
 
         def x_child(self):
             if self.borderless:
@@ -248,6 +259,9 @@ class ConsoleWidgets:
                    self.console_view.brush.FgBgColor(self.border[4].color) + \
                    self.border[4].c + \
                    self.console_view.brush.ResetColor()
+
+        def draw(self):
+            self.draw_bordered(title=self.title)
 
         def draw_bordered(self, inside_text: str = '', title: str = ''):
             offset_rows = self.last_dimensions.row
@@ -298,9 +312,9 @@ class ConsoleWidgets:
 
     class TextBox(BorderWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
-                     dimensions: DimensionsFlag = DimensionsFlag.Absolute):
+                     dimensions: DimensionsFlag = DimensionsFlag.Absolute, borderless: bool = False):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
-                             dimensions=dimensions)
+                             dimensions=dimensions, borderless=borderless)
             self.text = ''
 
         def draw(self):
@@ -308,9 +322,9 @@ class ConsoleWidgets:
 
     class Pane(BorderWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int,
-                     alignment: Alignment, dimensions: DimensionsFlag = DimensionsFlag.Absolute):
+                     alignment: Alignment, dimensions: DimensionsFlag = DimensionsFlag.Absolute, borderless: bool = False):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
-                             dimensions=dimensions)
+                             dimensions=dimensions, borderless=borderless)
             self.widgets = []
 
         def draw(self):
