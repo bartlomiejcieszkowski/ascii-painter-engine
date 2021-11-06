@@ -21,7 +21,7 @@ import ctypes
 import ctypes.wintypes
 import sys
 
-from enum import Flag, Enum, auto
+from enum import Flag, Enum, auto, IntEnum
 from abc import ABC, abstractmethod
 
 import signal
@@ -799,25 +799,30 @@ class Brush:
     def nocolor_mode(self):
         self.color = False
 
-    def FgColor(self, color, check_last=False):
+    class ColorBits(IntEnum):
+        Bit8 = 5
+        Bit24 = 2
+
+    def FgColor(self, color, check_last=False, bits: ColorBits = ColorBits.Bit24):
         if check_last:
             if self.fgcolor == color:
                 return ''
-        self.fgcolor = color
+        self.fgcolor = (color, bits)
         if color is None:
             return ''
-        return f'\x1B[38;5;{color}m'
+        return f'\x1B[38;{int(bits)};{color}m'
 
-    def BgColor(self, color, check_last=False):
+
+    def BgColor(self, color, check_last=False, bits: ColorBits = ColorBits.Bit24):
         if check_last:
             if self.bgcolor == color:
                 return ''
-        self.bgcolor = color
+        self.bgcolor = (color, bits)
         if color is None:
             return ''
-        return f'\x1B[48;5;{color}m'
+        return f'\x1B[48;{int(bits)};{color}m'
 
-    def FgBgColor(self, color, check_last=False):
+    def FgBgColor(self, color, check_last=False, bits=24):
         ret_val = ''
         if (color[0] is None and self.fgcolor != color[0]) or (color[1] is None and self.bgcolor != color[1]):
             ret_val = self.ResetColor()
