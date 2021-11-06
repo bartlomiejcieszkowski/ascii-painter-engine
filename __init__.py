@@ -437,6 +437,8 @@ class ConsoleView:
 
         self.mouse_lmb_state = 0
 
+        self.column_row_widget_cache = {}
+
     def x_child(self):
         return 0
 
@@ -463,7 +465,13 @@ class ConsoleView:
         return None
 
     def handle_click(self, column: int, row: int):
-        widget = self.get_widget(column, row)
+        # naive cache - based on clicked point
+        # pro - we can create heat map
+        # cons - it would be better with rectangle
+        widget = self.column_row_widget_cache.get((column, row), 1)
+        if type(widget) is int:
+            widget = self.get_widget(column, row)
+            self.column_row_widget_cache[(column, row)] = widget
         if widget:
             widget.handle(Event.MouseClick, (row, column))
         return widget
@@ -535,6 +543,7 @@ class ConsoleView:
         i = 0
         while self.run:
             if self.requires_draw:
+                self.column_row_widget_cache.clear()
                 for widget in self.widgets:
                     widget.update_dimensions()
                 for widget in self.widgets:
