@@ -47,7 +47,7 @@ class ConsoleBuffer:
             buffer = '\n'
             for col in range(0, x):
                 buffer += str(col % 10)
-            for row in range(1, y):
+            for row in range(0, y):
                 buffer += '\n' + str(row % 10) + (symbol * (x - 2)) + str(row % 10)
             return buffer
         if border:
@@ -451,9 +451,9 @@ class ConsoleView:
 
     def clear(self, reuse=True):
         self.columns, self.rows = self.console.update_size()
-        self.rows -= 1
+        self.rows -= 2
         if reuse:
-            self.brush.MoveCursor(1, 1)
+            self.brush.MoveCursor(0, 0)
         print(ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' '), end='')
         self.requires_draw = True
 
@@ -885,8 +885,8 @@ class Brush:
         print(f'\x1B[{column}G')  # not ANSI.SYS
 
     @staticmethod
-    def MoveCursor(row: int = 1, column: int = 0):
-        print(f'\x1B[{row};{column}H')
+    def MoveCursor(row: int = 0, column: int = 0):
+        print(f'\x1B[{row+1};{column+1}H')
 
     @staticmethod
     def HorizontalVerticalPosition(row: int = 1, column: int = 1):
