@@ -435,7 +435,7 @@ class ConsoleView:
         self.rows = 0
         self.columns = 0
 
-        self.mouse_lbutton_state = 0
+        self.mouse_lmb_state = 0
 
     def x_child(self):
         return 0
@@ -483,9 +483,9 @@ class ConsoleView:
                 release = False
                 widget = None
                 if event.button_state == 0x1 and event.event_flags == 0:
-                    self.mouse_lbutton_state = 1 # pressed
-                elif self.mouse_lbutton_state == 1 and event.event_flags == 0:
-                    self.mouse_lbutton_state = 0
+                    self.mouse_lmb_state = 1  # pressed
+                elif self.mouse_lmb_state == 1 and event.event_flags == 0:
+                    self.mouse_lmb_state = 0
                     release = True
                     widget = self.handle_click(event.coordinates[0], event.coordinates[1])
                     # release
