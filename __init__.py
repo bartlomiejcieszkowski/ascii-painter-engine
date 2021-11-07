@@ -429,7 +429,7 @@ class ConsoleView:
         self.widgets = []
         self.brush = Brush(self.console.vt_supported)
         self.debug = debug
-        self.debug_colors = (None, None)  # 14, 4
+        self.debug_colors = (None, None, None)  # 14, 4
         self.run = True
         self.requires_draw = False
         self.rows = 0
@@ -447,7 +447,7 @@ class ConsoleView:
 
     def debug_print(self, text, end='\n'):
         if self.debug:
-            self.brush.print(text, fgcolor=self.debug_colors[0], bgcolor=self.debug_colors[1], end=end)
+            self.brush.print(text, fgcolor=self.debug_colors[0], bgcolor=self.debug_colors[1], bits=self.debug_colors[2], end=end)
 
     def clear(self, reuse=True):
         self.columns, self.rows = self.console.update_size()
@@ -562,7 +562,7 @@ class ConsoleView:
         success = self.console.set_color_mode(True)
         if success:
             self.brush.color_mode()
-            self.debug_colors = (14, 4)
+            self.debug_colors = (14, 4, Brush.ColorBits.Bit8)
         return success
 
     def nocolor_mode(self) -> bool:
@@ -830,11 +830,11 @@ class Brush:
         ret_val += self.BgColor(color[1], check_last)
         return ret_val
 
-    def print(self, *args, sep=' ', end='', file=None, fgcolor=None, bgcolor=None):
+    def print(self, *args, sep=' ', end='', file=None, fgcolor=None, bgcolor=None, bits=ColorBits.Bit24):
         if fgcolor is None and bgcolor is None:
             print(*args, sep=sep, end=end, file=file)
         else:
-            color = (self.BgColor(bgcolor) if bgcolor else '') + (self.FgColor(fgcolor) if fgcolor else '')
+            color = (self.BgColor(color=bgcolor, bits=bits) if bgcolor else '') + (self.FgColor(color=fgcolor, bits=bits) if fgcolor else '')
             print(color + " ".join(map(str, args)) + self.RESET, sep=sep, end=end, file=file)
 
     def SetFgColor(self, color):
