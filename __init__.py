@@ -132,12 +132,41 @@ class ConsoleWidget(ABC):
     def update_dimensions(self):
         # update dimensions is separate, so we separate drawing logic, so if one implement own widget
         # doesn't have to remember to call update_dimensions every time or do it incorrectly
-        self.last_dimensions.update(
-            self.parent.x_child() + self.x,
-            self.parent.y_child() + self.y,
-            self.width_calculated(),
-            self.height_calculated()
-        )
+        x = self.x
+        y = self.y
+        width = self.width_calculated()
+        height = self.height_calculated()
+        if Alignment.Float in self.alignment:
+            # here be dragons
+            pass
+        else:
+            if Alignment.Left in self.alignment:
+                #  x
+                #   []
+                #  0 1 2
+                x += self.parent.inner_x()
+                pass
+            elif Alignment.Right in self.alignment:
+                #      x
+                #   []
+                #  2 1 0
+                x = self.parent.inner_x() + self.parent.inner_width() - width - x
+                pass
+
+            if Alignment.Top in self.alignment:
+                #  y   0
+                #   [] 1
+                #      2
+                y += self.parent.inner_y()
+                pass
+            elif Alignment.Bottom in self.alignment:
+                #      2
+                #   [] 0
+                #  y   1
+                y = self.parent.inner_y() + self.parent.inner_height() - height - y
+                pass
+
+        self.last_dimensions.update(x, y, width, height)
         pass
 
     def get_widget(self, column: int, row: int) -> Union['ConsoleWidget', None]:
@@ -218,15 +247,25 @@ class ConsoleWidgets:
             #     BorderPoint('_'),
             # ]
 
-        def x_child(self):
+        def inner_x(self):
             if self.borderless:
-                return self.x
-            return self.x + 1
+                return self.last_dimensions.column
+            return self.last_dimensions.column + 1
 
-        def y_child(self):
+        def inner_y(self):
             if self.borderless:
-                return self.y
-            return self.y + 1
+                return self.last_dimensions.row
+            return self.last_dimensions.row + 1
+
+        def inner_width(self):
+            if self.borderless:
+                return self.last_dimensions.width
+            return self.last_dimensions.width - 2
+
+        def inner_height(self):
+            if self.borderless:
+                return self.last_dimensions.height
+            return self.last_dimensions.height - 2
 
         def border_from_str(self, border_str: str):
             if len(border_str) < 9:
@@ -439,11 +478,17 @@ class ConsoleView:
 
         self.column_row_widget_cache = {}
 
-    def x_child(self):
+    def inner_x(self):
         return 0
 
-    def y_child(self):
+    def inner_y(self):
         return 0
+
+    def inner_width(self):
+        return self.width
+
+    def inner_height(self):
+        return self.height
 
     def debug_print(self, text, end='\n'):
         if self.debug:
