@@ -13,7 +13,7 @@
 # TODO: Keys and mouse support under Linux
 # TODO: Handlers - when clicking given point - pass the event to the widget underneath - required for color selection
 # TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
-
+# TODO: trim line to screen width on debug prints
 
 import shutil
 import os
@@ -203,10 +203,7 @@ class ConsoleWidget(ABC):
         return self.last_dimensions.contains_point(column, row)
 
 
-class BorderPoint:
-    def __init__(self, c: str = ' ', color=(None, None)):
-        self.c = c
-        self.color = color
+
 
 
 class ConsoleWidgets:
@@ -468,7 +465,7 @@ class ConsoleView:
         self.widgets = []
         self.brush = Brush(self.console.vt_supported)
         self.debug = debug
-        self.debug_colors = (None, None, None)  # 14, 4
+        self.debug_colors = ConsoleColor(None, None)
         self.run = True
         self.requires_draw = False
         self.rows = 0
@@ -492,7 +489,7 @@ class ConsoleView:
 
     def debug_print(self, text, end='\n'):
         if self.debug:
-            self.brush.print(text, fgcolor=self.debug_colors[0], bgcolor=self.debug_colors[1], bits=self.debug_colors[2], end=end)
+            self.brush.print(text, color=self.debug_colors, end=end)
 
     def clear(self, reuse=True):
         self.columns, self.rows = self.console.update_size()
@@ -545,7 +542,8 @@ class ConsoleView:
 
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
                 self.debug_print(
-                    f'mouse coord: x:{event.coordinates[0]:3} y:{event.coordinates[1]:3} release:{release} widget:{widget}')
+                    # f'mouse coord: x:{event.coordinates[0]:3} y:{event.coordinates[1]:3} release:{release}')
+                    f'widget:{widget}')
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
                 self.brush.MoveCursor(row=(self.console.rows + off) - 0)
@@ -607,11 +605,11 @@ class ConsoleView:
         success = self.console.set_color_mode(True)
         if success:
             self.brush.color_mode()
-            self.debug_colors = (14, 4, Brush.ColorBits.Bit8)
+            self.debug_colors = ConsoleColor(Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8))
         return success
 
     def nocolor_mode(self) -> bool:
-        self.debug_colors = (None, None)
+        self.debug_colors = ConsoleColor(None, None)
         self.brush.nocolor_mode()
         return self.console.set_color_mode(False)
 
@@ -830,6 +828,32 @@ class WindowsConsole(Console):
         return self.SetMode(self.consoleHandleIn, ENABLE_MOUSE_INPUT, enable)
 
 
+class ColorBits(IntEnum):
+    Bit8 = 5
+    Bit24 = 2
+
+
+class Color:
+    def __init__(self, color: int, bits: ColorBits):
+        self.color = color
+        self.bits = bits
+
+
+class ConsoleColor:
+    def __init__(self, fgcolor: Union[Color, None] = None, bgcolor: Union[Color, None] = None):
+        self.fgcolor = fgcolor
+        self.bgcolor = bgcolor
+
+    def no_color(self):
+        return self.fgcolor is None and self.bgcolor is None
+
+
+class BorderPoint:
+    def __init__(self, c: str = ' ', color: ConsoleColor = ConsoleColor()):
+        self.c = c
+        self.color = color
+
+
 class Brush:
     def __init__(self, color=True):
         self.fgcolor = None
@@ -844,42 +868,37 @@ class Brush:
     def nocolor_mode(self):
         self.color = False
 
-    class ColorBits(IntEnum):
-        Bit8 = 5
-        Bit24 = 2
-
     def FgColor(self, color, check_last=False, bits: ColorBits = ColorBits.Bit24):
         if check_last:
             if self.fgcolor == color:
                 return ''
-        self.fgcolor = (color, bits)
-        if color is None:
+        self.fgcolor = color
+        if self.fgcolor is None:
             return ''
-        return f'\x1B[38;{int(bits)};{color}m'
+        return f'\x1B[38;{int(self.fgcolor.bits)};{self.fgcolor.color}m'
 
-
-    def BgColor(self, color, check_last=False, bits: ColorBits = ColorBits.Bit24):
+    def BgColor(self, color: Color, check_last=False):
         if check_last:
             if self.bgcolor == color:
                 return ''
-        self.bgcolor = (color, bits)
-        if color is None:
+        self.bgcolor = color
+        if self.bgcolor is None:
             return ''
-        return f'\x1B[48;{int(bits)};{color}m'
+        return f'\x1B[48;{int(self.bgcolor.bits)};{self.bgcolor.color}m'
 
-    def FgBgColor(self, color, check_last=False, bits=24):
+    def FgBgColor(self, console_color: ConsoleColor, check_last=False):
         ret_val = ''
-        if (color[0] is None and self.fgcolor != color[0]) or (color[1] is None and self.bgcolor != color[1]):
+        if (console_color.fgcolor is None and self.fgcolor != console_color.fgcolor) or (console_color.bgcolor is None and self.bgcolor != console_color.bgcolor):
             ret_val = self.ResetColor()
-        ret_val += self.FgColor(color[0], check_last)
-        ret_val += self.BgColor(color[1], check_last)
+        ret_val += self.FgColor(console_color.fgcolor, check_last)
+        ret_val += self.BgColor(console_color.fgcolor, check_last)
         return ret_val
 
-    def print(self, *args, sep=' ', end='', file=None, fgcolor=None, bgcolor=None, bits=ColorBits.Bit24):
-        if fgcolor is None and bgcolor is None:
+    def print(self, *args, sep=' ', end='', file=None, color: Union[ConsoleColor, None] = None):
+        if color is None or color.no_color():
             print(*args, sep=sep, end=end, file=file)
         else:
-            color = (self.BgColor(color=bgcolor, bits=bits) if bgcolor else '') + (self.FgColor(color=fgcolor, bits=bits) if fgcolor else '')
+            color = self.BgColor(color.bgcolor) + self.FgColor(color.fgcolor)
             print(color + " ".join(map(str, args)) + self.RESET, sep=sep, end=end, file=file)
 
     def SetFgColor(self, color):
