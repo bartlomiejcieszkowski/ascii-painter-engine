@@ -21,13 +21,15 @@ def test() -> int:
 
     brush = ape.Brush()
 
-    brush.SetBgColor(4)
-    brush.SetFgColor(14)
+    test_color = ape.ConsoleColor(ape.Color(14, ape.ColorBits.Bit8), ape.Color(4, ape.ColorBits.Bit8))
+
+    brush.SetBgColor(test_color.bgcolor)
+    brush.SetFgColor(test_color.fgcolor)
     print("TEST", end='')
     brush.Reset()
     print()
 
-    brush.print("TEST", fgcolor=14, bgcolor=4, end='\n')
+    brush.print("TEST2", color=test_color, end='\n')
 
 
 if __name__ == '__main__':
