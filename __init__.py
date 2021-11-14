@@ -47,7 +47,7 @@ class ConsoleBuffer:
             buffer = '\n'
             for col in range(0, x):
                 buffer += str(col % 10)
-            for row in range(0, y):
+            for row in range(1, y+1):
                 buffer += '\n' + str(row % 10) + (symbol * (x - 2)) + str(row % 10)
             return buffer
         if border:
@@ -182,20 +182,19 @@ class ConsoleWidget(ABC):
         pass
 
     def width_calculated(self):
-        # TODO: self.parent.columns is unavailable in Pane, we need to return it based on width of border (fixed 1)
         if DimensionsFlag.RelativeWidth in self.dimensions:
-            return (self.width * self.parent.columns) // 100
+            return (self.width * self.parent.inner_width()) // 100
         elif DimensionsFlag.Fill == self.dimensions:
-            return self.parent.columns
+            return self.parent.inner_width()
         else:
             return self.width
 
     def height_calculated(self):
         if DimensionsFlag.RelativeHeight in self.dimensions:
             # concern about rows - 1
-            return (self.height * self.parent.rows) // 100
+            return (self.height * self.parent.inner_height()) // 100
         elif DimensionsFlag.Fill == self.dimensions:
-            return self.parent.rows
+            return self.parent.inner_height()
         else:
             return self.height
 
@@ -402,6 +401,7 @@ class Console:
 
     def update_size(self):
         self.columns, self.rows = self.get_size()
+        self.rows -= 2
         return self.columns, self.rows
 
     @staticmethod
@@ -468,8 +468,8 @@ class ConsoleView:
         self.debug_colors = ConsoleColor(None, None)
         self.run = True
         self.requires_draw = False
-        self.rows = 0
-        self.columns = 0
+        self.width = 0
+        self.height = 0
 
         self.mouse_lmb_state = 0
 
@@ -492,11 +492,10 @@ class ConsoleView:
             self.brush.print(text, color=self.debug_colors, end=end)
 
     def clear(self, reuse=True):
-        self.columns, self.rows = self.console.update_size()
-        self.rows -= 2
+        self.width, self.height = self.console.update_size()
         if reuse:
             self.brush.MoveCursor(0, 0)
-        print(ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' '), end='')
+        print(ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' '), end='\n')
         self.requires_draw = True
 
     def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
@@ -573,8 +572,6 @@ class ConsoleView:
             signal.signal(signal.SIGINT, ConsoleView.signal_sigint_handler)
 
         self.run = True
-        self.columns, self.rows = self.console.update_size()
-        self.rows -= 1
 
         # create blank canvas
         self.clear(reuse=False)
@@ -855,18 +852,18 @@ class BorderPoint:
 
 
 class Brush:
-    def __init__(self, color=True):
+    def __init__(self, use_color=True):
         self.fgcolor = None
         self.bgcolor = None
-        self.color = color
+        self.use_color = use_color
 
     RESET = '\x1B[0m'
 
     def color_mode(self):
-        self.color = True
+        self.use_color = True
 
     def nocolor_mode(self):
-        self.color = False
+        self.use_color = False
 
     def FgColor(self, color, check_last=False, bits: ColorBits = ColorBits.Bit24):
         if check_last:
@@ -950,7 +947,7 @@ class Brush:
 
     @staticmethod
     def MoveCursor(row: int = 0, column: int = 0):
-        print(f'\x1B[{row+1};{column+1}H')
+        print(f'\x1B[{row + 1};{column + 1}H')
 
     @staticmethod
     def HorizontalVerticalPosition(row: int = 1, column: int = 1):
