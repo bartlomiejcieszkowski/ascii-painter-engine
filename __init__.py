@@ -495,7 +495,7 @@ class ConsoleView:
         self.width, self.height = self.console.update_size()
         if reuse:
             self.brush.MoveCursor(0, 0)
-        print(ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' '), end='\n')
+        print(ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' ', border=False, debug=False), end='\n')
         self.requires_draw = True
 
     def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
@@ -515,6 +515,8 @@ class ConsoleView:
             self.column_row_widget_cache[(column, row)] = widget
         if widget:
             widget.handle(Event.MouseClick, (row, column))
+
+        widget = widget.title if widget else widget
         return widget
 
     @staticmethod
@@ -542,7 +544,7 @@ class ConsoleView:
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
                 self.debug_print(
                     # f'mouse coord: x:{event.coordinates[0]:3} y:{event.coordinates[1]:3} release:{release}')
-                    f'widget:{widget}')
+                    f'x: {event.coordinates[0]} y:{event.coordinates[1]} widget:{widget}')
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
                 self.brush.MoveCursor(row=(self.console.rows + off) - 0)
