@@ -108,8 +108,8 @@ class Rectangle:
         self.height = dimensions[3]
 
     def contains_point(self, column: int, row: int):
-        return not ((self.row > row) or (self.row + self.height < row) or (self.column > column) or (
-                    self.column + self.width < column))
+        return not ((self.row > row) or (self.row + self.height - 1 < row) or (self.column > column) or (
+                    self.column + self.width - 1 < column))
 
 
 class ConsoleWidget(ABC):
