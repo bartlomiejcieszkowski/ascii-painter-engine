@@ -758,11 +758,13 @@ class WindowsConsole(Console):
         if record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
             events_list.append(SizeChangeEvent())
         elif record.EventType == self.MOUSE_EVENT:
-            events_list.append(MouseEvent(x=record.Event.MouseEvent.dwMousePosition.X,
-                                          y=record.Event.MouseEvent.dwMousePosition.Y,
-                                          button_state=record.Event.MouseEvent.dwButtonState,
-                                          control_key_state=record.Event.MouseEvent.dwControlKeyState,
-                                          event_flags=record.Event.MouseEvent.dwEventFlags))
+            # on windows position is 0-based, top-left corner, row 0 is inaccessible, translate X -1
+            if record.Event.MouseEvent.dwMousePosition.Y != 0:
+                events_list.append(MouseEvent(x=record.Event.MouseEvent.dwMousePosition.X,
+                                              y=record.Event.MouseEvent.dwMousePosition.Y-1,
+                                              button_state=record.Event.MouseEvent.dwButtonState,
+                                              control_key_state=record.Event.MouseEvent.dwControlKeyState,
+                                              event_flags=record.Event.MouseEvent.dwEventFlags))
         elif record.EventType == self.KEY_EVENT:
             events_list.append(KeyEvent(key_down=record.Event.KeyEvent.bKeyDown,
                                         repeat_count=record.Event.KeyEvent.wRepeatCount,
