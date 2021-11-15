@@ -23,6 +23,11 @@ __log_idx = 0
 __log_idx_max = 5
 __log_file_size_max = 5 * 1024 * 1024
 
+
+__log_file_size_check_n = 0
+__log_file_size_check_every_nth = 100
+
+
 def set_log_level(level: LogLevel):
     global __level
     __level = level
@@ -61,9 +66,12 @@ def log_flush():
 
 
 def log(fmt, *args):
-    # if __log_file is not sys.stdout:
-    #     if __log_file_size_max < __log_file_path.stat().st_size:
-    #         log_file_next()
+    global __log_file_size_check_n
+    __log_file_size_check_n += 1
+    if __log_file_size_check_n % __log_file_size_check_every_nth == 0:
+        if __log_file is not sys.stdout:
+            if __log_file_size_max < __log_file_path.stat().st_size:
+                log_file_next()
 
     print(time.strftime("[%H:%M:%S]", time.localtime())
           + "[{:<10.10}] ".format(threading.current_thread().name) + str(fmt), *args, file=__log_file)
