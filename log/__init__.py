@@ -1,9 +1,8 @@
-import abc
-import time
-import threading
-import pathlib
 import enum
-from collections import deque
+import threading
+import time
+import sys
+from pathlib import Path
 
 
 class LogLevel(enum.IntEnum):
@@ -12,8 +11,6 @@ class LogLevel(enum.IntEnum):
     INFO = 3
     VERBOSE = 4
 
-import sys
-from pathlib import Path
 
 __level = LogLevel.INFO
 __log_file = sys.stdout
@@ -22,7 +19,6 @@ __log_file_path = None
 __log_idx = 0
 __log_idx_max = 5
 __log_file_size_max = 5 * 1024 * 1024
-
 
 __log_file_size_check_n = 0
 __log_file_size_check_every_nth = 100
@@ -39,6 +35,7 @@ def get_log_level() -> LogLevel:
 
 def log_verbose() -> bool:
     return __level >= LogLevel.VERBOSE
+
 
 def log_file_next():
     global __log_file
@@ -57,7 +54,7 @@ def log_file(file_path):
         __log_file = sys.stdout
     else:
         __log_file_base = file_path
-        __log_file_path = Path(__log_file_base +  '.{}'.format(__log_idx))
+        __log_file_path = Path(__log_file_base + '.{}'.format(__log_idx))
         __log_file = __log_file_path.open('w')
 
 
@@ -76,4 +73,3 @@ def log(fmt, *args):
     print(time.strftime("[%H:%M:%S]", time.localtime())
           + "[{:<10.10}] ".format(threading.current_thread().name) + str(fmt), *args, file=__log_file)
     log_flush()
-

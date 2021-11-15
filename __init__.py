@@ -456,15 +456,20 @@ class LinuxConsole(Console):
         return True
 
 
+def no_print(fmt, *args):
+    pass
+
+
 class ConsoleView:
-    def __init__(self, debug=False):
+    def __init__(self, log=no_print):
+        self.log = log
+
         if is_windows():
             self.console = WindowsConsole()
         else:
             self.console = LinuxConsole()
         self.widgets = []
         self.brush = Brush(self.console.vt_supported)
-        self.debug = debug
         self.debug_colors = ConsoleColor(None, None)
         self.run = True
         self.requires_draw = False
@@ -542,9 +547,8 @@ class ConsoleView:
                     # release
 
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
-                self.debug_print(
-                    # f'mouse coord: x:{event.coordinates[0]:3} y:{event.coordinates[1]:3} release:{release}')
-                    f'x: {event.coordinates[0]} y:{event.coordinates[1]} widget:{widget}')
+                if widget:
+                    self.log(f'x: {event.coordinates[0]} y:{event.coordinates[1]} widget:{widget}')
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
                 self.brush.MoveCursor(row=(self.console.rows + off) - 0)
