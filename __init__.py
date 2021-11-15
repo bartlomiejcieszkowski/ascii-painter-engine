@@ -27,6 +27,8 @@ from abc import ABC, abstractmethod
 import signal
 from typing import Tuple, Union, List
 
+import ascii_painter_engine.log
+
 
 def is_windows() -> bool:
     return os.name == 'nt'
@@ -493,7 +495,7 @@ class ConsoleView:
         return self.height
 
     def debug_print(self, text, end='\n'):
-        if self.debug:
+        if self.log is not no_print:
             self.brush.print(text, color=self.debug_colors, end=end)
 
     def clear(self, reuse=True):

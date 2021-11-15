@@ -4,11 +4,11 @@
 import argparse
 import os.path
 import pkgutil
-
 import tests
 import importlib
 import sys
 
+import log
 
 def main():
     tests_path = os.path.dirname(tests.__file__)
@@ -24,6 +24,8 @@ def main():
     print(args.test)
     sys.path.append(os.path.abspath(os.path.join(os.path.abspath(__file__), os.pardir, '..')))
     x = importlib.import_module(f'tests.{args.test}')
+
+    log.log_file(f'{args.test}')
     x.test()
     sys.exit(0)
 
