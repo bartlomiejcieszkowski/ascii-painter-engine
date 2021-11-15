@@ -46,15 +46,15 @@ def log_file_next():
     log_file(__log_file_base)
 
 
-def log_file(file_path):
+def log_file(file_base_prefix):
     global __log_file
     global __log_file_path
     global __log_file_base
-    if file_path is None:
+    if file_base_prefix is None:
         __log_file = sys.stdout
     else:
-        __log_file_base = file_path
-        __log_file_path = Path(__log_file_base + '.{}'.format(__log_idx))
+        __log_file_base = file_base_prefix
+        __log_file_path = Path(__log_file_base + '.{}.log'.format(__log_idx))
         __log_file = __log_file_path.open('w')
 
 
@@ -73,3 +73,4 @@ def log(fmt, *args):
     print(time.strftime("[%H:%M:%S]", time.localtime())
           + "[{:<10.10}] ".format(threading.current_thread().name) + str(fmt), *args, file=__log_file)
     log_flush()
+
