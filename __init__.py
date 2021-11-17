@@ -606,6 +606,7 @@ class ConsoleView:
             i += 1
         # Move to the end, so we wont end up writing in middle of screen
         self.brush.MoveCursor(self.console.rows - 1)
+        self.brush.ShowCursor()
         return 0
 
     def color_mode(self) -> bool:
