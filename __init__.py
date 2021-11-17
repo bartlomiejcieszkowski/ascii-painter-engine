@@ -36,6 +36,9 @@ def is_windows() -> bool:
 
 if is_windows():
     import msvcrt
+else:
+    import fcntl
+    import termios
 
 
 class ConsoleBuffer:
@@ -426,11 +429,37 @@ class Console:
         pass
 
 
+
 class LinuxConsole(Console):
     # TODO
     def __init__(self, console_view):
         super().__init__(console_view)
+        self.is_interactive_mode = False
         self.window_changed = False
+        self.prev_fl = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
+        new_fl = self.prev_fl | os.O_NONBLOCK
+        fcntl.fcntl(sys.stdin, fcntl.F_SETFL, new_fl)
+        self.console_view.log(f'stdin fl: 0x{self.prev_fl:X} -> 0x{new_fl:X}')
+        self.prev_tc = termios.tcgetattr(sys.stdin)
+        new_tc = termios.tcgetattr(sys.stdin)
+        # manipulating lflag
+        new_tc[3] = new_tc[3] & ~termios.ECHO # disable input echo
+        new_tc[3] = new_tc[3] & ~termios.ICANON # disable canonical mode - input available immediately
+        termios.tcsetattr(sys.stdin, termios.TCSANOW, new_tc) # TCSADRAIN?
+        self.console_view.log(f'stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}')
+
+    def __del__(self):
+        # restore stdin
+        if self.is_interactive_mode:
+            print('\x1B[?10001')
+
+        termios.tcsetattr(sys.stdin, termios.TCSANOW, self.prev_tc)
+        fcntl.fcntl(sys.stdin, fcntl.F_SETFL, self.prev_fl)
+        print('')
+        print('Restore console done')
+        # print('\x1B[?10001') # restore mouse
+        print('\x1B[?1002;1005l') # restore mouse
+
 
     window_change_event_ctx = None
 
@@ -443,8 +472,11 @@ class LinuxConsole(Console):
         self.window_changed = True
 
     def interactive_mode(self):
+        self.is_interactive_mode = True
         LinuxConsole.window_change_event_ctx = self
         signal.signal(signal.SIGWINCH, LinuxConsole.window_change_handler)
+        # enable mouse - xterm, urxvt, sgr1006
+        print('\x1B[?1003h\x1B[?1015h\x1B[?1006h')
 
     def read_events(self, callback, callback_ctx) -> bool:
         events_list = []
