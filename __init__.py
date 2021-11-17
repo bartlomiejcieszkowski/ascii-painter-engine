@@ -394,8 +394,9 @@ class ConsoleWidgets:
 
 
 class Console:
-    def __init__(self, debug=True):
+    def __init__(self, console_view, debug=True):
         # TODO: this would print without vt enabled yet update state if vt enabled in brush?
+        self.console_view = console_view
         self.columns, self.rows = self.get_size()
         self.vt_supported = False
         self.debug = debug
@@ -427,8 +428,8 @@ class Console:
 
 class LinuxConsole(Console):
     # TODO
-    def __init__(self):
-        super().__init__()
+    def __init__(self, console_view):
+        super().__init__(console_view)
         self.window_changed = False
 
     window_change_event_ctx = None
@@ -467,9 +468,9 @@ class ConsoleView:
         self.log = log
 
         if is_windows():
-            self.console = WindowsConsole()
+            self.console = WindowsConsole(self)
         else:
-            self.console = LinuxConsole()
+            self.console = LinuxConsole(self)
         self.widgets = []
         self.brush = Brush(self.console.vt_supported)
         self.debug_colors = ConsoleColor(None, None)
@@ -714,8 +715,8 @@ class KeyEvent(ConsoleEvent):
 
 
 class WindowsConsole(Console):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, console_view):
+        super().__init__(console_view)
         self.kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
         set_console_mode_proto = ctypes.WINFUNCTYPE(
             ctypes.wintypes.BOOL,
