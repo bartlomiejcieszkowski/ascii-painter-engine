@@ -455,7 +455,8 @@ class LinuxConsole(Console):
         else:
             pass
 
-        callback(callback_ctx, events_list)
+        if len(events_list):
+            callback(callback_ctx, events_list)
         return True
 
 
@@ -784,7 +785,8 @@ class WindowsConsole(Console):
         else:
             pass
 
-        callback(callback_ctx, events_list)
+        if len(events_list):
+            callback(callback_ctx, events_list)
         return True
 
     def GetConsoleMode(self, handle) -> int:
