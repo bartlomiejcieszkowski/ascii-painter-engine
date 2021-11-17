@@ -445,8 +445,13 @@ class LinuxConsole(Console):
         # manipulating lflag
         new_tc[3] = new_tc[3] & ~termios.ECHO # disable input echo
         new_tc[3] = new_tc[3] & ~termios.ICANON # disable canonical mode - input available immediately
+        # cc
+        new_tc[6][termios.VMIN] = 0 # cc - minimum bytes
+        new_tc[6][termios.VTIME] = 0 # cc - minimum time
         termios.tcsetattr(sys.stdin, termios.TCSANOW, new_tc) # TCSADRAIN?
         self.console_view.log(f'stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}')
+        self.console_view.log(f'stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}')
+        self.console_view.log(f'stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}')
 
     def __del__(self):
         # restore stdin
