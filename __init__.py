@@ -490,7 +490,14 @@ class LinuxConsole(Console):
             self.window_changed = False
             events_list.append(SizeChangeEvent())
         else:
-            pass
+            input_raw = []
+            ch = sys.stdin.read(1)
+            while ch is not None and len(ch) > 0:
+                input_raw.append(ch)
+                ch = sys.stdin.read(1)
+            if len(input_raw) > 0:
+                self.console_view.log(f'all: {input_raw} len: {len(input_raw)}')
+
 
         if len(events_list):
             callback(callback_ctx, events_list)
