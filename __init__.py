@@ -117,15 +117,7 @@ class Rectangle:
                     self.column + self.width - 1 < column))
 
 
-class InputInterpreterState(IntEnum):
-    Default = 0
-    AnsiEscapeSequence = 1
-
 class InputInterpreter:
-    class State(IntEnum):
-        Default = 0
-        AnsiEscapeSequence = 1
-
     # this class should
     # receive data
     # and parse it accordingly
@@ -138,7 +130,7 @@ class InputInterpreter:
 
     def __init__(self, input):
         self.input = input
-        self.mode = InputInterpreter.State.Default
+        self.not_sequence = True
         self.input_raw = []
 
     def read(self, count: int = 1):
@@ -148,12 +140,10 @@ class InputInterpreter:
             ch = self.input.read(count)
         if len(self.input_raw) > 0:
             for i in range(0, len(self.input_raw)):
-                if self.mode is InputInterpreter.State.Default:
-                    pass
-                elif self.mode is InputInterpreter.State.AnsiEscapeSequence:
+                if self.not_sequence:
                     pass
                 else:
-                    # impossible
+                    # sequence
                     pass
                 pass
             self.input_raw.clear()
