@@ -53,7 +53,7 @@ class ConsoleBuffer:
             buffer = '\n'
             for col in range(0, x):
                 buffer += str(col % 10)
-            for row in range(1, y+1):
+            for row in range(1, y + 1):
                 buffer += '\n' + str(row % 10) + (symbol * (x - 2)) + str(row % 10)
             return buffer
         if border:
@@ -115,7 +115,7 @@ class Rectangle:
 
     def contains_point(self, column: int, row: int):
         return not ((self.row > row) or (self.row + self.height - 1 < row) or (self.column > column) or (
-                    self.column + self.width - 1 < column))
+                self.column + self.width - 1 < column))
 
 
 class InputInterpreter:
@@ -200,7 +200,6 @@ class InputInterpreter:
         return None
 
 
-
 class ConsoleWidget(ABC):
     def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
                  dimensions: DimensionsFlag = DimensionsFlag.Absolute):
@@ -263,7 +262,7 @@ class ConsoleWidget(ABC):
 
     def handle(self, event: Event, coords: Tuple[int, int]):
         # guess we should pass also unknown args
-        #raise Exception('handle')
+        # raise Exception('handle')
         pass
 
     @abstractmethod
@@ -289,9 +288,6 @@ class ConsoleWidget(ABC):
 
     def contains_point(self, column: int, row: int):
         return self.last_dimensions.contains_point(column, row)
-
-
-
 
 
 class ConsoleWidgets:
@@ -446,7 +442,8 @@ class ConsoleWidgets:
 
     class Pane(BorderWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int,
-                     alignment: Alignment, dimensions: DimensionsFlag = DimensionsFlag.Absolute, borderless: bool = False):
+                     alignment: Alignment, dimensions: DimensionsFlag = DimensionsFlag.Absolute,
+                     borderless: bool = False):
             super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
                              dimensions=dimensions, borderless=borderless)
             self.widgets = []
@@ -526,12 +523,12 @@ class LinuxConsole(Console):
         self.prev_tc = termios.tcgetattr(sys.stdin)
         new_tc = termios.tcgetattr(sys.stdin)
         # manipulating lflag
-        new_tc[3] = new_tc[3] & ~termios.ECHO # disable input echo
-        new_tc[3] = new_tc[3] & ~termios.ICANON # disable canonical mode - input available immediately
+        new_tc[3] = new_tc[3] & ~termios.ECHO  # disable input echo
+        new_tc[3] = new_tc[3] & ~termios.ICANON  # disable canonical mode - input available immediately
         # cc
-        new_tc[6][termios.VMIN] = 0 # cc - minimum bytes
-        new_tc[6][termios.VTIME] = 0 # cc - minimum time
-        termios.tcsetattr(sys.stdin, termios.TCSANOW, new_tc) # TCSADRAIN?
+        new_tc[6][termios.VMIN] = 0  # cc - minimum bytes
+        new_tc[6][termios.VTIME] = 0  # cc - minimum time
+        termios.tcsetattr(sys.stdin, termios.TCSANOW, new_tc)  # TCSADRAIN?
         self.console_view.log(f'stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}')
         self.console_view.log(f'stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}')
         self.console_view.log(f'stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}')
@@ -546,8 +543,7 @@ class LinuxConsole(Console):
         print('')
         print('Restore console done')
         # print('\x1B[?10001') # restore mouse
-        print('\x1B[?1002;1005l') # restore mouse
-
+        print('\x1B[?1002;1005l')  # restore mouse
 
     window_change_event_ctx = None
 
@@ -580,7 +576,6 @@ class LinuxConsole(Console):
                 ch = sys.stdin.read(1)
             if len(input_raw) > 0:
                 self.console_view.log(f'all: {input_raw} len: {len(input_raw)}')
-
 
         if len(events_list):
             callback(callback_ctx, events_list)
@@ -631,11 +626,12 @@ class ConsoleView:
         self.width, self.height = self.console.update_size()
         if reuse:
             self.brush.MoveCursor(0, 0)
-        print(ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' ', border=False, debug=False), end='\n')
+        print(ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' ', border=False, debug=False),
+              end='\n')
         self.requires_draw = True
 
     def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
-        for idx in range(len(self.widgets)-1, -1, -1):
+        for idx in range(len(self.widgets) - 1, -1, -1):
             widget = self.widgets[idx].get_widget(column, row)
             if widget:
                 return widget
@@ -899,7 +895,7 @@ class WindowsConsole(Console):
             # on windows position is 0-based, top-left corner, row 0 is inaccessible, translate X -1
             if record.Event.MouseEvent.dwMousePosition.Y != 0:
                 events_list.append(MouseEvent(x=record.Event.MouseEvent.dwMousePosition.X,
-                                              y=record.Event.MouseEvent.dwMousePosition.Y-1,
+                                              y=record.Event.MouseEvent.dwMousePosition.Y - 1,
                                               button_state=record.Event.MouseEvent.dwButtonState,
                                               control_key_state=record.Event.MouseEvent.dwControlKeyState,
                                               event_flags=record.Event.MouseEvent.dwEventFlags))
@@ -1026,7 +1022,8 @@ class Brush:
 
     def FgBgColor(self, console_color: ConsoleColor, check_last=False):
         ret_val = ''
-        if (console_color.fgcolor is None and self.fgcolor != console_color.fgcolor) or (console_color.bgcolor is None and self.bgcolor != console_color.bgcolor):
+        if (console_color.fgcolor is None and self.fgcolor != console_color.fgcolor) or (
+                console_color.bgcolor is None and self.bgcolor != console_color.bgcolor):
             ret_val = self.ResetColor()
         ret_val += self.FgColor(console_color.fgcolor, check_last)
         ret_val += self.BgColor(console_color.fgcolor, check_last)
