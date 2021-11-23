@@ -117,6 +117,17 @@ class Rectangle:
                     self.column + self.width - 1 < column))
 
 
+class InputInterpreter:
+    # this class should
+    # receive data
+    # and parse it accordingly
+    # if it is ESC then start parsing it as ansi escape code
+    # and emit event once we parse whole sequence
+    # otherwise pass it to.. input handler?
+
+    def __init__(self):
+        pass
+
 class ConsoleWidget(ABC):
     def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
                  dimensions: DimensionsFlag = DimensionsFlag.Absolute):
@@ -427,7 +438,6 @@ class Console:
     @abstractmethod
     def read_events(self, callback, callback_ctx) -> bool:
         pass
-
 
 
 class LinuxConsole(Console):
