@@ -117,7 +117,15 @@ class Rectangle:
                     self.column + self.width - 1 < column))
 
 
+class InputInterpreterState(IntEnum):
+    Default = 0
+    AnsiEscapeSequence = 1
+
 class InputInterpreter:
+    class State(IntEnum):
+        Default = 0
+        AnsiEscapeSequence = 1
+
     # this class should
     # receive data
     # and parse it accordingly
@@ -125,8 +133,33 @@ class InputInterpreter:
     # and emit event once we parse whole sequence
     # otherwise pass it to.. input handler?
 
-    def __init__(self):
-        pass
+    # better yet:
+    # this class should provide read method, and wrap the input provided
+
+    def __init__(self, input):
+        self.input = input
+        self.mode = InputInterpreter.State.Default
+        self.input_raw = []
+
+    def read(self, count: int = 1):
+        ch = self.input.read(count)
+        while ch is not None and len(ch) > 0:
+            self.input_raw.append(ch)
+            ch = self.input.read(count)
+        if len(self.input_raw) > 0:
+            for i in range(0, len(self.input_raw)):
+                if self.mode is InputInterpreter.State.Default:
+                    pass
+                elif self.mode is InputInterpreter.State.AnsiEscapeSequence:
+                    pass
+                else:
+                    # impossible
+                    pass
+                pass
+            self.input_raw.clear()
+        return None
+
+
 
 class ConsoleWidget(ABC):
     def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
