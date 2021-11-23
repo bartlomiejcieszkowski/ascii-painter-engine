@@ -559,6 +559,8 @@ class LinuxConsole(Console):
         self.is_interactive_mode = True
         LinuxConsole.window_change_event_ctx = self
         signal.signal(signal.SIGWINCH, LinuxConsole.window_change_handler)
+        # ctrl-z not allowed
+        signal.signal(signal.SIGTSTP, signal.SIG_IGN)
         # enable mouse - xterm, urxvt, sgr1006
         print('\x1B[?1003h\x1B[?1015h\x1B[?1006h')
 
