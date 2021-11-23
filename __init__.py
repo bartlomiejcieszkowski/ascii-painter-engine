@@ -23,6 +23,7 @@ import sys
 
 from enum import Flag, Enum, auto, IntEnum
 from abc import ABC, abstractmethod
+from collections import deque
 
 import signal
 from typing import Tuple, Union, List
@@ -118,6 +119,11 @@ class Rectangle:
 
 
 class InputInterpreter:
+    class State(Enum):
+        Default = 0
+        Escape = 1
+        CSI_Bytes = 2
+
     # this class should
     # receive data
     # and parse it accordingly
@@ -128,23 +134,67 @@ class InputInterpreter:
     # better yet:
     # this class should provide read method, and wrap the input provided
 
-    def __init__(self, input):
-        self.input = input
-        self.not_sequence = True
+    def __init__(self, readable_input):
+        self.input = readable_input
+        self.state = self.State.Default
         self.input_raw = []
+        self.ansi_escape_sequence = []
+        self.payload = deque()
+
+    def parse(self):
+        # should append to self.event_list
+        length = len(self.ansi_escape_sequence)
+
+        if length < 3:
+            # minimal sequence is ESC [ (byte in range 0x40-0x7e)
+            self.payload.extend(self.ansi_escape_sequence)
+            return
+
+        # we can safely skip first 2 bytes
+
+        pass
 
     def read(self, count: int = 1):
+        # ESC [ followed by any number in range 0x30-0x3f, then any between 0x20-0x2f, and final byte 0x40-0x7e
+
         ch = self.input.read(count)
         while ch is not None and len(ch) > 0:
             self.input_raw.append(ch)
             ch = self.input.read(count)
+
         if len(self.input_raw) > 0:
             for i in range(0, len(self.input_raw)):
-                if self.not_sequence:
-                    pass
-                else:
-                    # sequence
-                    pass
+                ch = self.input_raw[i]
+                if self.state != self.State.Default:
+                    ord_ch = ord(ch)
+                    if 0x20 <= ord_ch <= 0x7f:
+                        if self.state == self.State.Escape:
+                            if ch == '[':
+                                self.ansi_escape_sequence.append(ch)
+                                self.state = self.State.CSI_Bytes
+                                continue
+                        elif self.state == self.State.CSI_Bytes:
+                            if 0x30 <= ord_ch <= 0x3f:
+                                self.ansi_escape_sequence.append(ch)
+                                continue
+                            elif 0x40 <= ord_ch <= 0x7e:
+                                # implicit IntermediateBytes
+                                self.ansi_escape_sequence.append(ch)
+                                self.parse()
+                                self.state = self.State.Default
+                                continue
+                    # parse what we had collected so far, since we failed check above
+                    self.parse()
+                    self.state = self.State.Default
+                    # intentionally fall through to regular parse
+                # check if escape code
+                if ch == '\x1B':
+                    self.ansi_escape_sequence.clear()
+                    self.ansi_escape_sequence.append(ch)
+                    self.state = self.State.Escape
+                    continue
+
+                # pass input to handler
                 pass
             self.input_raw.clear()
         return None
