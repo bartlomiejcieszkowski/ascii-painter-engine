@@ -141,6 +141,12 @@ class InputInterpreter:
         self.ansi_escape_sequence = []
         self.payload = deque()
 
+
+    # 9 Normal \x1B[ CbCxCy M , value + 32 -> ! is 1 - max 223 (255 - 32)
+    # 1006 SGR  \x1B[<Pb;Px;Py[Mm] M - press m - release
+    # 1015 URXVT \x1B[Pb;Px;Py M - not recommended, can be mistaken for DL
+    # 1016 SGR-Pixel x,y are pixels instead of cells
+
     def parse(self):
         # should append to self.event_list
         length = len(self.ansi_escape_sequence)
@@ -151,12 +157,44 @@ class InputInterpreter:
             return
 
         # we can safely skip first 2 bytes
+        # last byte will be character
+        if self.ansi_escape_sequence[-1] not in ('m', 'M'):
+            self.payload.extend(self.ansi_escape_sequence)
+            return
 
-        pass
+        if self.ansi_escape_sequence[2] == '<':
+            # SGR
+            idx = 0
+            values = [0, 0, 0]
+            temp_word = ''
+            for i in range(3, length+1):
+                ch = self.ansi_escape_sequence[i]
+                if idx < 2:
+                    if ch == ';':
+                        values[idx] = int(temp_word, 10)
+                        idx += 1
+                        continue
+                elif ch in ('m', 'M'):
+                    values[idx] = int(temp_word, 10)
+                    break
+                temp_word += ch
+            # msft
+            # lmb 0x1 rmb 0x2, lmb2 0x4 lmb3 0x8 lmb4 0x10
+            # linux
+            # lmb 0, rmb 2, middle 1, wheel up 64 + 0, wheel down 64 + 1
+            # move 32 + key
+            # shift   4
+            # meta    8
+            # control 16
+            self.payload.append(MouseEvent(values[1], values[2], values[0]))
+
+        # normal - TODO
+        self.payload.extend(self.ansi_escape_sequence)
+        return
 
     def read(self, count: int = 1):
         # ESC [ followed by any number in range 0x30-0x3f, then any between 0x20-0x2f, and final byte 0x40-0x7e
-
+        # TODO: this should be limited so if one pastes long, long text this wont create arbitrary size buffer
         ch = self.input.read(count)
         while ch is not None and len(ch) > 0:
             self.input_raw.append(ch)
@@ -197,6 +235,12 @@ class InputInterpreter:
                 # pass input to handler
                 pass
             self.input_raw.clear()
+
+            if len(self.payload) > 0:
+                payload = self.payload
+                self.payload = deque()
+                return payload
+
         return None
 
 
@@ -533,6 +577,8 @@ class LinuxConsole(Console):
         self.console_view.log(f'stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}')
         self.console_view.log(f'stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}')
 
+        self.input_interpreter = InputInterpreter(sys.stdin)
+
     def __del__(self):
         # restore stdin
         if self.is_interactive_mode:
@@ -543,7 +589,9 @@ class LinuxConsole(Console):
         print('')
         print('Restore console done')
         # print('\x1B[?10001') # restore mouse
-        print('\x1B[?1002;1005l')  # restore mouse
+        #print('\x1B[?1002;1005l')  # restore mouse
+        print('\x1B[?1006l\x1B[?1003l')
+
 
     window_change_event_ctx = None
 
@@ -561,8 +609,8 @@ class LinuxConsole(Console):
         signal.signal(signal.SIGWINCH, LinuxConsole.window_change_handler)
         # ctrl-z not allowed
         signal.signal(signal.SIGTSTP, signal.SIG_IGN)
-        # enable mouse - xterm, urxvt, sgr1006
-        print('\x1B[?1003h\x1B[?1015h\x1B[?1006h')
+        # enable mouse - xterm, sgr1006
+        print('\x1B[?1003h\x1B[?1006h')
 
     def read_events(self, callback, callback_ctx) -> bool:
         events_list = []
@@ -571,13 +619,10 @@ class LinuxConsole(Console):
             self.window_changed = False
             events_list.append(SizeChangeEvent())
         else:
-            input_raw = []
-            ch = sys.stdin.read(1)
-            while ch is not None and len(ch) > 0:
-                input_raw.append(ch)
-                ch = sys.stdin.read(1)
-            if len(input_raw) > 0:
-                self.console_view.log(f'all: {input_raw} len: {len(input_raw)}')
+            ret = self.input_interpreter.read()
+            if ret:
+                # passing around deque..
+                events_list.append(ret)
 
         if len(events_list):
             callback(callback_ctx, events_list)
@@ -828,6 +873,18 @@ class MouseEvent(ConsoleEvent):
         self.button_state = button_state
         self.control_key_state = control_key_state
         self.event_flags = event_flags
+
+    @classmethod
+    def from_windows_event(cls, mouse_event_record: MOUSE_EVENT_RECORD):
+        
+
+        # TODO
+        return cls(mouse_event_record.dwMousePosition.X, mouse_event_record.dwMousePosition.Y)
+
+
+    @classmethod
+    def from_sgr_csi(cls, buttons: int, x: int, y: int, press: bool):
+        return cls(x, y, None, None, None)
 
 
 class KeyEvent(ConsoleEvent):
