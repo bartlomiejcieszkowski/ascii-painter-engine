@@ -141,7 +141,6 @@ class InputInterpreter:
         self.ansi_escape_sequence = []
         self.payload = deque()
 
-
     # 9 Normal \x1B[ CbCxCy M , value + 32 -> ! is 1 - max 223 (255 - 32)
     # 1006 SGR  \x1B[<Pb;Px;Py[Mm] M - press m - release
     # 1015 URXVT \x1B[Pb;Px;Py M - not recommended, can be mistaken for DL
@@ -167,7 +166,7 @@ class InputInterpreter:
             idx = 0
             values = [0, 0, 0]
             temp_word = ''
-            for i in range(3, length+1):
+            for i in range(3, length + 1):
                 ch = self.ansi_escape_sequence[i]
                 if idx < 2:
                     if ch == ';':
@@ -589,9 +588,8 @@ class LinuxConsole(Console):
         print('')
         print('Restore console done')
         # print('\x1B[?10001') # restore mouse
-        #print('\x1B[?1002;1005l')  # restore mouse
+        # print('\x1B[?1002;1005l')  # restore mouse
         print('\x1B[?1006l\x1B[?1003l')
-
 
     window_change_event_ctx = None
 
@@ -876,11 +874,8 @@ class MouseEvent(ConsoleEvent):
 
     @classmethod
     def from_windows_event(cls, mouse_event_record: MOUSE_EVENT_RECORD):
-        
-
         # TODO
         return cls(mouse_event_record.dwMousePosition.X, mouse_event_record.dwMousePosition.Y)
-
 
     @classmethod
     def from_sgr_csi(cls, buttons: int, x: int, y: int, press: bool):
