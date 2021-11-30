@@ -152,6 +152,7 @@ class InputInterpreter:
     # https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 
     def parse(self):
+        # ConsoleView.log(f'parse: {self.ansi_escape_sequence}')
         # should append to self.event_list
         length = len(self.ansi_escape_sequence)
 
@@ -178,6 +179,7 @@ class InputInterpreter:
                     if ch == ';':
                         values[idx] = int(temp_word, 10)
                         idx += 1
+                        temp_word = ''
                         continue
                 elif ch in ('m', 'M'):
                     values[idx] = int(temp_word, 10)
@@ -593,9 +595,8 @@ class LinuxConsole(Console):
 
         termios.tcsetattr(sys.stdin, termios.TCSANOW, self.prev_tc)
         fcntl.fcntl(sys.stdin, fcntl.F_SETFL, self.prev_fl)
-        print('')
-        print('Restore console done')
-        if self.is_intercative_mode:
+        print('xRestore console done')
+        if self.is_interactive_mode:
             print('\x1B[?1006l\x1B[?1015l\x1B[?1003l')
 
     window_change_event_ctx = None
@@ -639,7 +640,9 @@ def no_print(fmt, *args):
 
 
 class ConsoleView:
+    log = no_print
     def __init__(self, log=no_print):
+        ConsoleView.log = log
         self.log = log
 
         if is_windows():
@@ -726,7 +729,7 @@ class ConsoleView:
 
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
                 if widget:
-                    self.log(f'x: {event.coordinates[0]} y:{event.coordinates[1]} button:{event.button} press:{event.pressed} widget:{widget}')
+                    self.log(f'x: {event.coordinates[0]} y: {event.coordinates[1]} button:{event.button} press:{event.pressed} widget:{widget}')
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
                 self.brush.MoveCursor(row=(self.console.rows + off) - 0)
@@ -957,6 +960,9 @@ class MouseEvent(ConsoleEvent):
         if move_event:
             return None
 
+        if y < 2:
+            return None
+
         wheel_event = button_hex & 64
         ctrl_button = 0x8 if button_hex & 16 else 0x0
 
@@ -964,7 +970,9 @@ class MouseEvent(ConsoleEvent):
         button_hex = button_hex & (0xFFFFFFFF - 0x10)
 
         button = MouseEvent.Buttons(button_hex)
-        return cls(x, y, button, press, ctrl_button)
+        # sgr - 1-based
+        # also we have 1st row inactive
+        return cls(x-1, y-2, button, press, ctrl_button)
 
 
 class KeyEvent(ConsoleEvent):
