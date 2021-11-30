@@ -713,24 +713,21 @@ class ConsoleView:
         # with -1 - 2 lines nearest end of screen overwrite each other
         for event in events_list:
             if isinstance(event, deque):
-                pass
+                self.handle_events(event)
+            elif isinstance(event, list):
+                self.handle_events(event)
             elif isinstance(event, MouseEvent):
                 # we could use mask here, but then we will handle holding right button and
                 # pressing/releasing left button and other combinations and frankly i don't want to
                 # if (event.button_state & 0x1) == 0x1 and event.event_flags == 0:
                 release = False
                 widget = None
-                if event.button_state == 0x1 and event.event_flags == 0:
-                    self.mouse_lmb_state = 1  # pressed
-                elif self.mouse_lmb_state == 1 and event.event_flags == 0:
-                    self.mouse_lmb_state = 0
-                    release = True
+                if event.button == event.button.LMB and event.pressed is False:
                     widget = self.handle_click(event.coordinates[0], event.coordinates[1])
-                    # release
 
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
                 if widget:
-                    self.log(f'x: {event.coordinates[0]} y:{event.coordinates[1]} widget:{widget}')
+                    self.log(f'x: {event.coordinates[0]} y:{event.coordinates[1]} button:{event.button} press:{event.pressed} widget:{widget}')
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
                 self.brush.MoveCursor(row=(self.console.rows + off) - 0)
@@ -875,7 +872,6 @@ class SizeChangeEvent(ConsoleEvent):
 
 
 class MouseEvent(ConsoleEvent):
-    wheel_mask = 32
     last_mask = 0x0
 
     class Buttons(IntEnum):
@@ -888,7 +884,7 @@ class MouseEvent(ConsoleEvent):
     class ControlKeys(Flag):
         LEFT_CTRL = 0x8
 
-    def __init__(self, x, y, button, pressed, control_key_state, event_flags):
+    def __init__(self, x, y, button: Buttons, pressed: bool, control_key_state):
         super().__init__()
         self.coordinates = (x, y)
         self.button = button
@@ -896,12 +892,65 @@ class MouseEvent(ConsoleEvent):
         # based on https://docs.microsoft.com/en-us/windows/console/mouse-event-record-str
         # but simplified - right ctrl => left ctrl
         self.control_key_state = control_key_state
-        self.event_flags = event_flags
 
     @classmethod
     def from_windows_event(cls, mouse_event_record: MOUSE_EVENT_RECORD):
-        # TODO
-        return cls(mouse_event_record.dwMousePosition.X, mouse_event_record.dwMousePosition.Y)
+        # on windows position is 0-based, top-left corner, row 0 is inaccessible, translate Y as Y-1
+        if mouse_event_record.dwMousePosition.Y == 0:
+            return None
+
+        # zero indicates mouse button is pressed or released
+        if mouse_event_record.dwEventFlags != 0:
+            if mouse_event_record.dwEventFlags == 0x1:
+                # mouse move - TODO: hover implementation
+                pass
+            if mouse_event_record.dwEventFlags == 0x4:
+                # mouse wheel move, high word of dwButtonState is dir, positive up
+                return cls(mouse_event_record.dwMousePosition.X,
+                           mouse_event_record.dwMousePosition.Y - 1,
+                           MouseEvent.Buttons(MouseEvent.Buttons.WHEEL_UP + ((mouse_event_record.dwButtonState >> 31) & 0x1)),
+                           True,
+                           None
+                           )
+                # TODO: high word
+                pass
+            elif mouse_event_record.dwEventFlags == 0x8:
+                # horizontal mouse wheel - NOT SUPPORTED
+                pass
+            elif mouse_event_record.dwEventFlags == 0x2:
+                # double click - TODO: do we need this?
+                pass
+            return None
+
+        ret_list = []
+
+        # on windows we get mask of pressed buttons
+        # we can either pass mask around and worry about translating it outside
+        # we will have two different handlings on windows and linux
+        # so we just translate it into serialized clicks
+        changed_mask = mouse_event_record.dwButtonState ^ MouseEvent.last_mask
+
+        if changed_mask == 0:
+            return None
+
+        MouseEvent.last_mask = mouse_event_record.dwButtonState
+
+        for idx in [0, 1, 2]:
+            changed = changed_mask & (0x1 << idx)
+            if changed:
+                press = (mouse_event_record.dwButtonState & (0x1 << idx) != 0)
+
+                event = cls(mouse_event_record.dwMousePosition.X,
+                            mouse_event_record.dwMousePosition.Y - 1,
+                            MouseEvent.Buttons(idx),
+                            press,
+                            None)
+                ret_list.append(event)
+
+        if len(ret_list) == 0:
+            return None
+
+        return ret_list
 
     @classmethod
     def from_sgr_csi(cls, button_hex: int, x: int, y: int, press: bool):
@@ -916,7 +965,7 @@ class MouseEvent(ConsoleEvent):
         button_hex = button_hex & (0xFFFFFFFF - 0x10)
 
         button = MouseEvent.Buttons(button_hex)
-        return cls(x, y, button, press, ctrl_button, None)
+        return cls(x, y, button, press, ctrl_button)
 
 
 class KeyEvent(ConsoleEvent):
@@ -983,13 +1032,9 @@ class WindowsConsole(Console):
         if record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
             events_list.append(SizeChangeEvent())
         elif record.EventType == self.MOUSE_EVENT:
-            # on windows position is 0-based, top-left corner, row 0 is inaccessible, translate X -1
-            if record.Event.MouseEvent.dwMousePosition.Y != 0:
-                events_list.append(MouseEvent(x=record.Event.MouseEvent.dwMousePosition.X,
-                                              y=record.Event.MouseEvent.dwMousePosition.Y - 1,
-                                              button_state=record.Event.MouseEvent.dwButtonState,
-                                              control_key_state=record.Event.MouseEvent.dwControlKeyState,
-                                              event_flags=record.Event.MouseEvent.dwEventFlags))
+            event = MouseEvent.from_windows_event(record.Event.MouseEvent)
+            if event:
+                events_list.append(event)
         elif record.EventType == self.KEY_EVENT:
             events_list.append(KeyEvent(key_down=record.Event.KeyEvent.bKeyDown,
                                         repeat_count=record.Event.KeyEvent.wRepeatCount,
