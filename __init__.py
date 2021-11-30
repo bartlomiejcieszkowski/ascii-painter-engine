@@ -595,9 +595,8 @@ class LinuxConsole(Console):
         fcntl.fcntl(sys.stdin, fcntl.F_SETFL, self.prev_fl)
         print('')
         print('Restore console done')
-        # print('\x1B[?10001') # restore mouse
-        # print('\x1B[?1002;1005l')  # restore mouse
-        print('\x1B[?1006l\x1B[?1003l')
+        if self.is_intercative_mode:
+            print('\x1B[?1006l\x1B[?1015l\x1B[?1003l')
 
     window_change_event_ctx = None
 
