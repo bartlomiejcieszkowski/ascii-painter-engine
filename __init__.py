@@ -119,6 +119,9 @@ class Rectangle:
 
 
 class InputInterpreter:
+    # linux
+    # lmb 0, rmb 2, middle 1, wheel up 64 + 0, wheel down 64 + 1
+
     class State(Enum):
         Default = 0
         Escape = 1
@@ -140,11 +143,13 @@ class InputInterpreter:
         self.input_raw = []
         self.ansi_escape_sequence = []
         self.payload = deque()
+        self.last_button_state = [0, 0, 0]
 
     # 9 Normal \x1B[ CbCxCy M , value + 32 -> ! is 1 - max 223 (255 - 32)
     # 1006 SGR  \x1B[<Pb;Px;Py[Mm] M - press m - release
     # 1015 URXVT \x1B[Pb;Px;Py M - not recommended, can be mistaken for DL
     # 1016 SGR-Pixel x,y are pixels instead of cells
+    # https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 
     def parse(self):
         # should append to self.event_list
@@ -166,6 +171,7 @@ class InputInterpreter:
             idx = 0
             values = [0, 0, 0]
             temp_word = ''
+            press = False
             for i in range(3, length + 1):
                 ch = self.ansi_escape_sequence[i]
                 if idx < 2:
@@ -175,6 +181,8 @@ class InputInterpreter:
                         continue
                 elif ch in ('m', 'M'):
                     values[idx] = int(temp_word, 10)
+                    if ch == 'M':
+                        press = True
                     break
                 temp_word += ch
             # msft
@@ -185,7 +193,7 @@ class InputInterpreter:
             # shift   4
             # meta    8
             # control 16
-            self.payload.append(MouseEvent(values[1], values[2], values[0]))
+            self.payload.append(MouseEvent.from_sgr_csi(values[0], values[1], values[2], press))
 
         # normal - TODO
         self.payload.extend(self.ansi_escape_sequence)
@@ -704,7 +712,9 @@ class ConsoleView:
         off = -2
         # with -1 - 2 lines nearest end of screen overwrite each other
         for event in events_list:
-            if isinstance(event, MouseEvent):
+            if isinstance(event, deque):
+                pass
+            elif isinstance(event, MouseEvent):
                 # we could use mask here, but then we will handle holding right button and
                 # pressing/releasing left button and other combinations and frankly i don't want to
                 # if (event.button_state & 0x1) == 0x1 and event.event_flags == 0:
@@ -865,10 +875,26 @@ class SizeChangeEvent(ConsoleEvent):
 
 
 class MouseEvent(ConsoleEvent):
-    def __init__(self, x, y, button_state, control_key_state, event_flags):
+    wheel_mask = 32
+    last_mask = 0x0
+
+    class Buttons(IntEnum):
+        LMB = 0,
+        RMB = 2,
+        MIDDLE = 1,
+        WHEEL_UP = 64,
+        WHEEL_DOWN = 65
+
+    class ControlKeys(Flag):
+        LEFT_CTRL = 0x8
+
+    def __init__(self, x, y, button, pressed, control_key_state, event_flags):
         super().__init__()
         self.coordinates = (x, y)
-        self.button_state = button_state
+        self.button = button
+        self.pressed = pressed
+        # based on https://docs.microsoft.com/en-us/windows/console/mouse-event-record-str
+        # but simplified - right ctrl => left ctrl
         self.control_key_state = control_key_state
         self.event_flags = event_flags
 
@@ -878,8 +904,19 @@ class MouseEvent(ConsoleEvent):
         return cls(mouse_event_record.dwMousePosition.X, mouse_event_record.dwMousePosition.Y)
 
     @classmethod
-    def from_sgr_csi(cls, buttons: int, x: int, y: int, press: bool):
-        return cls(x, y, None, None, None)
+    def from_sgr_csi(cls, button_hex: int, x: int, y: int, press: bool):
+        move_event = button_hex & 32
+        if move_event:
+            return None
+
+        wheel_event = button_hex & 64
+        ctrl_button = 0x8 if button_hex & 16 else 0x0
+
+        # remove ctrl button
+        button_hex = button_hex & (0xFFFFFFFF - 0x10)
+
+        button = MouseEvent.Buttons(button_hex)
+        return cls(x, y, button, press, ctrl_button, None)
 
 
 class KeyEvent(ConsoleEvent):
