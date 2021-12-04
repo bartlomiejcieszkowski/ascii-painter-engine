@@ -15,11 +15,8 @@ def main():
     tests_list = [name for _, name, _ in pkgutil.iter_modules([tests_path])]
     print(tests_list)
     parser = argparse.ArgumentParser(description='Run tests.')
-    parser.add_argument('--test', '-t', choices=tests_list)
+    parser.add_argument('--test', '-t', choices=tests_list, required=True)
     args = parser.parse_args()
-    if args.test is None:
-        parser.print_help()
-        sys.exit(-1)
 
     print(args.test)
     sys.path.append(os.path.abspath(os.path.join(os.path.abspath(__file__), os.pardir, '..')))
