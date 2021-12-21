@@ -48,17 +48,25 @@ class ConsoleBuffer:
 
     @staticmethod
     def fill_buffer(x, y, symbol=' ', border=True, debug=True):
+        buffer = ['']
         if debug:
             # print numbered border
-            buffer = '\n'
+            line = ''
             for col in range(0, x):
-                buffer += str(col % 10)
+                line += str(col % 10)
+            buffer.append(line)
             for row in range(1, y + 1):
-                buffer += '\n' + str(row % 10) + (symbol * (x - 2)) + str(row % 10)
+                 buffer.append(str(row % 10) + (symbol * (x - 2)) + str(row % 10))
             return buffer
         if border:
-            return ('\n' + (symbol * x)) * y
-        return ('\n' + (symbol * x)) * y
+            line = (symbol * x)
+            for i in range(y):
+                buffer.append(line)
+            return buffer
+        line = (symbol * x)
+        for i in range(y):
+            buffer.append(line)
+        return buffer
 
 
 class Alignment(Flag):
@@ -697,8 +705,8 @@ class ConsoleView:
         self.width, self.height = self.console.update_size()
         if reuse:
             self.brush.MoveCursor(0, 0)
-        print(ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' ', border=False, debug=False),
-              end='\n')
+        for line in ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' ', border=False, debug=False):
+            print(line, end='\n', flush=True)
         self.requires_draw = True
 
     def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
