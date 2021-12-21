@@ -980,15 +980,19 @@ class MouseEvent(ConsoleEvent):
 
     @classmethod
     def from_sgr_csi(cls, button_hex: int, x: int, y: int, press: bool):
-        move_event = button_hex & 32
+        move_event = button_hex & 0x20
         if move_event:
-            return None
+            # OPT1: dont support move
+            #return None
+            # OPT2: support move like normal click
+            button_hex = button_hex & (0xFFFFFFFF - 0x20)
+            # FINAL: TODO: pass it as Move mouse event and let
 
         if y < 2:
             return None
 
         wheel_event = button_hex & 64
-        ctrl_button = 0x8 if button_hex & 16 else 0x0
+        ctrl_button = 0x8 if button_hex & 0x10 else 0x0
 
         # remove ctrl button
         button_hex = button_hex & (0xFFFFFFFF - 0x10)
