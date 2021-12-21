@@ -483,6 +483,22 @@ class ConsoleWidgets:
                 self.console_view.brush.print(offset_str + self.border_get_bottom(width_middle), end='\n')
             pass
 
+        def local_point(self, point: Tuple[int, int]) -> Tuple[int, int]:
+            # NOTE: this won't return point if we touch border
+            border = 0 if self.borderless else 1
+            offset_rows = self.last_dimensions.row + border
+            offset_cols = self.last_dimensions.column + border
+            width = self.last_dimensions.width - (border * 2)
+            height = self.last_dimensions.height - (border * 2)
+
+            local_row = point[0] - offset_rows
+            local_column = point[1] - offset_cols
+
+            if local_column < 0 or local_column >= width or local_row < 0 or local_row >= height:
+                return None, None
+
+            return local_row, local_column
+
     class TextBox(BorderWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
                      dimensions: DimensionsFlag = DimensionsFlag.Absolute, borderless: bool = False):
