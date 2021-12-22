@@ -241,15 +241,19 @@ class MouseEvent(ConsoleEvent):
 
     @classmethod
     def from_sgr_csi(cls, button_hex: int, x: int, y: int, press: bool):
-        move_event = button_hex & 32
+        move_event = button_hex & 0x20
         if move_event:
-            return None
+            # OPT1: dont support move
+            # return None
+            # OPT2: support move like normal click
+            button_hex = button_hex & (0xFFFFFFFF - 0x20)
+            # FINAL: TODO: pass it as Move mouse event and let
 
         if y < 2:
             return None
 
-        wheel_event = button_hex & 64
-        ctrl_button = 0x8 if button_hex & 16 else 0x0
+        wheel_event = button_hex & 0x40
+        ctrl_button = 0x8 if button_hex & 0x10 else 0x0
 
         # remove ctrl button
         button_hex = button_hex & (0xFFFFFFFF - 0x10)
@@ -257,7 +261,7 @@ class MouseEvent(ConsoleEvent):
         button = MouseEvent.Buttons(button_hex)
         # sgr - 1-based
         # also we have 1st row inactive
-        return cls(x-1, y-2, button, press, ctrl_button)
+        return cls(x-1, y-2, button, press, ctrl_button, False)
 
 
 class KeyEvent(ConsoleEvent):
@@ -494,7 +498,7 @@ class ConsoleWidget(ABC):
     def get_widget(self, column: int, row: int) -> Union['ConsoleWidget', None]:
         return self if self.contains_point(column, row) else None
 
-    def handle(self, event: Event, coords: Tuple[int, int]):
+    def handle(self, event):
         # guess we should pass also unknown args
         # raise Exception('handle')
         pass
@@ -674,13 +678,14 @@ class ConsoleWidgets:
             width = self.last_dimensions.width - (border * 2)
             height = self.last_dimensions.height - (border * 2)
 
-            local_row = point[0] - offset_rows
-            local_column = point[1] - offset_cols
+            local_column = point[0] - offset_cols
+            local_row = point[1] - offset_rows
 
             if local_column < 0 or local_column >= width or local_row < 0 or local_row >= height:
                 return None, None
 
-            return local_row, local_column
+            # x, y
+            return local_column, local_row
 
     class TextBox(BorderWidget):
         def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
@@ -891,16 +896,16 @@ class ConsoleView:
                 return widget
         return None
 
-    def handle_click(self, column: int, row: int):
+    def handle_click(self, event: MouseEvent):
         # naive cache - based on clicked point
         # pro - we can create heat map
         # cons - it would be better with rectangle
-        widget = self.column_row_widget_cache.get((column, row), 1)
+        widget = self.column_row_widget_cache.get(event.coordinates, 1)
         if type(widget) is int:
-            widget = self.get_widget(column, row)
-            self.column_row_widget_cache[(column, row)] = widget
+            widget = self.get_widget(event.coordinates[0], event.coordinates[1])
+            self.column_row_widget_cache[event.coordinates] = widget
         if widget:
-            widget.handle(Event.MouseClick, (row, column))
+            widget.handle(event)
 
         widget = widget.title if widget else widget
         return widget
@@ -922,8 +927,8 @@ class ConsoleView:
                 # pressing/releasing left button and other combinations and frankly i don't want to
                 # if (event.button_state & 0x1) == 0x1 and event.event_flags == 0:
                 widget = None
-                if event.button == event.button.LMB and event.pressed is False:
-                    widget = self.handle_click(event.coordinates[0], event.coordinates[1])
+                if event.button == event.button.LMB:
+                    widget = self.handle_click(event)
 
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
                 if widget:
