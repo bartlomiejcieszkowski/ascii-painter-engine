@@ -910,14 +910,18 @@ class MouseEvent(ConsoleEvent):
     class ControlKeys(Flag):
         LEFT_CTRL = 0x8
 
-    def __init__(self, x, y, button: Buttons, pressed: bool, control_key_state):
+    def __init__(self, x, y, button: Buttons, pressed: bool, control_key_state, hover: bool):
         super().__init__()
         self.coordinates = (x, y)
         self.button = button
         self.pressed = pressed
+        self.hover = hover
         # based on https://docs.microsoft.com/en-us/windows/console/mouse-event-record-str
         # but simplified - right ctrl => left ctrl
         self.control_key_state = control_key_state
+
+    def __str__(self):
+        return f'x: {self.coordinates[0]} y: {self.coordinates[1]} button: {self.button} pressed: {self.pressed} control_key: {self.control_key_state} hover: {self.hover}'
 
     @classmethod
     def from_windows_event(cls, mouse_event_record: MOUSE_EVENT_RECORD):
@@ -925,12 +929,12 @@ class MouseEvent(ConsoleEvent):
         if mouse_event_record.dwMousePosition.Y == 0:
             return None
 
+        hover = False
         # zero indicates mouse button is pressed or released
         if mouse_event_record.dwEventFlags != 0:
             if mouse_event_record.dwEventFlags == 0x1:
-                # mouse move - TODO: hover implementation
-                pass
-            if mouse_event_record.dwEventFlags == 0x4:
+                hover = True
+            elif mouse_event_record.dwEventFlags == 0x4:
                 # mouse wheel move, high word of dwButtonState is dir, positive up
                 return cls(mouse_event_record.dwMousePosition.X,
                            mouse_event_record.dwMousePosition.Y - 1,
@@ -939,14 +943,12 @@ class MouseEvent(ConsoleEvent):
                            None
                            )
                 # TODO: high word
-                pass
             elif mouse_event_record.dwEventFlags == 0x8:
                 # horizontal mouse wheel - NOT SUPPORTED
-                pass
+                return None
             elif mouse_event_record.dwEventFlags == 0x2:
                 # double click - TODO: do we need this?
-                pass
-            return None
+                return None
 
         ret_list = []
 
@@ -955,6 +957,8 @@ class MouseEvent(ConsoleEvent):
         # we will have two different handlings on windows and linux
         # so we just translate it into serialized clicks
         changed_mask = mouse_event_record.dwButtonState ^ MouseEvent.last_mask
+        if hover:
+            changed_mask = mouse_event_record.dwButtonState
 
         if changed_mask == 0:
             return None
@@ -970,7 +974,8 @@ class MouseEvent(ConsoleEvent):
                             mouse_event_record.dwMousePosition.Y - 1,
                             MouseEvent.Buttons(idx),
                             press,
-                            None)
+                            None,
+                            hover)
                 ret_list.append(event)
 
         if len(ret_list) == 0:
