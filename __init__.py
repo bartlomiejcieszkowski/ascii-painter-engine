@@ -95,7 +95,12 @@ class DimensionsFlag(Flag):
     RelativeWidth = 1
     RelativeHeight = 2
     Relative = RelativeWidth | RelativeHeight
-    Fill = 4
+    FillWidth = 4
+    FillHeight = 8
+    Fill = FillWidth | FillHeight
+    FillWidthRelativeHeight = FillWidth | RelativeHeight
+    FillHeightRelativeWidth = FillHeight | RelativeWidth
+
 
 
 class COORD(ctypes.Structure):
@@ -501,7 +506,8 @@ class ConsoleWidget(ABC):
     def width_calculated(self):
         if DimensionsFlag.RelativeWidth in self.dimensions:
             return (self.width * self.parent.inner_width()) // 100
-        elif DimensionsFlag.Fill == self.dimensions:
+        elif DimensionsFlag.FillWidth in self.dimensions:
+            # TODO: this should be width left
             return self.parent.inner_width()
         else:
             return self.width
@@ -510,7 +516,8 @@ class ConsoleWidget(ABC):
         if DimensionsFlag.RelativeHeight in self.dimensions:
             # concern about rows - 1
             return (self.height * self.parent.inner_height()) // 100
-        elif DimensionsFlag.Fill == self.dimensions:
+        elif DimensionsFlag.FillHeight in self.dimensions:
+            # TODO: this should be height left
             return self.parent.inner_height()
         else:
             return self.height
