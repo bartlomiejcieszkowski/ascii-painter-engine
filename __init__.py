@@ -196,7 +196,8 @@ class MouseEvent(ConsoleEvent):
                            mouse_event_record.dwMousePosition.Y - 1,
                            MouseEvent.Buttons(MouseEvent.Buttons.WHEEL_UP + ((mouse_event_record.dwButtonState >> 31) & 0x1)),
                            True,
-                           None
+                           None,
+                           False
                            )
                 # TODO: high word
             elif mouse_event_record.dwEventFlags == 0x8:
