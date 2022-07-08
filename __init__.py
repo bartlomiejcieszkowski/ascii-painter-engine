@@ -927,9 +927,12 @@ class ConsoleView:
                 # we could use mask here, but then we will handle holding right button and
                 # pressing/releasing left button and other combinations and frankly i don't want to
                 # if (event.button_state & 0x1) == 0x1 and event.event_flags == 0:
-                widget = None
-                if event.button == event.button.LMB:
-                    widget = self.handle_click(event)
+                #widget = None
+                #if event.button == event.button.LMB:
+                #    widget = self.handle_click(event)
+                #elif event.button == event.button.RMB:
+                #    widget = self.handle_click(event)
+                widget = self.handle_click(event)
 
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
                 if widget:
