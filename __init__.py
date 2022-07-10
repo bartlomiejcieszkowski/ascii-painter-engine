@@ -154,7 +154,7 @@ class SizeChangeEvent(ConsoleEvent):
 
 
 class MouseEvent(ConsoleEvent):
-    last_mask = 0x0
+    last_mask = 0xFFFFFFFF
 
     dwButtonState_to_Buttons = [[0, 0], [1, 2], [2, 1]]
 
