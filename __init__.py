@@ -156,6 +156,8 @@ class SizeChangeEvent(ConsoleEvent):
 class MouseEvent(ConsoleEvent):
     last_mask = 0x0
 
+    dwButtonState_to_Buttons = [[0, 0], [1, 2], [2, 1]]
+
     class Buttons(IntEnum):
         LMB = 0,
         RMB = 2,
@@ -222,14 +224,14 @@ class MouseEvent(ConsoleEvent):
 
         MouseEvent.last_mask = mouse_event_record.dwButtonState
 
-        for idx in [0, 1, 2]:
-            changed = changed_mask & (0x1 << idx)
+        for dwButtonState, button in MouseEvent.dwButtonState_to_Buttons:
+            changed = changed_mask & (0x1 << dwButtonState)
             if changed:
-                press = (mouse_event_record.dwButtonState & (0x1 << idx) != 0)
+                press = (mouse_event_record.dwButtonState & (0x1 << dwButtonState) != 0)
 
                 event = cls(mouse_event_record.dwMousePosition.X,
                             mouse_event_record.dwMousePosition.Y - 1,
-                            MouseEvent.Buttons(idx),
+                            MouseEvent.Buttons(button),
                             press,
                             None,
                             hover)
