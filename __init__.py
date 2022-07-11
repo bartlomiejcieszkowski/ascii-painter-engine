@@ -437,7 +437,11 @@ class InputInterpreter:
                     continue
 
                 # pass input to handler
+                # here goes key, but what about ctrl, shift etc? these are regular AsciiChar equivalents
+                # no key up, only key down, is there \x sequence to enable extended? should be imho
                 pass
+            # DEBUG - dont do "".join, as the sequences are not printable
+            self.payload.append(str(self.input_raw))
             self.input_raw.clear()
 
             if len(self.payload) > 0:
@@ -926,6 +930,7 @@ class ConsoleView:
 
     def handle_events(self, events_list):
         off = -2
+        col = 0
         # with -1 - 2 lines nearest end of screen overwrite each other
         for event in events_list:
             if isinstance(event, deque):
@@ -954,6 +959,10 @@ class ConsoleView:
                 self.brush.MoveCursor(row=(self.console.rows + off) - 2)
                 self.debug_print(event)
             else:
+                self.brush.MoveCursor(row=(self.console.rows + off) - 0, column=col)
+                debug_string = f'type={type(event)} event="{event}", '
+                # col = len(debug_string)
+                self.debug_print(debug_string)
                 pass
 
     signal_sigint_ctx = None
