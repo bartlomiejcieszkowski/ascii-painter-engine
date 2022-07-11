@@ -268,14 +268,21 @@ class MouseEvent(ConsoleEvent):
 
 
 class KeyEvent(ConsoleEvent):
-    def __init__(self, key_down: bool, repeat_count: int, vk_code: int, vs_code: int, char, control_key_state):
+    def __init__(self, key_down: bool, repeat_count: int, vk_code: int, vs_code: int, char, wchar, control_key_state):
         super().__init__()
         self.key_down = key_down
         self.repeat_count = repeat_count
         self.vk_code = vk_code
         self.vs_code = vs_code
         self.char = char
+        self.wchar = wchar
         self.control_key_state = control_key_state
+
+    def __str__(self):
+        return f'KeyEvent: vk_code={self.vk_code} vs_code={self.vs_code} char="{self.char}" wchar="{self.wchar}" repeat={self.repeat_count}' \
+               f' ctrl=0x{self.control_key_state:X} key_down={self.key_down} '
+
+
 
 
 class Event(Enum):
@@ -945,9 +952,7 @@ class ConsoleView:
                 self.debug_print(f'size: {self.console.columns:3}x{self.console.rows:3}')
             elif isinstance(event, KeyEvent):
                 self.brush.MoveCursor(row=(self.console.rows + off) - 2)
-                self.debug_print(
-                    f'vk_code: {hex(event.vk_code)} pressed? {event.key_down}'
-                )
+                self.debug_print(event)
             else:
                 pass
 
@@ -1094,6 +1099,7 @@ class WindowsConsole(Console):
                                         vk_code=record.Event.KeyEvent.wVirtualKeyCode,
                                         vs_code=record.Event.KeyEvent.wVirtualScanCode,
                                         char=record.Event.KeyEvent.uChar.AsciiChar,
+                                        wchar=record.Event.KeyEvent.uChar.UnicodeChar,
                                         control_key_state=record.Event.KeyEvent.dwControlKeyState))
         else:
             pass
