@@ -391,6 +391,7 @@ class InputInterpreter:
             # meta    8
             # control 16
             self.payload.append(MouseEvent.from_sgr_csi(values[0], values[1], values[2], press))
+            return
 
         # normal - TODO
         self.payload.extend(self.ansi_escape_sequence)
