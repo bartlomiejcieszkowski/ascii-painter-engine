@@ -397,6 +397,25 @@ class InputInterpreter:
         self.payload.extend(self.ansi_escape_sequence)
         return
 
+    def parse_keyboard(self):
+        if len(self.input_raw) > 1:
+            # skip for now
+            self.payload.append(str(self.input_raw))
+            return
+        char = self.input_raw[0]
+        if char.isprintable() is False:
+            # skip for now
+            self.payload.append(str(self.input_raw))
+            return
+        self.payload.append(KeyEvent(key_down=True,
+                                        repeat_count=1,
+                                        vk_code=0xFFFF,
+                                        vs_code=0xFFFF,
+                                        char=char.encode(),
+                                        wchar=char,
+                                        control_key_state=0))
+        return
+
     def read(self, count: int = 1):
         # ESC [ followed by any number in range 0x30-0x3f, then any between 0x20-0x2f, and final byte 0x40-0x7e
         # TODO: this should be limited so if one pastes long, long text this wont create arbitrary size buffer
@@ -440,9 +459,10 @@ class InputInterpreter:
                 # pass input to handler
                 # here goes key, but what about ctrl, shift etc? these are regular AsciiChar equivalents
                 # no key up, only key down, is there \x sequence to enable extended? should be imho
+                self.parse_keyboard()
                 pass
             # DEBUG - dont do "".join, as the sequences are not printable
-            self.payload.append(str(self.input_raw))
+            #self.payload.append(str(self.input_raw))
             self.input_raw.clear()
 
             if len(self.payload) > 0:
