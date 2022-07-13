@@ -914,6 +914,11 @@ class LinuxConsole(Console):
         signal.signal(signal.SIGTSTP, signal.SIG_IGN)
         # enable mouse - xterm, sgr1006
         print('\x1B[?1003h\x1B[?1006h')
+        # focus event
+        # CSI I on focus
+        # CSI O on loss
+        #print('\x1B[?1004h')
+
 
     def read_events(self, callback, callback_ctx) -> bool:
         events_list = []
