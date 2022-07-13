@@ -312,6 +312,7 @@ class Rectangle:
         return not ((self.row > row) or (self.row + self.height - 1 < row) or (self.column > column) or (
                 self.column + self.width - 1 < column))
 
+from ascii_painter_engine.input_handling import VirtualKeyCodes
 
 class InputInterpreter:
     # linux
@@ -398,32 +399,27 @@ class InputInterpreter:
         if len_aes == 3:
             third_char = ord(self.ansi_escape_sequence[2])
             vk_code = 0
-            vs_code = 0
             char = b'\x00'
             wchar = ""
             if third_char == 65:
                 # A - Cursor Up
-                vk_code = 38
-                vs_code = 72
+                vk_code = VirtualKeyCodes.VK_UP
             elif third_char == 66:
                 # B - Cursor Down
-                vk_code = 40
-                vs_code = 80
+                vk_code = VirtualKeyCodes.VK_DOWN
             elif third_char == 67:
                 # C - Cursor Right
-                vk_code = 39
-                vs_code = 77
+                vk_code = VirtualKeyCodes.VK_RIGHT
             elif third_char == 68:
                 # D - Cursor Left
-                vk_code = 37
-                vs_code = 75
+                vk_code = VirtualKeyCodes.VK_LEFT
             else:
                 self.payload.append(str(self.input_raw))
                 return
             self.payload.append(KeyEvent(key_down=True,
                                         repeat_count=1,
                                         vk_code=vk_code,
-                                        vs_code=vs_code,
+                                        vs_code=vk_code,
                                         char=char,
                                         wchar=wchar,
                                         control_key_state=0))
@@ -467,7 +463,7 @@ class InputInterpreter:
         vk_code = wchar.lower()
         self.payload.append(KeyEvent(key_down=True,
                                         repeat_count=1,
-                                        vk_code=0xFFFF,
+                                        vk_code=VirtualKeyCodes.from_ascii(ord(wchar)),
                                         vs_code=ord(wchar),
                                         char=wchar.encode(),
                                         wchar=wchar,
