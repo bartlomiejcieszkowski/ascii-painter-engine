@@ -913,7 +913,7 @@ class LinuxConsole(Console):
         # focus event
         # CSI I on focus
         # CSI O on loss
-        #print('\x1B[?1004h')
+        print('\x1B[?1004h')
 
 
     def read_events(self, callback, callback_ctx) -> bool:
