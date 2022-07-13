@@ -353,16 +353,15 @@ class InputInterpreter:
 
         if length < 3:
             # minimal sequence is ESC [ (byte in range 0x40-0x7e)
-            self.payload.extend(self.ansi_escape_sequence)
+            self.payload.append(str(self.ansi_escape_sequence))
             return
 
         # we can safely skip first 2 bytes
-        # last byte will be character
-        if self.ansi_escape_sequence[-1] not in ('m', 'M'):
-            self.payload.extend(self.ansi_escape_sequence)
-            return
-
         if self.ansi_escape_sequence[2] == '<':
+            # for mouse last byte will be m or M character
+            if self.ansi_escape_sequence[-1] not in ('m', 'M'):
+                self.payload.append(str(self.ansi_escape_sequence))
+                return
             # SGR
             idx = 0
             values = [0, 0, 0]
@@ -394,7 +393,62 @@ class InputInterpreter:
             return
 
         # normal - TODO
-        self.payload.extend(self.ansi_escape_sequence)
+        # self.payload.extend(str(self.ansi_escape_sequence))
+        len_aes = len(self.ansi_escape_sequence)
+        if len_aes == 3:
+            third_char = ord(self.ansi_escape_sequence[2])
+            vk_code = 0
+            vs_code = 0
+            char = b'\x00'
+            wchar = ""
+            if third_char == 65:
+                # A - Cursor Up
+                vk_code = 38
+                vs_code = 72
+            elif third_char == 66:
+                # B - Cursor Down
+                vk_code = 40
+                vs_code = 80
+            elif third_char == 67:
+                # C - Cursor Right
+                vk_code = 39
+                vs_code = 77
+            elif third_char == 68:
+                # D - Cursor Left
+                vk_code = 37
+                vs_code = 75
+            else:
+                self.payload.append(str(self.input_raw))
+                return
+            self.payload.append(KeyEvent(key_down=True,
+                                        repeat_count=1,
+                                        vk_code=vk_code,
+                                        vs_code=vs_code,
+                                        char=char,
+                                        wchar=wchar,
+                                        control_key_state=0))
+        elif len_aes == 4:
+            # 1 ~ Home
+            # 2 ~ Insert
+            # 3 ~ Delete
+            # 4 ~ End
+            # 5 ~ PageUp
+            # 6 ~ PageDown
+            pass
+        elif len_aes == 5:
+            # 1 1 ~ F1
+            # ....
+            # 1 5 ~ F5
+            # 1 7 ~ F6
+            # 1 8 ~ F7
+            # 1 9 ~ F8
+            # 2 0 ~ F9
+            # 2 1 ~ F10
+            # 2 3 ~ F11
+            # 2 3 ~ F12
+            pass
+
+        self.payload.append(str(self.input_raw))
         return
 
     def parse_keyboard(self):
@@ -402,17 +456,21 @@ class InputInterpreter:
             # skip for now
             self.payload.append(str(self.input_raw))
             return
-        char = self.input_raw[0]
-        if char.isprintable() is False:
+        wchar = self.input_raw[0]
+        if wchar.isprintable() is False:
             # skip for now
             self.payload.append(str(self.input_raw))
             return
+        # https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+        # key a is for both upper and lower case
+        # wchar.lower()
+        vk_code = wchar.lower()
         self.payload.append(KeyEvent(key_down=True,
                                         repeat_count=1,
                                         vk_code=0xFFFF,
-                                        vs_code=0xFFFF,
-                                        char=char.encode(),
-                                        wchar=char,
+                                        vs_code=ord(wchar),
+                                        char=wchar.encode(),
+                                        wchar=wchar,
                                         control_key_state=0))
         return
 
