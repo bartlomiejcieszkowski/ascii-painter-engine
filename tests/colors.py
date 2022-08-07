@@ -4,7 +4,7 @@ import ascii_painter_engine as ape
 
 
 def test() -> int:
-    cv = ape.ConsoleView()
+    cv = ape.App()
     if cv.color_mode() is False:
         print('Abort')
         return -1

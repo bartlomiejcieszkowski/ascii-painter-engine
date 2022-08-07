@@ -2,7 +2,7 @@ import ascii_painter_engine as ape
 
 
 def test():
-    console_view = ape.ConsoleView(log=ape.log.log)
+    console_view = ape.App(log=ape.log.log)
     console_view.color_mode()
 
     # TODO: Percent of window, fill

@@ -5,7 +5,7 @@ import ascii_painter_engine as ape
 
 
 def test(handle_sigint=True):
-    console_view = ape.ConsoleView(log=ape.log.log)
+    console_view = ape.App(log=ape.log.log)
     console_view.color_mode()
 
     widget = ape.ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=4, width=20,

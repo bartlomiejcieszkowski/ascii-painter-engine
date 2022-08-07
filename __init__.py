@@ -937,10 +937,10 @@ def no_print(fmt, *args):
     pass
 
 
-class ConsoleView:
+class App:
     log = no_print
     def __init__(self, log=no_print):
-        ConsoleView.log = log
+        App.log = log
         self.log = log
 
         if is_windows():
@@ -1049,7 +1049,7 @@ class ConsoleView:
 
     @staticmethod
     def signal_sigint_handler(signum, frame):
-        ConsoleView.signal_sigint_ctx.signal_sigint()
+        App.signal_sigint_ctx.signal_sigint()
 
     def signal_sigint(self):
         self.run = False
@@ -1058,8 +1058,8 @@ class ConsoleView:
 
     def loop(self, handle_sigint) -> int:
         if handle_sigint:
-            ConsoleView.signal_sigint_ctx = self
-            signal.signal(signal.SIGINT, ConsoleView.signal_sigint_handler)
+            App.signal_sigint_ctx = self
+            signal.signal(signal.SIGINT, App.signal_sigint_handler)
 
         self.run = True
 
