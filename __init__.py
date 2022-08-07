@@ -56,7 +56,7 @@ class ConsoleBuffer:
                 line += str(col % 10)
             buffer.append(line)
             for row in range(1, y + 1):
-                 buffer.append(str(row % 10) + (symbol * (x - 2)) + str(row % 10))
+                buffer.append(str(row % 10) + (symbol * (x - 2)) + str(row % 10))
             return buffer
         if border:
             line = (symbol * x)
@@ -100,7 +100,6 @@ class DimensionsFlag(Flag):
     Fill = FillWidth | FillHeight
     FillWidthRelativeHeight = FillWidth | RelativeHeight
     FillHeightRelativeWidth = FillHeight | RelativeWidth
-
 
 
 class COORD(ctypes.Structure):
@@ -196,7 +195,8 @@ class MouseEvent(ConsoleEvent):
                 # mouse wheel move, high word of dwButtonState is dir, positive up
                 return cls(mouse_event_record.dwMousePosition.X,
                            mouse_event_record.dwMousePosition.Y - 1,
-                           MouseEvent.Buttons(MouseEvent.Buttons.WHEEL_UP + ((mouse_event_record.dwButtonState >> 31) & 0x1)),
+                           MouseEvent.Buttons(
+                               MouseEvent.Buttons.WHEEL_UP + ((mouse_event_record.dwButtonState >> 31) & 0x1)),
                            True,
                            None,
                            False
@@ -264,7 +264,7 @@ class MouseEvent(ConsoleEvent):
         button = MouseEvent.Buttons(button_hex)
         # sgr - 1-based
         # also we have 1st row inactive
-        return cls(x-1, y-2, button, press, ctrl_button, False)
+        return cls(x - 1, y - 2, button, press, ctrl_button, False)
 
 
 class KeyEvent(ConsoleEvent):
@@ -281,8 +281,6 @@ class KeyEvent(ConsoleEvent):
     def __str__(self):
         return f'KeyEvent: vk_code={self.vk_code} vs_code={self.vs_code} char="{self.char}" wchar="{self.wchar}" repeat={self.repeat_count}' \
                f' ctrl=0x{self.control_key_state:X} key_down={self.key_down} '
-
-
 
 
 class Event(Enum):
@@ -312,7 +310,9 @@ class Rectangle:
         return not ((self.row > row) or (self.row + self.height - 1 < row) or (self.column > column) or (
                 self.column + self.width - 1 < column))
 
+
 from ascii_painter_engine.input_handling import VirtualKeyCodes
+
 
 class InputInterpreter:
     # linux
@@ -417,12 +417,12 @@ class InputInterpreter:
                 self.payload.append(str(self.input_raw))
                 return
             self.payload.append(KeyEvent(key_down=True,
-                                        repeat_count=1,
-                                        vk_code=vk_code,
-                                        vs_code=vk_code,
-                                        char=char,
-                                        wchar=wchar,
-                                        control_key_state=0))
+                                         repeat_count=1,
+                                         vk_code=vk_code,
+                                         vs_code=vk_code,
+                                         char=char,
+                                         wchar=wchar,
+                                         control_key_state=0))
         elif len_aes == 4:
             # 1 ~ Home
             # 2 ~ Insert
@@ -462,12 +462,12 @@ class InputInterpreter:
         # wchar.lower()
         vk_code = wchar.lower()
         self.payload.append(KeyEvent(key_down=True,
-                                        repeat_count=1,
-                                        vk_code=VirtualKeyCodes.from_ascii(ord(wchar)),
-                                        vs_code=ord(wchar),
-                                        char=wchar.encode(),
-                                        wchar=wchar,
-                                        control_key_state=0))
+                                     repeat_count=1,
+                                     vk_code=VirtualKeyCodes.from_ascii(ord(wchar)),
+                                     vs_code=ord(wchar),
+                                     char=wchar.encode(),
+                                     wchar=wchar,
+                                     control_key_state=0))
         return
 
     def read(self, count: int = 1):
@@ -516,7 +516,7 @@ class InputInterpreter:
                 self.parse_keyboard()
                 pass
             # DEBUG - dont do "".join, as the sequences are not printable
-            #self.payload.append(str(self.input_raw))
+            # self.payload.append(str(self.input_raw))
             self.input_raw.clear()
 
             if len(self.payload) > 0:
@@ -915,7 +915,6 @@ class LinuxConsole(Console):
         # CSI O on loss
         print('\x1B[?1004h')
 
-
     def read_events(self, callback, callback_ctx) -> bool:
         events_list = []
 
@@ -939,6 +938,7 @@ def no_print(fmt, *args):
 
 class App:
     log = no_print
+
     def __init__(self, log=no_print):
         App.log = log
         self.log = log
@@ -1021,16 +1021,17 @@ class App:
                 # we could use mask here, but then we will handle holding right button and
                 # pressing/releasing left button and other combinations and frankly i don't want to
                 # if (event.button_state & 0x1) == 0x1 and event.event_flags == 0:
-                #widget = None
-                #if event.button == event.button.LMB:
+                # widget = None
+                # if event.button == event.button.LMB:
                 #    widget = self.handle_click(event)
-                #elif event.button == event.button.RMB:
+                # elif event.button == event.button.RMB:
                 #    widget = self.handle_click(event)
                 widget = self.handle_click(event)
 
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
                 if widget:
-                    self.log(f'x: {event.coordinates[0]} y: {event.coordinates[1]} button:{event.button} press:{event.pressed} widget:{widget}')
+                    self.log(
+                        f'x: {event.coordinates[0]} y: {event.coordinates[1]} button:{event.button} press:{event.pressed} widget:{widget}')
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
                 self.brush.MoveCursor(row=(self.console.rows + off) - 0)
