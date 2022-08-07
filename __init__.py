@@ -528,14 +528,14 @@ class InputInterpreter:
 
 
 class ConsoleWidget(ABC):
-    def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
+    def __init__(self, app, x: int, y: int, width: int, height: int, alignment: Alignment,
                  dimensions: DimensionsFlag = DimensionsFlag.Absolute):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.alignment = alignment
-        self.console_view = console_view
+        self.app = app
         self.dimensions = dimensions
         self.parent = None
         self.handlers = {}
@@ -621,9 +621,9 @@ class ConsoleWidget(ABC):
 
 class ConsoleWidgets:
     class BorderWidget(ConsoleWidget):
-        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
+        def __init__(self, app, x: int, y: int, width: int, height: int, alignment: Alignment,
                      dimensions: DimensionsFlag = DimensionsFlag.Absolute, borderless: bool = False):
-            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
+            super().__init__(app=app, x=x, y=y, width=width, height=height, alignment=alignment,
                              dimensions=dimensions)
             self.borderless = borderless
             self.title = ''
@@ -691,23 +691,23 @@ class ConsoleWidgets:
             self.border[0].color = color
 
         def border_get_top(self, width_middle, title):
-            return self.console_view.brush.FgBgColor(self.border[1].color) + \
+            return self.app.brush.FgBgColor(self.border[1].color) + \
                    self.border[1].c + \
-                   self.console_view.brush.FgBgColor(self.border[5].color) + \
+                   self.app.brush.FgBgColor(self.border[5].color) + \
                    ((title[:width_middle - 2] + '..') if len(title) > width_middle else title) + \
                    (self.border[5].c * (width_middle - len(self.title))) + \
-                   self.console_view.brush.FgBgColor(self.border[2].color) + \
+                   self.app.brush.FgBgColor(self.border[2].color) + \
                    self.border[2].c + \
-                   self.console_view.brush.ResetColor()
+                   self.app.brush.ResetColor()
 
         def border_get_bottom(self, width_middle):
-            return self.console_view.brush.FgBgColor(self.border[3].color) + \
+            return self.app.brush.FgBgColor(self.border[3].color) + \
                    self.border[3].c + \
-                   self.console_view.brush.FgBgColor(self.border[8].color) + \
+                   self.app.brush.FgBgColor(self.border[8].color) + \
                    (self.border[8].c * width_middle) + \
-                   self.console_view.brush.FgBgColor(self.border[4].color) + \
+                   self.app.brush.FgBgColor(self.border[4].color) + \
                    self.border[4].c + \
-                   self.console_view.brush.ResetColor()
+                   self.app.brush.ResetColor()
 
         def draw(self):
             self.draw_bordered(title=self.title)
@@ -720,15 +720,15 @@ class ConsoleWidgets:
             width_middle = width
             if self.borderless is False:
                 width_middle -= 2
-            self.console_view.brush.MoveCursor(row=offset_rows)
-            offset_str = self.console_view.brush.MoveRight(offset_cols)
+            self.app.brush.MoveCursor(row=offset_rows)
+            offset_str = self.app.brush.MoveRight(offset_cols)
             if self.borderless is False:
-                self.console_view.brush.print(offset_str + self.border_get_top(width_middle, title), end='')
+                self.app.brush.print(offset_str + self.border_get_top(width_middle, title), end='')
             text = inside_text
             start = 0 if self.borderless else 1
             end = height if self.borderless else (height - 1)
             for h in range(start, end):
-                self.console_view.brush.MoveCursor(row=offset_rows + h)
+                self.app.brush.MoveCursor(row=offset_rows + h)
                 # split string ?
                 print_text = text
                 if len(text) > width_middle and len(text) != 0:
@@ -741,22 +741,22 @@ class ConsoleWidgets:
                 line = offset_str
 
                 if self.borderless is False:
-                    line += self.console_view.brush.FgBgColor(self.border[6].color) + \
+                    line += self.app.brush.FgBgColor(self.border[6].color) + \
                             self.border[6].c
 
-                line += self.console_view.brush.FgBgColor(self.border[0].color) + print_text + \
+                line += self.app.brush.FgBgColor(self.border[0].color) + print_text + \
                         (self.border[0].c * leftover)
 
                 if self.borderless is False:
-                    line += self.console_view.brush.FgBgColor(self.border[7].color) + \
+                    line += self.app.brush.FgBgColor(self.border[7].color) + \
                             self.border[7].c
 
-                line += self.console_view.brush.ResetColor()
-                self.console_view.brush.print(line, end='')
+                line += self.app.brush.ResetColor()
+                self.app.brush.print(line, end='')
 
             if self.borderless is False:
-                self.console_view.brush.MoveCursor(row=offset_rows + height - 1)
-                self.console_view.brush.print(offset_str + self.border_get_bottom(width_middle), end='\n')
+                self.app.brush.MoveCursor(row=offset_rows + height - 1)
+                self.app.brush.print(offset_str + self.border_get_bottom(width_middle), end='\n')
             pass
 
         def local_point(self, point: Tuple[int, int]) -> Tuple[int, int]:
@@ -777,9 +777,9 @@ class ConsoleWidgets:
             return local_column, local_row
 
     class TextBox(BorderWidget):
-        def __init__(self, console_view, x: int, y: int, width: int, height: int, alignment: Alignment,
+        def __init__(self, app, x: int, y: int, width: int, height: int, alignment: Alignment,
                      dimensions: DimensionsFlag = DimensionsFlag.Absolute, borderless: bool = False):
-            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
+            super().__init__(app=app, x=x, y=y, width=width, height=height, alignment=alignment,
                              dimensions=dimensions, borderless=borderless)
             self.text = ''
 
@@ -787,10 +787,10 @@ class ConsoleWidgets:
             return self.draw_bordered(inside_text=self.text, title=self.title)
 
     class Pane(BorderWidget):
-        def __init__(self, console_view, x: int, y: int, width: int, height: int,
+        def __init__(self, app, x: int, y: int, width: int, height: int,
                      alignment: Alignment, dimensions: DimensionsFlag = DimensionsFlag.Absolute,
                      borderless: bool = False):
-            super().__init__(console_view=console_view, x=x, y=y, width=width, height=height, alignment=alignment,
+            super().__init__(app=app, x=x, y=y, width=width, height=height, alignment=alignment,
                              dimensions=dimensions, borderless=borderless)
             self.widgets = []
 
@@ -824,9 +824,9 @@ class ConsoleWidgets:
 
 
 class Console:
-    def __init__(self, console_view, debug=True):
+    def __init__(self, app, debug=True):
         # TODO: this would print without vt enabled yet update state if vt enabled in brush?
-        self.console_view = console_view
+        self.app = app
         self.columns, self.rows = self.get_size()
         self.vt_supported = False
         self.debug = debug
@@ -858,14 +858,14 @@ class Console:
 
 class LinuxConsole(Console):
     # TODO
-    def __init__(self, console_view):
-        super().__init__(console_view)
+    def __init__(self, app):
+        super().__init__(app)
         self.is_interactive_mode = False
         self.window_changed = False
         self.prev_fl = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
         new_fl = self.prev_fl | os.O_NONBLOCK
         fcntl.fcntl(sys.stdin, fcntl.F_SETFL, new_fl)
-        self.console_view.log(f'stdin fl: 0x{self.prev_fl:X} -> 0x{new_fl:X}')
+        self.app.log(f'stdin fl: 0x{self.prev_fl:X} -> 0x{new_fl:X}')
         self.prev_tc = termios.tcgetattr(sys.stdin)
         new_tc = termios.tcgetattr(sys.stdin)
         # manipulating lflag
@@ -875,9 +875,9 @@ class LinuxConsole(Console):
         new_tc[6][termios.VMIN] = 0  # cc - minimum bytes
         new_tc[6][termios.VTIME] = 0  # cc - minimum time
         termios.tcsetattr(sys.stdin, termios.TCSANOW, new_tc)  # TCSADRAIN?
-        self.console_view.log(f'stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}')
-        self.console_view.log(f'stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}')
-        self.console_view.log(f'stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}')
+        self.app.log(f'stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}')
+        self.app.log(f'stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}')
+        self.app.log(f'stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}')
 
         self.input_interpreter = InputInterpreter(sys.stdin)
 
@@ -1128,8 +1128,8 @@ class App:
 
 
 class WindowsConsole(Console):
-    def __init__(self, console_view):
-        super().__init__(console_view)
+    def __init__(self, app):
+        super().__init__(app)
         self.kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
         set_console_mode_proto = ctypes.WINFUNCTYPE(
             ctypes.wintypes.BOOL,
