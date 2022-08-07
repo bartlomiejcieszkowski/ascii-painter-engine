@@ -2,14 +2,14 @@ import ascii_painter_engine as ape
 
 
 def test():
-    console_view = ape.App(log=ape.log.log)
-    console_view.color_mode()
+    app = ape.App(log=ape.log.log)
+    app.color_mode()
 
-    pane = ape.ConsoleWidgets.Pane(console_view=console_view, x=0, y=1, height=80, width=100,
+    pane = ape.ConsoleWidgets.Pane(app=app, x=0, y=1, height=80, width=100,
                                    alignment=ape.Alignment.LeftTop)
     pane.title = 'Test'
 
-    widget = ape.ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=20, width=40, alignment=ape.Alignment.FloatLeftTop)
+    widget = ape.ConsoleWidgets.TextBox(app=app, x=0, y=0, height=20, width=40, alignment=ape.Alignment.FloatLeftTop)
     widget.text = '1st float'
     pane.add_widget(widget)
 
@@ -20,7 +20,7 @@ def test():
     #
 
 
-    widget = ape.ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=30, width=60,
+    widget = ape.ConsoleWidgets.TextBox(app=app, x=0, y=0, height=30, width=60,
                                         alignment=ape.Alignment.FloatLeftTop)
     widget.text = '2nd float'
     pane.add_widget(widget)
@@ -31,7 +31,7 @@ def test():
     #     222222
     #
 
-    widget = ape.ConsoleWidgets.TextBox(console_view=console_view, x=0, y=0, height=20, width=30,
+    widget = ape.ConsoleWidgets.TextBox(app=app, x=0, y=0, height=20, width=30,
                                         alignment=ape.Alignment.FloatLeftTop)
     widget.text = '3rd float'
     pane.add_widget(widget)
@@ -43,6 +43,6 @@ def test():
     # 333
 
 
-    console_view.add_widget(pane)
+    app.add_widget(pane)
 
-    console_view.run()
+    app.run()
