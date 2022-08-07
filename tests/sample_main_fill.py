@@ -12,4 +12,4 @@ def test():
 
     console_view.add_widget(pane)
 
-    console_view.loop(True)
+    console_view.run()

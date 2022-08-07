@@ -950,10 +950,11 @@ class App:
         self.widgets = []
         self.brush = Brush(self.console.vt_supported)
         self.debug_colors = ConsoleColor(None, None)
-        self.run = True
+        self.running = False
         self.requires_draw = False
         self.width = 0
         self.height = 0
+        self.handle_sigint = True
 
         self.mouse_lmb_state = 0
 
@@ -1053,16 +1054,19 @@ class App:
         App.signal_sigint_ctx.signal_sigint()
 
     def signal_sigint(self):
-        self.run = False
+        self.running = False
         # TODO: read_events is blocking, sos this one needs to be somehow inject, otherwise we wait for first new event
         # works accidentally - as releasing ctrl-c cause key event ;)
 
-    def loop(self, handle_sigint) -> int:
-        if handle_sigint:
+    def run(self) -> int:
+        if self.running is True:
+            return -1
+
+        if self.handle_sigint:
             App.signal_sigint_ctx = self
             signal.signal(signal.SIGINT, App.signal_sigint_handler)
 
-        self.run = True
+        self.running = True
 
         # create blank canvas
         self.clear(reuse=False)
@@ -1072,7 +1076,7 @@ class App:
         self.brush.HideCursor()
         self.handle_events([SizeChangeEvent()])
         i = 0
-        while self.run:
+        while self.running:
             if self.requires_draw:
                 self.column_row_widget_cache.clear()
                 for widget in self.widgets:

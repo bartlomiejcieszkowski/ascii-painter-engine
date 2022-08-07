@@ -38,4 +38,5 @@ def test(handle_sigint=True):
     widget.borderless = True
     pane.add_widget(widget)
 
-    console_view.loop(handle_sigint)
+    console_view.handle_sigint = handle_sigint
+    console_view.run()
