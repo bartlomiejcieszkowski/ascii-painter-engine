@@ -1,7 +1,7 @@
 import ascii_painter_engine as ape
 
 
-def test():
+def test(handle_sigint=True, demo_time_s=None):
     app = ape.App(log=ape.log.log)
     app.color_mode()
 
@@ -44,5 +44,8 @@ def test():
 
 
     app.add_widget(pane)
+
+    app.handle_sigint = handle_sigint
+    app.demo_mode(demo_time_s)
 
     app.run()

@@ -20,6 +20,7 @@ import os
 import ctypes
 import ctypes.wintypes
 import sys
+import time
 
 from enum import Flag, Enum, auto, IntEnum
 from abc import ABC, abstractmethod
@@ -29,6 +30,8 @@ import signal
 from typing import Tuple, Union, List
 
 import ascii_painter_engine.log
+
+import threading
 
 
 def is_windows() -> bool:
@@ -936,6 +939,14 @@ def no_print(fmt, *args):
     pass
 
 
+def demo_fun(app):
+    app.demo_event.wait(app.demo_time_s)
+    print(f'DEMO MODE - {app.demo_time_s}s - END')
+    if app.demo_event.is_set():
+        return
+    app.running = False
+
+
 class App:
     log = no_print
 
@@ -959,6 +970,10 @@ class App:
         self.mouse_lmb_state = 0
 
         self.column_row_widget_cache = {}
+
+        self.demo_thread = None
+        self.demo_time_s = None
+        self.demo_event = None
 
     def inner_x(self):
         return 0
@@ -1058,6 +1073,9 @@ class App:
         # TODO: read_events is blocking, sos this one needs to be somehow inject, otherwise we wait for first new event
         # works accidentally - as releasing ctrl-c cause key event ;)
 
+    def demo_mode(self, time_s):
+        self.demo_time_s = time_s
+
     def run(self) -> int:
         if self.running is True:
             return -1
@@ -1065,6 +1083,11 @@ class App:
         if self.handle_sigint:
             App.signal_sigint_ctx = self
             signal.signal(signal.SIGINT, App.signal_sigint_handler)
+
+        if self.demo_time_s and self.demo_time_s > 0:
+            self.demo_event = threading.Event()
+            self.demo_thread = threading.Thread(target=demo_fun, args=(self,))
+            self.demo_thread.start()
 
         self.running = True
 
@@ -1089,6 +1112,11 @@ class App:
             if not self.console.read_events(self.handle_events_callback, self):
                 break
             i += 1
+
+        if self.demo_thread and self.demo_thread.is_alive():
+            self.demo_event.set()
+            self.demo_thread.join()
+
         # Move to the end, so we wont end up writing in middle of screen
         self.brush.MoveCursor(self.console.rows - 1)
         self.brush.ShowCursor()
@@ -1165,6 +1193,15 @@ class WindowsConsole(Console):
         self.readConsoleInput = read_console_input_proto(('ReadConsoleInputW', self.kernel32),
                                                          read_console_input_params)
 
+        get_number_of_console_input_events_proto = ctypes.WINFUNCTYPE(
+            ctypes.wintypes.BOOL,
+            ctypes.wintypes.HANDLE,
+            ctypes.wintypes.LPDWORD
+        )
+        get_number_of_console_input_events_params = (1, "hConsoleInput", 0), (1, "lpcNumberOfEvents", 0)
+        self.getNumberOfConsoleInputEvents = get_number_of_console_input_events_proto(('GetNumberOfConsoleInputEvents', self.kernel32),
+                                                         get_number_of_console_input_events_params)
+
     KEY_EVENT = 0x1
     MOUSE_EVENT = 0x2
     WINDOW_BUFFER_SIZE_EVENT = 0x4
@@ -1178,28 +1215,32 @@ class WindowsConsole(Console):
         # TODO: N events
         record = INPUT_RECORD()
         events = ctypes.wintypes.DWORD(0)
-        ret_val = self.readConsoleInput(self.consoleHandleIn, ctypes.byref(record), 1, ctypes.byref(events))
-        # print(f'\rret:{ret_val} EventType:{hex(record.EventType)}', end='')
+        # this will eat cycles in idle...
+        ret_val = self.getNumberOfConsoleInputEvents(self.consoleHandleIn, ctypes.byref(events))
+        if events.value > 0:
+            # this is blocking -vvvv
+            ret_val = self.readConsoleInput(self.consoleHandleIn, ctypes.byref(record), 1, ctypes.byref(events))
+            # print(f'\rret:{ret_val} EventType:{hex(record.EventType)}', end='')
 
-        if record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
-            events_list.append(SizeChangeEvent())
-        elif record.EventType == self.MOUSE_EVENT:
-            event = MouseEvent.from_windows_event(record.Event.MouseEvent)
-            if event:
-                events_list.append(event)
-        elif record.EventType == self.KEY_EVENT:
-            events_list.append(KeyEvent(key_down=record.Event.KeyEvent.bKeyDown,
-                                        repeat_count=record.Event.KeyEvent.wRepeatCount,
-                                        vk_code=record.Event.KeyEvent.wVirtualKeyCode,
-                                        vs_code=record.Event.KeyEvent.wVirtualScanCode,
-                                        char=record.Event.KeyEvent.uChar.AsciiChar,
-                                        wchar=record.Event.KeyEvent.uChar.UnicodeChar,
-                                        control_key_state=record.Event.KeyEvent.dwControlKeyState))
-        else:
-            pass
+            if record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
+                events_list.append(SizeChangeEvent())
+            elif record.EventType == self.MOUSE_EVENT:
+                event = MouseEvent.from_windows_event(record.Event.MouseEvent)
+                if event:
+                    events_list.append(event)
+            elif record.EventType == self.KEY_EVENT:
+                events_list.append(KeyEvent(key_down=record.Event.KeyEvent.bKeyDown,
+                                            repeat_count=record.Event.KeyEvent.wRepeatCount,
+                                            vk_code=record.Event.KeyEvent.wVirtualKeyCode,
+                                            vs_code=record.Event.KeyEvent.wVirtualScanCode,
+                                            char=record.Event.KeyEvent.uChar.AsciiChar,
+                                            wchar=record.Event.KeyEvent.uChar.UnicodeChar,
+                                            control_key_state=record.Event.KeyEvent.dwControlKeyState))
+            else:
+                pass
 
-        if len(events_list):
-            callback(callback_ctx, events_list)
+            if len(events_list):
+                callback(callback_ctx, events_list)
         return True
 
     def GetConsoleMode(self, handle) -> int:
