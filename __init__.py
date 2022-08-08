@@ -876,7 +876,7 @@ class LinuxConsole(Console):
         new_tc[3] = new_tc[3] & ~termios.ICANON  # disable canonical mode - input available immediately
         # cc
         new_tc[6][termios.VMIN] = 0  # cc - minimum bytes
-        new_tc[6][termios.VTIME] = 0  # cc - minimum time
+        new_tc[6][termios.VTIME] = 5  # cc - minimum time -> blocking with timeout, unit is 0.1s, todo: fine tune
         termios.tcsetattr(sys.stdin, termios.TCSANOW, new_tc)  # TCSADRAIN?
         self.app.log(f'stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}')
         self.app.log(f'stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}')
