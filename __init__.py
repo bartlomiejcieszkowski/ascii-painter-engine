@@ -1088,6 +1088,8 @@ class App:
             self.demo_event = threading.Event()
             self.demo_thread = threading.Thread(target=demo_fun, args=(self,))
             self.demo_thread.start()
+            if type(self.console) is WindowsConsole:
+                self.console.blocking_input(False)
 
         self.running = True
 
@@ -1201,6 +1203,7 @@ class WindowsConsole(Console):
         get_number_of_console_input_events_params = (1, "hConsoleInput", 0), (1, "lpcNumberOfEvents", 0)
         self.getNumberOfConsoleInputEvents = get_number_of_console_input_events_proto(('GetNumberOfConsoleInputEvents', self.kernel32),
                                                          get_number_of_console_input_events_params)
+        self.blocking = True
 
     KEY_EVENT = 0x1
     MOUSE_EVENT = 0x2
@@ -1210,37 +1213,45 @@ class WindowsConsole(Console):
         self.SetWindowChangeSizeEvents(True)
         self.SetMouseInput(True)
 
+    def blocking_input(self, blocking: bool):
+        self.blocking = blocking
+
+    def read_console_input(self):
+        record = INPUT_RECORD()
+        number_of_events = ctypes.wintypes.DWORD(0)
+        if self.blocking is False:
+            ret_val = self.getNumberOfConsoleInputEvents(self.consoleHandleIn, ctypes.byref(number_of_events))
+            if number_of_events.value == 0:
+                return None
+
+        ret_val = self.readConsoleInput(self.consoleHandleIn, ctypes.byref(record), 1, ctypes.byref(number_of_events))
+        return record
+
     def read_events(self, callback, callback_ctx) -> bool:
         events_list = []
         # TODO: N events
-        record = INPUT_RECORD()
-        events = ctypes.wintypes.DWORD(0)
-        # this will eat cycles in idle...
-        ret_val = self.getNumberOfConsoleInputEvents(self.consoleHandleIn, ctypes.byref(events))
-        if events.value > 0:
-            # this is blocking -vvvv
-            ret_val = self.readConsoleInput(self.consoleHandleIn, ctypes.byref(record), 1, ctypes.byref(events))
-            # print(f'\rret:{ret_val} EventType:{hex(record.EventType)}', end='')
+        record = self.read_console_input()
+        if record is None:
+            pass
+        elif record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
+            events_list.append(SizeChangeEvent())
+        elif record.EventType == self.MOUSE_EVENT:
+            event = MouseEvent.from_windows_event(record.Event.MouseEvent)
+            if event:
+                events_list.append(event)
+        elif record.EventType == self.KEY_EVENT:
+            events_list.append(KeyEvent(key_down=record.Event.KeyEvent.bKeyDown,
+                                        repeat_count=record.Event.KeyEvent.wRepeatCount,
+                                        vk_code=record.Event.KeyEvent.wVirtualKeyCode,
+                                        vs_code=record.Event.KeyEvent.wVirtualScanCode,
+                                        char=record.Event.KeyEvent.uChar.AsciiChar,
+                                        wchar=record.Event.KeyEvent.uChar.UnicodeChar,
+                                        control_key_state=record.Event.KeyEvent.dwControlKeyState))
+        else:
+            pass
 
-            if record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
-                events_list.append(SizeChangeEvent())
-            elif record.EventType == self.MOUSE_EVENT:
-                event = MouseEvent.from_windows_event(record.Event.MouseEvent)
-                if event:
-                    events_list.append(event)
-            elif record.EventType == self.KEY_EVENT:
-                events_list.append(KeyEvent(key_down=record.Event.KeyEvent.bKeyDown,
-                                            repeat_count=record.Event.KeyEvent.wRepeatCount,
-                                            vk_code=record.Event.KeyEvent.wVirtualKeyCode,
-                                            vs_code=record.Event.KeyEvent.wVirtualScanCode,
-                                            char=record.Event.KeyEvent.uChar.AsciiChar,
-                                            wchar=record.Event.KeyEvent.uChar.UnicodeChar,
-                                            control_key_state=record.Event.KeyEvent.dwControlKeyState))
-            else:
-                pass
-
-            if len(events_list):
-                callback(callback_ctx, events_list)
+        if len(events_list):
+            callback(callback_ctx, events_list)
         return True
 
     def GetConsoleMode(self, handle) -> int:
