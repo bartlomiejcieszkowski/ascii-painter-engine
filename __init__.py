@@ -629,8 +629,6 @@ class ConsoleWidget(ABC):
         return self.last_dimensions.contains_point(column, row)
 
 
-
-
 class Console:
     def __init__(self, app, debug=True):
         # TODO: this would print without vt enabled yet update state if vt enabled in brush?
@@ -1006,8 +1004,9 @@ class WindowsConsole(Console):
             ctypes.wintypes.LPDWORD
         )
         get_number_of_console_input_events_params = (1, "hConsoleInput", 0), (1, "lpcNumberOfEvents", 0)
-        self.getNumberOfConsoleInputEvents = get_number_of_console_input_events_proto(('GetNumberOfConsoleInputEvents', self.kernel32),
-                                                         get_number_of_console_input_events_params)
+        self.getNumberOfConsoleInputEvents = get_number_of_console_input_events_proto(
+            ('GetNumberOfConsoleInputEvents', self.kernel32),
+            get_number_of_console_input_events_params)
         self.blocking = True
 
     KEY_EVENT = 0x1
