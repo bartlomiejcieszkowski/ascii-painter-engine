@@ -1200,6 +1200,84 @@ class Theme:
             Theme.Point('|'),
             Theme.Point('_'),
         ]
+        return cls(border=border)
+
+    @classmethod
+    def double_line_theme(cls):
+        border = [
+            Theme.Point(' '),
+            Theme.Point('╔'),
+            Theme.Point('╗'),
+            Theme.Point('╚'),
+            Theme.Point('╝'),
+            Theme.Point('═'),
+            Theme.Point('║'),
+            Theme.Point('║'),
+            Theme.Point('═'),
+        ]
+        return cls(border=border)
+
+    @classmethod
+    def single_line_light_theme(cls):
+        border = [
+            Theme.Point(' '),
+            Theme.Point('┌'),
+            Theme.Point('┐'),
+            Theme.Point('└'),
+            Theme.Point('┘'),
+            Theme.Point('─'),
+            Theme.Point('│'),
+            Theme.Point('│'),
+            Theme.Point('─'),
+        ]
+        return cls(border=border)
+
+    @classmethod
+    def single_line_heavy_theme(cls):
+        border = [
+            Theme.Point(' '),
+            Theme.Point('┏'),
+            Theme.Point('┓'),
+            Theme.Point('┗'),
+            Theme.Point('┛'),
+            Theme.Point('━'),
+            Theme.Point('┃'),
+            Theme.Point('┃'),
+            Theme.Point('━'),
+        ]
+        return cls(border=border)
+
+    @classmethod
+    def single_line_heavy_top_light_rest_theme(cls):
+        border = [
+            Theme.Point(' '),
+            Theme.Point('┍'),
+            Theme.Point('┑'),
+            Theme.Point('└'),
+            Theme.Point('┘'),
+            Theme.Point('━'),
+            Theme.Point('│'),
+            Theme.Point('│'),
+            Theme.Point('─'),
+        ]
+        return cls(border=border)
+
+    @classmethod
+    def single_line_light_rounded_corners_theme(cls):
+        # unciode chars box drawing https://www.w3.org/TR/xml-entity-names/025.html
+        border = [
+            Theme.Point(' '),
+            Theme.Point('╭'),
+            Theme.Point('╮'),
+            Theme.Point('╰'),
+            Theme.Point('╯'),
+            Theme.Point('─'),
+            Theme.Point('│'),
+            Theme.Point('│'),
+            Theme.Point('─'),
+        ]
+        return cls(border=border)
+
 
 theme = Theme.default_theme()
 
