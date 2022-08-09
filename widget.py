@@ -1,13 +1,9 @@
 from typing import Tuple, Union
 
-from ascii_painter_engine import ConsoleWidget, Alignment, DimensionsFlag, ConsoleColor
+from ascii_painter_engine import ConsoleWidget, Alignment, DimensionsFlag, theme
 
 
 class BorderWidget(ConsoleWidget):
-    class BorderPoint:
-        def __init__(self, c: str = ' ', color: ConsoleColor = ConsoleColor()):
-            self.c = c
-            self.color = color
 
     def __init__(self, app, x: int, y: int, width: int, height: int, alignment: Alignment,
                  dimensions: DimensionsFlag = DimensionsFlag.Absolute,
@@ -16,35 +12,7 @@ class BorderWidget(ConsoleWidget):
                          dimensions=dimensions, tab_index=tab_index)
         self.borderless = borderless
         self.title = ''
-        # border string
-        # 155552
-        # 600007
-        # 600007
-        # 388884
-        # where the string is in form
-        # '012345678'
-        self.border = [
-            self.BorderPoint(' '),
-            self.BorderPoint('+'),
-            self.BorderPoint('+'),
-            self.BorderPoint('+'),
-            self.BorderPoint('+'),
-            self.BorderPoint('-'),
-            self.BorderPoint('|'),
-            self.BorderPoint('|'),
-            self.BorderPoint('-'),
-        ]
-        # self.border = [
-        #     BorderPoint(' '),
-        #     BorderPoint(' '),
-        #     BorderPoint(' '),
-        #     BorderPoint('|'),
-        #     BorderPoint('|'),
-        #     BorderPoint('_'),
-        #     BorderPoint('|'),
-        #     BorderPoint('|'),
-        #     BorderPoint('_'),
-        # ]
+        self.border = None
 
     def inner_x(self):
         if self.borderless:
@@ -70,7 +38,7 @@ class BorderWidget(ConsoleWidget):
         if len(border_str) < 9:
             raise Exception(f'border_str must have at least len of 9 - got {len(border_str)}')
         for i in range(0, 9):
-            self.border[i] = self.BorderPoint(border_str[i])
+            self.border[i] = self.Point(border_str[i])
 
     def border_set_color(self, color):
         for i in range(1, 9):
@@ -79,23 +47,32 @@ class BorderWidget(ConsoleWidget):
     def border_inside_set_color(self, color):
         self.border[0].color = color
 
+    def border_get_point(self, idx: int):
+        return self.border[idx] if self.border else theme.border[idx]
+
     def border_get_top(self, width_middle, title):
-        return self.app.brush.FgBgColor(self.border[1].color) + \
-               self.border[1].c + \
-               self.app.brush.FgBgColor(self.border[5].color) + \
-               ((title[:width_middle - 2] + '..') if len(title) > width_middle else title) + \
-               (self.border[5].c * (width_middle - len(self.title))) + \
-               self.app.brush.FgBgColor(self.border[2].color) + \
-               self.border[2].c + \
-               self.app.brush.ResetColor()
+        left_top_corner = self.border_get_point(1)
+        right_top_corner = self.border_get_point(2)
+        top_border = self.border_get_point(5)
+        return self.app.brush.FgBgColor(left_top_corner.color) + \
+            left_top_corner.c + \
+            self.app.brush.FgBgColor(top_border.color) + \
+            ((title[:width_middle - 2] + '..') if len(title) > width_middle else title) + \
+            (top_border.c * (width_middle - len(self.title))) + \
+            self.app.brush.FgBgColor(right_top_corner.color) + \
+            right_top_corner.c + \
+            self.app.brush.ResetColor()
 
     def border_get_bottom(self, width_middle):
-        return self.app.brush.FgBgColor(self.border[3].color) + \
-               self.border[3].c + \
-               self.app.brush.FgBgColor(self.border[8].color) + \
-               (self.border[8].c * width_middle) + \
-               self.app.brush.FgBgColor(self.border[4].color) + \
-               self.border[4].c + \
+        left_bottom_corner = self.border_get_point(3)
+        right_bottom_corner = self.border_get_point(4)
+        bottom_border = self.border_get_point(8)
+        return self.app.brush.FgBgColor(left_bottom_corner.color) + \
+               left_bottom_corner.c + \
+               self.app.brush.FgBgColor(bottom_border.color) + \
+               (bottom_border.c * width_middle) + \
+               self.app.brush.FgBgColor(right_bottom_corner.color) + \
+               right_bottom_corner.c + \
                self.app.brush.ResetColor()
 
     def draw(self):
@@ -130,15 +107,18 @@ class BorderWidget(ConsoleWidget):
             line = offset_str
 
             if self.borderless is False:
-                line += self.app.brush.FgBgColor(self.border[6].color) + \
-                        self.border[6].c
+                left_border = self.border_get_point(6)
+                line += self.app.brush.FgBgColor(left_border.color) + \
+                        left_border.c
 
-            line += self.app.brush.FgBgColor(self.border[0].color) + print_text + \
-                    (self.border[0].c * leftover)
+            inside_border = self.border_get_point(0)
+            line += self.app.brush.FgBgColor(inside_border.color) + print_text + \
+                    (inside_border.c * leftover)
 
             if self.borderless is False:
-                line += self.app.brush.FgBgColor(self.border[7].color) + \
-                        self.border[7].c
+                right_border = self.border_get_point(7)
+                line += self.app.brush.FgBgColor(right_border.color) + \
+                        right_border.c
 
             line += self.app.brush.ResetColor()
             self.app.brush.print(line, end='')
@@ -214,7 +194,7 @@ class Pane(BorderWidget):
         return super().get_widget(column, row)
 
 
-class Button(ConsoleWidget):
+class Button(TextBox):
     def __init__(self):
         # TODO: distinct border
 

@@ -1128,6 +1128,82 @@ class ConsoleColor:
         return self.fgcolor is None and self.bgcolor is None
 
 
+class Theme:
+    class Point:
+        def __init__(self, c: str = ' ', color: ConsoleColor = ConsoleColor()):
+            self.c = c
+            self.color = color
+
+    def __init__(self, border: list[Point]):
+        # border string
+        # 155552
+        # 600007
+        # 600007
+        # 388884
+        # where the string is in form
+        # '012345678'
+
+        # validate border
+        self.border = []
+        if len(border) >= 9:
+            for i in range(0, 9):
+                if type(border[i]) is not Theme.Point:
+                    break
+                self.border.append(border[i])
+
+        if len(self.border) < 9:
+            # invalid border TODO
+            self.border = 9 * [Theme.Point(' ')]
+
+    def border_set_color(self, color):
+        for i in range(1, 9):
+            self.border[i].color = color
+
+    def border_inside_set_color(self, color):
+        self.border[0].color = color
+
+    @staticmethod
+    def border_from_str(border_str: str) -> list[Point]:
+        border = []
+        if len(border_str) < 9:
+            raise Exception(f'border_str must have at least len of 9 - got {len(border_str)}')
+        for i in range(0, 9):
+            border.append(Theme.Point(border_str[i]))
+        return border
+
+
+
+    @classmethod
+    def default_theme(cls):
+        border = [
+            Theme.Point(' '),
+            Theme.Point('+'),
+            Theme.Point('+'),
+            Theme.Point('+'),
+            Theme.Point('+'),
+            Theme.Point('-'),
+            Theme.Point('|'),
+            Theme.Point('|'),
+            Theme.Point('-'),
+        ]
+        return cls(border=border)
+
+    @classmethod
+    def other_theme(cls):
+        border = [
+            Theme.Point(' '),
+            Theme.Point(' '),
+            Theme.Point(' '),
+            Theme.Point('|'),
+            Theme.Point('|'),
+            Theme.Point('_'),
+            Theme.Point('|'),
+            Theme.Point('|'),
+            Theme.Point('_'),
+        ]
+
+theme = Theme.default_theme()
+
 class Brush:
     def __init__(self, use_color=True):
         self.fgcolor = None
