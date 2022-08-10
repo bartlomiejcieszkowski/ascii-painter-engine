@@ -1127,11 +1127,13 @@ class ConsoleColor:
         return self.fgcolor is None and self.bgcolor is None
 
 
+class Point:
+    def __init__(self, c: str = ' ', color: ConsoleColor = ConsoleColor()):
+        self.c = c
+        self.color = color
+
+
 class Theme:
-    class Point:
-        def __init__(self, c: str = ' ', color: ConsoleColor = ConsoleColor()):
-            self.c = c
-            self.color = color
 
     def __init__(self, border: list[Point]):
         # border string
@@ -1146,13 +1148,13 @@ class Theme:
         self.border = []
         if len(border) >= 9:
             for i in range(0, 9):
-                if type(border[i]) is not Theme.Point:
+                if type(border[i]) is not Point:
                     break
                 self.border.append(border[i])
 
         if len(self.border) < 9:
             # invalid border TODO
-            self.border = 9 * [Theme.Point(' ')]
+            self.border = 9 * [Point(' ')]
 
     def border_set_color(self, color):
         for i in range(1, 9):
@@ -1167,7 +1169,7 @@ class Theme:
         if len(border_str) < 9:
             raise Exception(f'border_str must have at least len of 9 - got {len(border_str)}')
         for i in range(0, 9):
-            border.append(Theme.Point(border_str[i]))
+            border.append(Point(border_str[i]))
         return border
 
 
@@ -1175,90 +1177,90 @@ class Theme:
     @classmethod
     def default_theme(cls):
         border = [
-            Theme.Point(' '),
-            Theme.Point('+'),
-            Theme.Point('+'),
-            Theme.Point('+'),
-            Theme.Point('+'),
-            Theme.Point('-'),
-            Theme.Point('|'),
-            Theme.Point('|'),
-            Theme.Point('-'),
+            Point(' '),
+            Point('+'),
+            Point('+'),
+            Point('+'),
+            Point('+'),
+            Point('-'),
+            Point('|'),
+            Point('|'),
+            Point('-'),
         ]
         return cls(border=border)
 
     @classmethod
     def other_theme(cls):
         border = [
-            Theme.Point(' '),
-            Theme.Point(' '),
-            Theme.Point(' '),
-            Theme.Point('|'),
-            Theme.Point('|'),
-            Theme.Point('_'),
-            Theme.Point('|'),
-            Theme.Point('|'),
-            Theme.Point('_'),
+            Point(' '),
+            Point(' '),
+            Point(' '),
+            Point('|'),
+            Point('|'),
+            Point('_'),
+            Point('|'),
+            Point('|'),
+            Point('_'),
         ]
         return cls(border=border)
 
     @classmethod
     def double_line_theme(cls):
         border = [
-            Theme.Point(' '),
-            Theme.Point('╔'),
-            Theme.Point('╗'),
-            Theme.Point('╚'),
-            Theme.Point('╝'),
-            Theme.Point('═'),
-            Theme.Point('║'),
-            Theme.Point('║'),
-            Theme.Point('═'),
+            Point(' '),
+            Point('╔'),
+            Point('╗'),
+            Point('╚'),
+            Point('╝'),
+            Point('═'),
+            Point('║'),
+            Point('║'),
+            Point('═'),
         ]
         return cls(border=border)
 
     @classmethod
     def single_line_light_theme(cls):
         border = [
-            Theme.Point(' '),
-            Theme.Point('┌'),
-            Theme.Point('┐'),
-            Theme.Point('└'),
-            Theme.Point('┘'),
-            Theme.Point('─'),
-            Theme.Point('│'),
-            Theme.Point('│'),
-            Theme.Point('─'),
+            Point(' '),
+            Point('┌'),
+            Point('┐'),
+            Point('└'),
+            Point('┘'),
+            Point('─'),
+            Point('│'),
+            Point('│'),
+            Point('─'),
         ]
         return cls(border=border)
 
     @classmethod
     def single_line_heavy_theme(cls):
         border = [
-            Theme.Point(' '),
-            Theme.Point('┏'),
-            Theme.Point('┓'),
-            Theme.Point('┗'),
-            Theme.Point('┛'),
-            Theme.Point('━'),
-            Theme.Point('┃'),
-            Theme.Point('┃'),
-            Theme.Point('━'),
+            Point(' '),
+            Point('┏'),
+            Point('┓'),
+            Point('┗'),
+            Point('┛'),
+            Point('━'),
+            Point('┃'),
+            Point('┃'),
+            Point('━'),
         ]
         return cls(border=border)
 
     @classmethod
     def single_line_heavy_top_light_rest_theme(cls):
         border = [
-            Theme.Point(' '),
-            Theme.Point('┍'),
-            Theme.Point('┑'),
-            Theme.Point('└'),
-            Theme.Point('┘'),
-            Theme.Point('━'),
-            Theme.Point('│'),
-            Theme.Point('│'),
-            Theme.Point('─'),
+            Point(' '),
+            Point('┍'),
+            Point('┑'),
+            Point('└'),
+            Point('┘'),
+            Point('━'),
+            Point('│'),
+            Point('│'),
+            Point('─'),
         ]
         return cls(border=border)
 
@@ -1266,15 +1268,15 @@ class Theme:
     def single_line_light_rounded_corners_theme(cls):
         # unciode chars box drawing https://www.w3.org/TR/xml-entity-names/025.html
         border = [
-            Theme.Point(' '),
-            Theme.Point('╭'),
-            Theme.Point('╮'),
-            Theme.Point('╰'),
-            Theme.Point('╯'),
-            Theme.Point('─'),
-            Theme.Point('│'),
-            Theme.Point('│'),
-            Theme.Point('─'),
+            Point(' '),
+            Point('╭'),
+            Point('╮'),
+            Point('╰'),
+            Point('╯'),
+            Point('─'),
+            Point('│'),
+            Point('│'),
+            Point('─'),
         ]
         return cls(border=border)
 
