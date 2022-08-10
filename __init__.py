@@ -1156,6 +1156,14 @@ class Theme:
             # invalid border TODO
             self.border = 9 * [Point(' ')]
 
+        # selectors are inspired by css
+        # TODO: allow styling by css stylesheet, but with limited subset
+        self.selectors = {}
+        self.id_selectors = {}
+        self.class_selectors = {}
+        self.universal_selector = None
+
+
     def border_set_color(self, color):
         for i in range(1, 9):
             self.border[i].color = color
