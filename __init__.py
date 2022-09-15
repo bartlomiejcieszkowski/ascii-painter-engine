@@ -33,6 +33,8 @@ import ascii_painter_engine.log
 
 import threading
 
+from ascii_painter_engine.theme import Selectors
+
 
 def is_windows() -> bool:
     return os.name == 'nt'
@@ -1134,6 +1136,20 @@ class Point:
 
 
 class Theme:
+    class Colors:
+        def __init__(self):
+            self.text = ConsoleColor(Color(0, ColorBits.Bit24))
+
+        @classmethod
+        def monokai(cls):
+            cyan = 0x00b9d7
+            gold_brown = 0xabaa98
+            green = 0x82cdb9
+            off_white = 0xf5f5f5
+            orange = 0xf37259
+            pink = 0xff3d70
+            pink_magenta = 0xf7208b
+            yellow = 0xf9f5c2
 
     def __init__(self, border: list[Point]):
         # border string
@@ -1156,12 +1172,7 @@ class Theme:
             # invalid border TODO
             self.border = 9 * [Point(' ')]
 
-        # selectors are inspired by css
-        # TODO: allow styling by css stylesheet, but with limited subset
-        self.selectors = {}
-        self.id_selectors = {}
-        self.class_selectors = {}
-        self.universal_selector = None
+        self.selectors = Selectors()
 
 
     def border_set_color(self, color):
@@ -1179,8 +1190,6 @@ class Theme:
         for i in range(0, 9):
             border.append(Point(border_str[i]))
         return border
-
-
 
     @classmethod
     def default_theme(cls):
@@ -1290,6 +1299,7 @@ class Theme:
 
 
 theme = Theme.default_theme()
+
 
 class Brush:
     def __init__(self, use_color=True):
