@@ -164,7 +164,7 @@ class CssParser:
                             failed = Exception(f'{line_num}: state: {state} - expected ; - got "{word}" - line: "{line}"')
                             break
                         else:
-                            print(f'{property}: {value};')
+                            print(f'{selector} {{ {property}: {value}; }}')
                             # TODO: PARSE PROPERTY
                             state = State.property
 
