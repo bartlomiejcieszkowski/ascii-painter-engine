@@ -33,6 +33,7 @@ import ascii_painter_engine.log
 
 import threading
 
+from ascii_painter_engine.base import ConsoleColor, Color, ColorBits, Point
 from ascii_painter_engine.theme import Selectors
 
 
@@ -1107,32 +1108,6 @@ class WindowsConsole(Console):
         self.SetQuickEditMode(False)
         ENABLE_MOUSE_INPUT = 0x10
         return self.SetMode(self.consoleHandleIn, ENABLE_MOUSE_INPUT, enable)
-
-
-class ColorBits(IntEnum):
-    Bit8 = 5
-    Bit24 = 2
-
-
-class Color:
-    def __init__(self, color: int, bits: ColorBits):
-        self.color = color
-        self.bits = bits
-
-
-class ConsoleColor:
-    def __init__(self, fgcolor: Union[Color, None] = None, bgcolor: Union[Color, None] = None):
-        self.fgcolor = fgcolor
-        self.bgcolor = bgcolor
-
-    def no_color(self):
-        return self.fgcolor is None and self.bgcolor is None
-
-
-class Point:
-    def __init__(self, c: str = ' ', color: ConsoleColor = ConsoleColor()):
-        self.c = c
-        self.color = color
 
 
 class Theme:
