@@ -64,55 +64,6 @@ class State(IntEnum):
 
 class CssParser:
     @staticmethod
-    def dummy_split(text: str, sep: str):
-        if len(text) <= len(sep):
-            return None
-        new_words = []
-        curr_idx = 0
-        try:
-            while True:
-                idx = text.index(sep, curr_idx)
-                if idx == curr_idx:
-                    # eg. ":text" idx=0, "::text" idx=1
-                    new_words.append(text[idx:(idx+len(sep))])
-                else:
-                    new_words.append(text[curr_idx:idx])
-                    new_words.append(sep)
-                curr_idx = idx + len(sep)
-        except ValueError:
-            if curr_idx == 0:
-                return None
-            if curr_idx < len(text):
-                new_words.append(text[curr_idx:])
-        return new_words
-
-    @staticmethod
-    def split_special(line: str):
-        words = line.split()
-        filtered_words = []
-        restart = True
-        while restart:
-            restart = False
-            new_words = []
-            for word in words:
-                if restart:
-                    new_words.append(word)
-                    continue
-
-                for sep in ['{', '}', ':', ';', '/*', '*/']:
-                    splitted = CssParser.dummy_split(word, sep)
-                    if splitted is not None:
-                        new_words.extend(splitted)
-                        restart = True
-                        break
-                if restart:
-                    continue
-
-                new_words.append(word)
-            words = new_words
-        return words
-
-    @staticmethod
     def parse(file_name: str, selectors: Selectors) -> Selectors:
         if selectors is None:
             selectors = Selectors()
@@ -120,54 +71,138 @@ class CssParser:
             last_state = State.selector
             state = State.selector
             selector = None
-            property = None
+            prop = None
             value = None
             failed = None
             line_num = 0
+            word = ''
+            non_printables = ['\n', '\r', '\t']
             for line in f:
                 line_num += 1
-                words = CssParser.split_special(line)
-                for word in words:
+                idx = 0
+                end = len(line)
+                while idx < end:
+                    c = line[idx]
+                    # big switch goes here
                     if state == State.comment:
-                        # ignore till */
-                        if word == '*/':
-                            state = last_state
-                    elif word == '/*':
-                        last_state = state
-                        state = State.comment
-                    elif state == State.selector:
-                        selector = word
-                        # validate selector
-                        state = State.open_sect
-                    elif state == State.open_sect:
-                        if word != '{':
-                            failed = Exception(f'{line_num}: state: {state} - expected ' + '{' + f' - got "{word}" - line: "{line}"')
-                            break
-                        else:
-                            state = State.property
-                    elif state == State.property:
-                        if word == '}':
-                            state = State.selector
-                        else:
-                            property = word
-                            state = State.colon
-                    elif state == State.colon:
-                        if word != ':':
-                            failed = Exception(f'{line_num}: state: {state} - expected : - got "{word}" - line: "{line}"')
-                            break
-                        state = State.value
-                    elif state == State.value:
-                        value = word
-                        state = State.semi_colon
-                    elif state == State.semi_colon:
-                        if word != ';':
-                            failed = Exception(f'{line_num}: state: {state} - expected ; - got "{word}" - line: "{line}"')
-                            break
-                        else:
-                            print(f'{selector} {{ {property}: {value}; }}')
-                            # TODO: PARSE PROPERTY
-                            state = State.property
+                        if c == '*':
+                            # hope
+                            if idx + 1 < end:
+                                c_next = line[idx+1]
+                                if c_next == '/':
+                                    # comment end
+                                    # restore state and skip */
+                                    state = last_state
+                                    idx += 2
+                                    continue
+                        idx += 1
+                        continue
 
+                    if c == '/':
+                        # comment?
+                        if idx+1 < end:
+                            # comment can't span to next line
+                            c_next = line[idx+1]
+                            if c_next == '*':
+                                # comment start
+                                # store state and skip /*
+                                last_state = state
+                                state = State.comment
+                                idx += 2
+                                continue
+
+                    if c in non_printables:
+                        c = ' '
+
+                    if state == State.selector:
+                        word_len = len(word)
+                        if len(word) > 0:
+                            if c == '{':
+                                # '*{'
+                                #   ^
+                                state = State.open_sect
+                                # ommit increment - we will hit the switch for {
+                                continue
+                            elif c != ' ':
+                                word += c
+                            else:
+                                state = State.open_sect
+                        elif c == ' ':
+                            # '    * {'
+                            #  ^^^^
+                            pass
+                        else:
+                            # '    * {'
+                            #      ^
+                            word += c
+                        idx += 1
+                        continue
+                    elif state == State.open_sect:
+                        if c == ' ':
+                            # skipping spaces
+                            pass
+                        elif c == '{':
+                            selector = word
+                            word = ''
+                            state = State.property
+                            pass
+                        else:
+                            failed = Exception(f'{line_num}: state: {state} - got "{c}" - line: "{line}"')
+                            break
+                        idx += 1
+                        continue
+                    elif state == State.property:
+                        if c == ':':
+                            state = State.colon
+                            continue
+                        elif c == '}':
+                            state = State.selector
+                        elif c == ' ':
+                            # yes, i know that this will remove spaces
+                            pass
+                        else:
+                            word += c
+                        idx += 1
+                        continue
+                    elif state == State.colon:
+                        if c == ':':
+                            prop = word
+                            word = ''
+                            state = State.value
+                        elif c == ' ':
+                            pass
+                        else:
+                            failed = Exception(f'{line_num}: state: {state} - got "{c}" - line: "{line}"')
+                            break
+                        idx += 1
+                        continue
+                    elif state == State.value:
+                        if c == ' ':
+                            pass
+                        elif c == ';':
+                            state = State.semi_colon
+                            continue
+                        else:
+                            word += c
+                        idx += 1
+                        continue
+                    elif state == State.semi_colon:
+                        if c == ';':
+                            value = word
+                            word = ''
+                            state = State.property
+                            print(f'{selector} {{ {prop}: {value}; }}')
+                            # TODO: PARSE PROPERTY
+                        elif c == ' ':
+                            pass
+                        else:
+                            failed = Exception(f'{line_num}: state: {state} - got "{c}" - line: "{line}"')
+                            break
+                        idx += 1
+                        continue
+                    else:
+                        failed = Exception(f'UNHANDLED STATE: {state}')
+                        break
                 if failed:
                     break
 
