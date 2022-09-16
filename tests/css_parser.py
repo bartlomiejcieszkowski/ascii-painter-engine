@@ -8,7 +8,7 @@ def test(handle_sigint=True, demo_time_s=None):
 
     working_directory = 'tests'
     files = [
-        'css_parser/main.css'
+        'css_parser/main.css',
     ]
 
     for file in files:

@@ -63,6 +63,9 @@ class State(IntEnum):
 
 
 class CssParser:
+    # TODO: properly handle nested { {
+    # https://www.w3.org/TR/css-syntax-3/#parsing-overview
+
     @staticmethod
     def parse(file_name: str, selectors: Selectors) -> Selectors:
         if selectors is None:
@@ -123,11 +126,14 @@ class CssParser:
                                 state = State.open_sect
                                 # ommit increment - we will hit the switch for {
                                 continue
-                            elif c != ' ':
-                                word += c
+                            #elif c != ' ':
+                            #    word += c
                             else:
-                                state = State.open_sect
+                                # we will have all words, need to split them later
+                                word += c
+                                # state = State.open_sect
                         elif c == ' ':
+                            # optimization
                             # '    * {'
                             #  ^^^^
                             pass
@@ -138,10 +144,11 @@ class CssParser:
                         idx += 1
                         continue
                     elif state == State.open_sect:
-                        if c == ' ':
-                            # skipping spaces
-                            pass
-                        elif c == '{':
+                        #if c == ' ':
+                        #
+                        #    # skipping spaces
+                        #    pass
+                        if c == '{':
                             selector = word
                             word = ''
                             state = State.property
@@ -156,10 +163,12 @@ class CssParser:
                             state = State.colon
                             continue
                         elif c == '}':
+                            # reset word
+                            word = ''
                             state = State.selector
-                        elif c == ' ':
-                            # yes, i know that this will remove spaces
-                            pass
+                        # elif c == ' ':
+                        #     # yes, i know that this will remove spaces
+                        #     pass
                         else:
                             word += c
                         idx += 1
@@ -169,17 +178,17 @@ class CssParser:
                             prop = word
                             word = ''
                             state = State.value
-                        elif c == ' ':
-                            pass
+                        # elif c == ' ':
+                        #    pass
                         else:
                             failed = Exception(f'{line_num}: state: {state} - got "{c}" - line: "{line}"')
                             break
                         idx += 1
                         continue
                     elif state == State.value:
-                        if c == ' ':
-                            pass
-                        elif c == ';':
+                        # if c == ' ':
+                        #    pass
+                        if c == ';':
                             state = State.semi_colon
                             continue
                         else:
@@ -191,10 +200,13 @@ class CssParser:
                             value = word
                             word = ''
                             state = State.property
+                            selector = ' '.join(selector.split())
+                            prop = ' '.join(prop.split())
+                            value = ' '.join(value.split())
                             print(f'{selector} {{ {prop}: {value}; }}')
                             # TODO: PARSE PROPERTY
-                        elif c == ' ':
-                            pass
+                        # elif c == ' ':
+                        #    pass
                         else:
                             failed = Exception(f'{line_num}: state: {state} - got "{c}" - line: "{line}"')
                             break
