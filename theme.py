@@ -31,6 +31,15 @@ class Selectors(ABC):
         self.class_selectors = {}
         self.universal_selector = None
 
+    def add_property(self, selectors: str, property: str, value: str):
+        if selectors is str:
+            # single selector
+            selectors = [selectors]
+
+        for selector in selectors:
+            print(f'adding: {selector} {{ {property}: {value}; }}')
+        # TODO
+
     def add_selector(self, name: str, attributes):
         if name == '*':
             self.universal_selector = attributes
@@ -231,11 +240,10 @@ class CssParser:
                             value = word
                             word = ''
                             state = State.property
-                            selector = ' '.join(selector.split())
                             prop = ' '.join(prop.split())
                             value = ' '.join(value.split())
-                            print(f'{selector} {{ {prop}: {value}; }}')
-                            # TODO: PARSE PROPERTY
+                            selector_split = StringHelper.split_trim(selector, ',')
+                            selectors.add_property(selector_split, prop, value)
                         # elif c == ' ':
                         #    pass
                         else:
