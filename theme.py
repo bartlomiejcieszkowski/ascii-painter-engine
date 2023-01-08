@@ -21,8 +21,22 @@ class Attributes:
         if other.color.bgcolor is not None:
             self.color.bgcolor = other.color.bgcolor
 
+    @staticmethod
+    def handle_background_color(this, prop, value):
+        pass
+
+    @staticmethod
+    def handle_color(this, prop, value):
+        pass
+
 
 class Selectors(ABC):
+    property_handlers = {
+        'background-color': Attributes.handle_background_color,
+        'color': Attributes.handle_color
+    }
+
+
     def __init__(self):
         # selectors are inspired by css
         # TODO: allow styling by css stylesheet, but with limited subset
@@ -31,13 +45,20 @@ class Selectors(ABC):
         self.class_selectors = {}
         self.universal_selector = None
 
-    def add_property(self, selectors: str, property: str, value: str):
+
+
+    def add_property(self, selectors: str, prop: str, value: str):
         if selectors is str:
             # single selector
             selectors = [selectors]
 
         for selector in selectors:
-            print(f'adding: {selector} {{ {property}: {value}; }}')
+            print(f'adding: {selector} {{ {prop}: {value}; }}')
+            curr_selector = self.selectors.get('*')
+            #curr_selector.
+            #property_handler = self.property_handlers.get(prop)
+            #if property_handler:
+            #    property_handler(selector, prop,
         # TODO
 
     def add_selector(self, name: str, attributes):
