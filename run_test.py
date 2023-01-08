@@ -31,14 +31,20 @@ def main():
     tests_list = [name for _, name, _ in pkgutil.iter_modules([tests_path])]
     # print(tests_list)
     parser = argparse.ArgumentParser(description='Run tests.')
-    parser.add_argument('--test', '-t', choices=tests_list, required=True)
     parser.add_argument('--auto', action='store_true', help='runs test and ends it')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--test', '-t', choices=tests_list)
+    group.add_argument('--all', action='store_true', help='runs ALL available tests')
     args = parser.parse_args()
 
     demo_time_s = None
     if args.auto:
         demo_time_s = 5
-    test_run(args.test, demo_time_s)
+    if args.all:
+        for test in tests_list:
+            test_run(test, demo_time_s)
+    else:
+        test_run(args.test, demo_time_s)
     sys.exit(0)
 
 
