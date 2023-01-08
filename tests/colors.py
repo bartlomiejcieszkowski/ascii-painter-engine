@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 
 import ascii_painter_engine as ape
 
@@ -30,6 +31,8 @@ def test(handle_sigint=True, demo_time_s=None) -> int:
     print()
 
     brush.print("TEST2", color=test_color, end='\n')
+    if demo_time_s:
+        time.sleep(demo_time_s)
 
 
 if __name__ == '__main__':
