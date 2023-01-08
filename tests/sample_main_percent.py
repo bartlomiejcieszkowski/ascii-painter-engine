@@ -8,7 +8,7 @@ def test(handle_sigint=True, demo_time_s=None):
     app.color_mode()
 
     # TODO: Percent of window, fill
-    pane = Pane(app=app, x=0, y=1, height=80, width=100, alignment=ape.Alignment.LeftTop, percent=True)
+    pane = Pane(app=app, x=0, y=1, height=80, width=100, alignment=ape.Alignment.LeftTop, dimensions=ape.DimensionsFlag.Relative)
     pane.title = 'Test'
 
     app.add_widget(pane)
