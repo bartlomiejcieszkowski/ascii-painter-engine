@@ -3,7 +3,7 @@
 import ascii_painter_engine as ape
 
 
-def test() -> int:
+def test(handle_sigint=True, demo_time_s=None) -> int:
     cv = ape.App()
     if cv.color_mode() is False:
         print('Abort')
