@@ -664,6 +664,9 @@ class Console:
     def read_events(self, callback, callback_ctx) -> bool:
         pass
 
+    def set_title(self, title):
+        print(f"\033]2;{title}\007")
+
 
 class LinuxConsole(Console):
     # TODO
@@ -756,8 +759,9 @@ def demo_fun(app):
 class App:
     log = no_print
 
-    def __init__(self, log=no_print):
+    def __init__(self, log=no_print, title=None):
         App.log = log
+        self.title = title
         self.log = log
 
         if is_windows():
@@ -885,6 +889,9 @@ class App:
     def run(self) -> int:
         if self.running is True:
             return -1
+
+        if self.title:
+            self.console.set_title(self.title)
 
         if self.handle_sigint:
             App.signal_sigint_ctx = self
