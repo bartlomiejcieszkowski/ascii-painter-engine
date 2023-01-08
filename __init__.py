@@ -1314,7 +1314,7 @@ class Brush:
                 console_color.bgcolor is None and self.bgcolor != console_color.bgcolor):
             ret_val = self.ResetColor()
         ret_val += self.FgColor(console_color.fgcolor, check_last)
-        ret_val += self.BgColor(console_color.fgcolor, check_last)
+        ret_val += self.BgColor(console_color.bgcolor, check_last)
         return ret_val
 
     def print(self, *args, sep=' ', end='', file=None, color: Union[ConsoleColor, None] = None):
