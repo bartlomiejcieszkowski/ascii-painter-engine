@@ -4,6 +4,7 @@ from ascii_painter_engine.widget import TextBox, Pane
 
 def test(handle_sigint=True, demo_time_s=None):
     app = ape.App(log=ape.log.log)
+    app.title = "sample_main_float.py"
     app.color_mode()
 
     pane = Pane(app=app, x=0, y=1, height=80, width=100, alignment=ape.Alignment.LeftTop)

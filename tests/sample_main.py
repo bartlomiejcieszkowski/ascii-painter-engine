@@ -7,6 +7,7 @@ from ascii_painter_engine.widget import TextBox, Pane
 
 def test(handle_sigint=True, demo_time_s=None):
     app = ape.App(log=ape.log.log)
+    app.title = "sample_main.py"
     app.color_mode()
 
     widget = TextBox(app=app, x=0, y=0, height=4, width=20, alignment=ape.Alignment.LeftTop)

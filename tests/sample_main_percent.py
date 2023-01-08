@@ -4,6 +4,7 @@ from ascii_painter_engine.widget import Pane
 
 def test(handle_sigint=True, demo_time_s=None):
     app = ape.App(log=ape.log.log)
+    app.title = "sample_main_percent.py"
     app.color_mode()
 
     # TODO: Percent of window, fill
