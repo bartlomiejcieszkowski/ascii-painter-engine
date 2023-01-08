@@ -1273,7 +1273,7 @@ class Theme:
         return cls(border=border)
 
 
-theme = Theme.default_theme()
+APP_THEME = Theme.default_theme()
 
 
 class Brush:

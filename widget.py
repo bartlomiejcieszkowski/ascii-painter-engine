@@ -1,6 +1,6 @@
 from typing import Tuple, Union
 
-from ascii_painter_engine import ConsoleWidget, Alignment, DimensionsFlag, theme
+from ascii_painter_engine import ConsoleWidget, Alignment, DimensionsFlag, APP_THEME, Point
 
 
 class BorderWidget(ConsoleWidget):
@@ -13,6 +13,7 @@ class BorderWidget(ConsoleWidget):
         self.borderless = borderless
         self.title = ''
         self.border = None
+        # None implies use theme
 
     def inner_x(self):
         if self.borderless:
@@ -37,8 +38,9 @@ class BorderWidget(ConsoleWidget):
     def border_from_str(self, border_str: str):
         if len(border_str) < 9:
             raise Exception(f'border_str must have at least len of 9 - got {len(border_str)}')
+        self.border = []
         for i in range(0, 9):
-            self.border[i] = self.Point(border_str[i])
+            self.border.append(Point(border_str[i]))
 
     def border_set_color(self, color):
         for i in range(1, 9):
@@ -48,20 +50,20 @@ class BorderWidget(ConsoleWidget):
         self.border[0].color = color
 
     def border_get_point(self, idx: int):
-        return self.border[idx] if self.border else theme.border[idx]
+        return self.border[idx] if self.border else APP_THEME.border[idx]
 
     def border_get_top(self, width_middle, title):
         left_top_corner = self.border_get_point(1)
         right_top_corner = self.border_get_point(2)
         top_border = self.border_get_point(5)
         return self.app.brush.FgBgColor(left_top_corner.color) + \
-            left_top_corner.c + \
-            self.app.brush.FgBgColor(top_border.color) + \
-            ((title[:width_middle - 2] + '..') if len(title) > width_middle else title) + \
-            (top_border.c * (width_middle - len(self.title))) + \
-            self.app.brush.FgBgColor(right_top_corner.color) + \
-            right_top_corner.c + \
-            self.app.brush.ResetColor()
+               left_top_corner.c + \
+               self.app.brush.FgBgColor(top_border.color) + \
+               ((title[:width_middle - 2] + '..') if len(title) > width_middle else title) + \
+               (top_border.c * (width_middle - len(self.title))) + \
+               self.app.brush.FgBgColor(right_top_corner.color) + \
+               right_top_corner.c + \
+               self.app.brush.ResetColor()
 
     def border_get_bottom(self, width_middle):
         left_bottom_corner = self.border_get_point(3)

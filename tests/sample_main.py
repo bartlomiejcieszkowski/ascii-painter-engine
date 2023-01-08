@@ -21,7 +21,7 @@ def test(handle_sigint=True, demo_time_s=None):
     pane.title = 'Bigger Pane'
     app.add_widget(pane)
 
-    test_color = ape.ConsoleColor(ape.Color(14, ape.ColorBits.Bit8), ape.Color(4, ape.ColorBits.Bit8))
+    test_color = ape.ConsoleColor(ape.Color(13, ape.ColorBits.Bit8), ape.Color(7, ape.ColorBits.Bit8))
 
     widget = TextBox(app=app, x=0, y=0, height=3, width=10, alignment=ape.Alignment.LeftTop)
     widget.text = 'Sample text in pane'
