@@ -7,11 +7,11 @@ def test(handle_sigint=True, demo_time_s=None):
     app.title = "sample_main_float.py"
     app.color_mode()
 
-    pane = Pane(app=app, x=0, y=1, height=80, width=100, alignment=ape.Alignment.LeftTop)
+    pane = Pane(app=app, x=0, y=1, height=80, width=100, alignment=ape.Alignment.LeftTop, dimensions=ape.DimensionsFlag.Fill)
     pane.title = 'Test'
 
-    widget = TextBox(app=app, x=0, y=0, height=20, width=40, alignment=ape.Alignment.FloatLeftTop)
-    widget.text = '1st float'
+    widget = TextBox(app=app, x=0, y=0, height=20, width=40, alignment=ape.Alignment.FloatLeftTop, dimensions=ape.DimensionsFlag.FillHeightRelativeWidth)
+    widget.text = f'1st float {widget}'
     pane.add_widget(widget)
 
     # pane inside:
@@ -20,8 +20,8 @@ def test(handle_sigint=True, demo_time_s=None):
     #
     #
 
-    widget = TextBox(app=app, x=0, y=0, height=30, width=60, alignment=ape.Alignment.FloatLeftTop)
-    widget.text = '2nd float'
+    widget = TextBox(app=app, x=0, y=0, height=30, width=60, alignment=ape.Alignment.FloatLeftTop, dimensions=ape.DimensionsFlag.FillHeightRelativeWidth)
+    widget.text = f'2nd float {widget}'
     pane.add_widget(widget)
 
     # pane inside:
@@ -30,8 +30,8 @@ def test(handle_sigint=True, demo_time_s=None):
     #     222222
     #
 
-    widget = TextBox(app=app, x=0, y=0, height=20, width=30, alignment=ape.Alignment.FloatLeftTop)
-    widget.text = '3rd float'
+    widget = TextBox(app=app, x=0, y=0, height=20, width=30, alignment=ape.Alignment.FloatLeftTop, dimensions=ape.DimensionsFlag.FillHeightRelativeWidth)
+    widget.text = f'3rd float {widget}'
     pane.add_widget(widget)
 
     # pane inside:
