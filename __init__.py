@@ -14,7 +14,7 @@
 # TODO: Handlers - when clicking given point - pass the event to the widget underneath - required for color selection
 # TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
 # TODO: trim line to screen width on debug prints
-
+import selectors
 import shutil
 import os
 import ctypes
@@ -346,6 +346,10 @@ class InputInterpreter:
         self.ansi_escape_sequence = []
         self.payload = deque()
         self.last_button_state = [0, 0, 0]
+        self.selector = selectors.DefaultSelector()
+        self.selector.register(self.input, selectors.EVENT_READ)
+        self.selector_timeout_s = 1.0
+        self.read_count = 64
 
     # 9 Normal \x1B[ CbCxCy M , value + 32 -> ! is 1 - max 223 (255 - 32)
     # 1006 SGR  \x1B[<Pb;Px;Py[Mm] M - press m - release
@@ -479,10 +483,14 @@ class InputInterpreter:
     def read(self, count: int = 1):
         # ESC [ followed by any number in range 0x30-0x3f, then any between 0x20-0x2f, and final byte 0x40-0x7e
         # TODO: this should be limited so if one pastes long, long text this wont create arbitrary size buffer
-        ch = self.input.read(count)
+        ready = self.selector.select(self.selector_timeout_s)
+        if not ready:
+            return None
+
+        ch = self.input.read(self.read_count)
         while ch is not None and len(ch) > 0:
-            self.input_raw.append(ch)
-            ch = self.input.read(count)
+            self.input_raw.extend(ch)
+            ch = self.input.read(self.read_count)
 
         if len(self.input_raw) > 0:
             for i in range(0, len(self.input_raw)):
