@@ -187,7 +187,7 @@ class Pane(BorderWidget):
         for widget in self.widgets:
             widget.update_dimensions()
 
-    def get_widget(self, column: int, row: int) -> Union['ConsoleWidget', None]:
+    def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
         for idx in range(len(self.widgets) - 1, -1, -1):
             widget = self.widgets[idx].get_widget(column, row)
             if widget:
