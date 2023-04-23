@@ -250,25 +250,28 @@ class MouseEvent(ConsoleEvent):
 
     @classmethod
     def from_sgr_csi(cls, button_hex: int, x: int, y: int, press: bool):
+        # print(f"0x{button_hex:X}", file=sys.stderr)
         move_event = button_hex & 0x20
         if move_event:
             # OPT1: dont support move
             # return None
             # OPT2: support move like normal click
-            button_hex = button_hex & (0xFFFFFFFF - 0x20)
+            # button_hex = button_hex & (0xFFFFFFFF - 0x20)
             # FINAL: TODO: pass it as Move mouse event and let
+            # button = None
+            # 0x23 on simple move.. with M..
+            return None
+        else:
+            wheel_event = button_hex & 0x40
+            ctrl_button = 0x8 if button_hex & 0x10 else 0x0
 
+            # remove ctrl button
+            button_hex = button_hex & (0xFFFFFFFF - 0x10)
+            button = MouseEvent.Buttons(button_hex)
+        # sgr - 1-based
         if y < 2:
             return None
 
-        wheel_event = button_hex & 0x40
-        ctrl_button = 0x8 if button_hex & 0x10 else 0x0
-
-        # remove ctrl button
-        button_hex = button_hex & (0xFFFFFFFF - 0x10)
-
-        button = MouseEvent.Buttons(button_hex)
-        # sgr - 1-based
         # also we have 1st row inactive
         return cls(x - 1, y - 2, button, press, ctrl_button, False)
 
@@ -400,7 +403,10 @@ class InputInterpreter:
             # shift   4
             # meta    8
             # control 16
-            self.payload.append(MouseEvent.from_sgr_csi(values[0], values[1], values[2], press))
+            #print(f"0X{values[0]:X} 0X{values[1]:X} 0x{values[2]:X}, press={press}", file=sys.stderr)
+            mouse_event = MouseEvent.from_sgr_csi(values[0], values[1], values[2], press)
+            if mouse_event:
+                self.payload.append(mouse_event)
             return
 
         # normal - TODO
