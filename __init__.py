@@ -646,7 +646,7 @@ class ConsoleWidget(ABC):
         return self.last_dimensions.contains_point(column, row)
 
     def __str__(self):
-        return f'[x:{self.x} y:{self.x} width:{self.width} height:{self.height} alignment:{self.alignment} dimensions:{self.dimensions} type:{type(self)}]'
+        return f'[x:{self.x} y:{self.x} width:{self.width} height:{self.height} alignment:{self.alignment} dimensions:{self.dimensions} type:{type(self)} 0x{hash(self):X}]'
 
 
 class Console:
