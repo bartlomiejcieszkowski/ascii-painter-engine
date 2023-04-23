@@ -1075,7 +1075,7 @@ class WindowsConsole(Console):
             if event:
                 events_list.append(event)
         elif record.EventType == self.KEY_EVENT:
-            events_list.append(KeyEvent(key_down=record.Event.KeyEvent.bKeyDown,
+            events_list.append(KeyEvent(key_down=bool(record.Event.KeyEvent.bKeyDown),
                                         repeat_count=record.Event.KeyEvent.wRepeatCount,
                                         vk_code=record.Event.KeyEvent.wVirtualKeyCode,
                                         vs_code=record.Event.KeyEvent.wVirtualScanCode,
