@@ -849,7 +849,6 @@ class App:
         if widget:
             widget.handle(event)
 
-        widget = widget.title if widget else widget
         return widget
 
     @staticmethod
