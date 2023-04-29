@@ -54,8 +54,8 @@ def log_file(file_base_prefix):
         __log_file = sys.stdout
     else:
         __log_file_base = file_base_prefix
-        __log_file_path = Path(__log_file_base + '.{}.log'.format(__log_idx))
-        __log_file = __log_file_path.open('w')
+        __log_file_path = Path(__log_file_base + ".{}.log".format(__log_idx))
+        __log_file = __log_file_path.open("w")
 
 
 def log_flush():
@@ -70,7 +70,11 @@ def log(fmt, *args):
             if __log_file_size_max < __log_file_path.stat().st_size:
                 log_file_next()
 
-    print(time.strftime("[%H:%M:%S]", time.localtime())
-          + "[{:<10.10}] ".format(threading.current_thread().name) + str(fmt), *args, file=__log_file)
+    print(
+        time.strftime("[%H:%M:%S]", time.localtime())
+        + "[{:<10.10}] ".format(threading.current_thread().name)
+        + str(fmt),
+        *args,
+        file=__log_file
+    )
     log_flush()
-

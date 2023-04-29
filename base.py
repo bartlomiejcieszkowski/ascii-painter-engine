@@ -14,7 +14,9 @@ class Color:
 
 
 class ConsoleColor:
-    def __init__(self, fgcolor: Union[Color, None] = None, bgcolor: Union[Color, None] = None):
+    def __init__(
+        self, fgcolor: Union[Color, None] = None, bgcolor: Union[Color, None] = None
+    ):
         self.fgcolor = fgcolor
         self.bgcolor = bgcolor
 
@@ -23,6 +25,6 @@ class ConsoleColor:
 
 
 class Point:
-    def __init__(self, c: str = ' ', color: ConsoleColor = ConsoleColor()):
+    def __init__(self, c: str = " ", color: ConsoleColor = ConsoleColor()):
         self.c = c
         self.color = color

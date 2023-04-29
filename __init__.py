@@ -38,7 +38,7 @@ from ascii_painter_engine.theme import Selectors
 
 
 def is_windows() -> bool:
-    return os.name == 'nt'
+    return os.name == "nt"
 
 
 if is_windows():
@@ -53,11 +53,11 @@ class ConsoleBuffer:
         pass
 
     @staticmethod
-    def fill_buffer(x, y, symbol=' ', border=True, debug=True):
-        buffer = ['']
+    def fill_buffer(x, y, symbol=" ", border=True, debug=True):
+        buffer = [""]
         if debug:
             # print numbered border
-            line = ''
+            line = ""
             for col in range(0, x):
                 line += str(col % 10)
             buffer.append(line)
@@ -65,11 +65,11 @@ class ConsoleBuffer:
                 buffer.append(str(row % 10) + (symbol * (x - 2)) + str(row % 10))
             return buffer
         if border:
-            line = (symbol * x)
+            line = symbol * x
             for i in range(y):
                 buffer.append(line)
             return buffer
-        line = (symbol * x)
+        line = symbol * x
         for i in range(y):
             buffer.append(line)
         return buffer
@@ -109,43 +109,48 @@ class DimensionsFlag(Flag):
 
 
 class COORD(ctypes.Structure):
-    _fields_ = [("X", ctypes.wintypes.SHORT),
-                ("Y", ctypes.wintypes.SHORT)]
+    _fields_ = [("X", ctypes.wintypes.SHORT), ("Y", ctypes.wintypes.SHORT)]
 
 
 class KEY_EVENT_RECORD_Char(ctypes.Union):
-    _fields_ = [("UnicodeChar", ctypes.wintypes.WCHAR),
-                ("AsciiChar", ctypes.wintypes.CHAR)]
+    _fields_ = [
+        ("UnicodeChar", ctypes.wintypes.WCHAR),
+        ("AsciiChar", ctypes.wintypes.CHAR),
+    ]
 
 
 class KEY_EVENT_RECORD(ctypes.Structure):
-    _fields_ = [("bKeyDown", ctypes.wintypes.BOOL),
-                ("wRepeatCount", ctypes.wintypes.WORD),
-                ("wVirtualKeyCode", ctypes.wintypes.WORD),
-                ("wVirtualScanCode", ctypes.wintypes.WORD),
-                ("uChar", KEY_EVENT_RECORD_Char),
-                ("dwControlKeyState", ctypes.wintypes.DWORD)]
+    _fields_ = [
+        ("bKeyDown", ctypes.wintypes.BOOL),
+        ("wRepeatCount", ctypes.wintypes.WORD),
+        ("wVirtualKeyCode", ctypes.wintypes.WORD),
+        ("wVirtualScanCode", ctypes.wintypes.WORD),
+        ("uChar", KEY_EVENT_RECORD_Char),
+        ("dwControlKeyState", ctypes.wintypes.DWORD),
+    ]
 
 
 class MOUSE_EVENT_RECORD(ctypes.Structure):
-    _fields_ = [("dwMousePosition", COORD),
-                ("dwButtonState", ctypes.wintypes.DWORD),
-                ("dwControlKeyState", ctypes.wintypes.DWORD),
-                ("dwEventFlags", ctypes.wintypes.DWORD)]
+    _fields_ = [
+        ("dwMousePosition", COORD),
+        ("dwButtonState", ctypes.wintypes.DWORD),
+        ("dwControlKeyState", ctypes.wintypes.DWORD),
+        ("dwEventFlags", ctypes.wintypes.DWORD),
+    ]
 
 
 class INPUT_RECORD_Event(ctypes.Union):
-    _fields_ = [("KeyEvent", KEY_EVENT_RECORD),
-                ("MouseEvent", MOUSE_EVENT_RECORD),
-                ("WindowBufferSizeEvent", COORD),
-                ("MenuEvent", ctypes.c_uint),
-                ("FocusEvent", ctypes.c_uint),
-                ]
+    _fields_ = [
+        ("KeyEvent", KEY_EVENT_RECORD),
+        ("MouseEvent", MOUSE_EVENT_RECORD),
+        ("WindowBufferSizeEvent", COORD),
+        ("MenuEvent", ctypes.c_uint),
+        ("FocusEvent", ctypes.c_uint),
+    ]
 
 
 class INPUT_RECORD(ctypes.Structure):
-    _fields_ = [("EventType", ctypes.wintypes.WORD),
-                ("Event", INPUT_RECORD_Event)]
+    _fields_ = [("EventType", ctypes.wintypes.WORD), ("Event", INPUT_RECORD_Event)]
 
 
 class ConsoleEvent(ABC):
@@ -173,7 +178,9 @@ class MouseEvent(ConsoleEvent):
     class ControlKeys(Flag):
         LEFT_CTRL = 0x8
 
-    def __init__(self, x, y, button: Buttons, pressed: bool, control_key_state, hover: bool):
+    def __init__(
+        self, x, y, button: Buttons, pressed: bool, control_key_state, hover: bool
+    ):
         super().__init__()
         self.coordinates = (x, y)
         self.button = button
@@ -184,7 +191,7 @@ class MouseEvent(ConsoleEvent):
         self.control_key_state = control_key_state
 
     def __str__(self):
-        return f'x: {self.coordinates[0]} y: {self.coordinates[1]} button: {self.button} pressed: {self.pressed} control_key: {self.control_key_state} hover: {self.hover}'
+        return f"x: {self.coordinates[0]} y: {self.coordinates[1]} button: {self.button} pressed: {self.pressed} control_key: {self.control_key_state} hover: {self.hover}"
 
     @classmethod
     def from_windows_event(cls, mouse_event_record: MOUSE_EVENT_RECORD):
@@ -199,14 +206,17 @@ class MouseEvent(ConsoleEvent):
                 hover = True
             elif mouse_event_record.dwEventFlags == 0x4:
                 # mouse wheel move, high word of dwButtonState is dir, positive up
-                return cls(mouse_event_record.dwMousePosition.X,
-                           mouse_event_record.dwMousePosition.Y - 1,
-                           MouseEvent.Buttons(
-                               MouseEvent.Buttons.WHEEL_UP + ((mouse_event_record.dwButtonState >> 31) & 0x1)),
-                           True,
-                           None,
-                           False
-                           )
+                return cls(
+                    mouse_event_record.dwMousePosition.X,
+                    mouse_event_record.dwMousePosition.Y - 1,
+                    MouseEvent.Buttons(
+                        MouseEvent.Buttons.WHEEL_UP
+                        + ((mouse_event_record.dwButtonState >> 31) & 0x1)
+                    ),
+                    True,
+                    None,
+                    False,
+                )
                 # TODO: high word
             elif mouse_event_record.dwEventFlags == 0x8:
                 # horizontal mouse wheel - NOT SUPPORTED
@@ -233,14 +243,16 @@ class MouseEvent(ConsoleEvent):
         for dwButtonState, button in MouseEvent.dwButtonState_to_Buttons:
             changed = changed_mask & (0x1 << dwButtonState)
             if changed:
-                press = (mouse_event_record.dwButtonState & (0x1 << dwButtonState) != 0)
+                press = mouse_event_record.dwButtonState & (0x1 << dwButtonState) != 0
 
-                event = cls(mouse_event_record.dwMousePosition.X,
-                            mouse_event_record.dwMousePosition.Y - 1,
-                            MouseEvent.Buttons(button),
-                            press,
-                            None,
-                            hover)
+                event = cls(
+                    mouse_event_record.dwMousePosition.X,
+                    mouse_event_record.dwMousePosition.Y - 1,
+                    MouseEvent.Buttons(button),
+                    press,
+                    None,
+                    hover,
+                )
                 ret_list.append(event)
 
         if len(ret_list) == 0:
@@ -281,7 +293,16 @@ class MouseEvent(ConsoleEvent):
 
 
 class KeyEvent(ConsoleEvent):
-    def __init__(self, key_down: bool, repeat_count: int, vk_code: int, vs_code: int, char, wchar, control_key_state):
+    def __init__(
+        self,
+        key_down: bool,
+        repeat_count: int,
+        vk_code: int,
+        vs_code: int,
+        char,
+        wchar,
+        control_key_state,
+    ):
         super().__init__()
         self.key_down = key_down
         self.repeat_count = repeat_count
@@ -292,8 +313,10 @@ class KeyEvent(ConsoleEvent):
         self.control_key_state = control_key_state
 
     def __str__(self):
-        return f'KeyEvent: vk_code={self.vk_code} vs_code={self.vs_code} char="{self.char}" wchar="{self.wchar}" repeat={self.repeat_count}' \
-               f' ctrl=0x{self.control_key_state:X} key_down={self.key_down} '
+        return (
+            f'KeyEvent: vk_code={self.vk_code} vs_code={self.vs_code} char="{self.char}" wchar="{self.wchar}" repeat={self.repeat_count}'
+            f" ctrl=0x{self.control_key_state:X} key_down={self.key_down} "
+        )
 
 
 class Event(Enum):
@@ -320,8 +343,12 @@ class Rectangle:
         self.height = dimensions[3]
 
     def contains_point(self, column: int, row: int):
-        return not ((self.row > row) or (self.row + self.height - 1 < row) or (self.column > column) or (
-                self.column + self.width - 1 < column))
+        return not (
+            (self.row > row)
+            or (self.row + self.height - 1 < row)
+            or (self.column > column)
+            or (self.column + self.width - 1 < column)
+        )
 
 
 from ascii_painter_engine.input_handling import VirtualKeyCodes
@@ -375,27 +402,27 @@ class InputInterpreter:
             return
 
         # we can safely skip first 2 bytes
-        if self.ansi_escape_sequence[2] == '<':
+        if self.ansi_escape_sequence[2] == "<":
             # for mouse last byte will be m or M character
-            if self.ansi_escape_sequence[-1] not in ('m', 'M'):
+            if self.ansi_escape_sequence[-1] not in ("m", "M"):
                 self.payload.append(str(self.ansi_escape_sequence))
                 return
             # SGR
             idx = 0
             values = [0, 0, 0]
-            temp_word = ''
+            temp_word = ""
             press = False
             for i in range(3, length + 1):
                 ch = self.ansi_escape_sequence[i]
                 if idx < 2:
-                    if ch == ';':
+                    if ch == ";":
                         values[idx] = int(temp_word, 10)
                         idx += 1
-                        temp_word = ''
+                        temp_word = ""
                         continue
-                elif ch in ('m', 'M'):
+                elif ch in ("m", "M"):
                     values[idx] = int(temp_word, 10)
-                    if ch == 'M':
+                    if ch == "M":
                         press = True
                     break
                 temp_word += ch
@@ -407,8 +434,10 @@ class InputInterpreter:
             # shift   4
             # meta    8
             # control 16
-            #print(f"0X{values[0]:X} 0X{values[1]:X} 0x{values[2]:X}, press={press}", file=sys.stderr)
-            mouse_event = MouseEvent.from_sgr_csi(values[0], values[1], values[2], press)
+            # print(f"0X{values[0]:X} 0X{values[1]:X} 0x{values[2]:X}, press={press}", file=sys.stderr)
+            mouse_event = MouseEvent.from_sgr_csi(
+                values[0], values[1], values[2], press
+            )
             if mouse_event:
                 self.payload.append(mouse_event)
             return
@@ -419,7 +448,7 @@ class InputInterpreter:
         if len_aes == 3:
             third_char = ord(self.ansi_escape_sequence[2])
             vk_code = 0
-            char = b'\x00'
+            char = b"\x00"
             wchar = ""
             if third_char == 65:
                 # A - Cursor Up
@@ -436,13 +465,17 @@ class InputInterpreter:
             else:
                 self.payload.append(str(self.input_raw))
                 return
-            self.payload.append(KeyEvent(key_down=True,
-                                         repeat_count=1,
-                                         vk_code=vk_code,
-                                         vs_code=vk_code,
-                                         char=char,
-                                         wchar=wchar,
-                                         control_key_state=0))
+            self.payload.append(
+                KeyEvent(
+                    key_down=True,
+                    repeat_count=1,
+                    vk_code=vk_code,
+                    vs_code=vk_code,
+                    char=char,
+                    wchar=wchar,
+                    control_key_state=0,
+                )
+            )
         elif len_aes == 4:
             # 1 ~ Home
             # 2 ~ Insert
@@ -481,13 +514,17 @@ class InputInterpreter:
         # key a is for both upper and lower case
         # wchar.lower()
         vk_code = wchar.lower()
-        self.payload.append(KeyEvent(key_down=True,
-                                     repeat_count=1,
-                                     vk_code=VirtualKeyCodes.from_ascii(ord(wchar)),
-                                     vs_code=ord(wchar),
-                                     char=wchar.encode(),
-                                     wchar=wchar,
-                                     control_key_state=0))
+        self.payload.append(
+            KeyEvent(
+                key_down=True,
+                repeat_count=1,
+                vk_code=VirtualKeyCodes.from_ascii(ord(wchar)),
+                vs_code=ord(wchar),
+                char=wchar.encode(),
+                wchar=wchar,
+                control_key_state=0,
+            )
+        )
         return
 
     def read(self, count: int = 1):
@@ -507,17 +544,17 @@ class InputInterpreter:
                 ch = self.input_raw[i]
                 if self.state != self.State.Default:
                     ord_ch = ord(ch)
-                    if 0x20 <= ord_ch <= 0x7f:
+                    if 0x20 <= ord_ch <= 0x7F:
                         if self.state == self.State.Escape:
-                            if ch == '[':
+                            if ch == "[":
                                 self.ansi_escape_sequence.append(ch)
                                 self.state = self.State.CSI_Bytes
                                 continue
                         elif self.state == self.State.CSI_Bytes:
-                            if 0x30 <= ord_ch <= 0x3f:
+                            if 0x30 <= ord_ch <= 0x3F:
                                 self.ansi_escape_sequence.append(ch)
                                 continue
-                            elif 0x40 <= ord_ch <= 0x7e:
+                            elif 0x40 <= ord_ch <= 0x7E:
                                 # implicit IntermediateBytes
                                 self.ansi_escape_sequence.append(ch)
                                 self.parse()
@@ -528,7 +565,7 @@ class InputInterpreter:
                     self.state = self.State.Default
                     # intentionally fall through to regular parse
                 # check if escape code
-                if ch == '\x1B':
+                if ch == "\x1B":
                     self.ansi_escape_sequence.clear()
                     self.ansi_escape_sequence.append(ch)
                     self.state = self.State.Escape
@@ -558,8 +595,17 @@ class ConsoleWidget(ABC):
     # -2 - auto - parent would go from top-left line by line and auto assign tab index TODO
     TAB_INDEX_AUTO = -2
 
-    def __init__(self, app, x: int, y: int, width: int, height: int, alignment: Alignment,
-                 dimensions: DimensionsFlag = DimensionsFlag.Absolute, tab_index: int = TAB_INDEX_NOT_SELECTABLE):
+    def __init__(
+        self,
+        app,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        alignment: Alignment,
+        dimensions: DimensionsFlag = DimensionsFlag.Absolute,
+        tab_index: int = TAB_INDEX_NOT_SELECTABLE,
+    ):
         self.x = x
         self.y = y
         self.width = width
@@ -615,7 +661,7 @@ class ConsoleWidget(ABC):
         self.last_dimensions.update(x, y, width, height)
         pass
 
-    def get_widget(self, column: int, row: int) -> Union['ConsoleWidget', None]:
+    def get_widget(self, column: int, row: int) -> Union["ConsoleWidget", None]:
         return self if self.contains_point(column, row) else None
 
     def handle(self, event):
@@ -650,7 +696,7 @@ class ConsoleWidget(ABC):
         return self.last_dimensions.contains_point(column, row)
 
     def __str__(self):
-        return f'[x:{self.x} y:{self.x} width:{self.width} height:{self.height} alignment:{self.alignment} dimensions:{self.dimensions} type:{type(self)} 0x{hash(self):X}]'
+        return f"[x:{self.x} y:{self.x} width:{self.width} height:{self.height} alignment:{self.alignment} dimensions:{self.dimensions} type:{type(self)} 0x{hash(self):X}]"
 
 
 class Console:
@@ -698,12 +744,14 @@ class LinuxConsole(Console):
         self.prev_fl = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
         new_fl = self.prev_fl | os.O_NONBLOCK
         fcntl.fcntl(sys.stdin, fcntl.F_SETFL, new_fl)
-        self.app.log(f'stdin fl: 0x{self.prev_fl:X} -> 0x{new_fl:X}')
+        self.app.log(f"stdin fl: 0x{self.prev_fl:X} -> 0x{new_fl:X}")
         self.prev_tc = termios.tcgetattr(sys.stdin)
         new_tc = termios.tcgetattr(sys.stdin)
         # manipulating lflag
         new_tc[3] = new_tc[3] & ~termios.ECHO  # disable input echo
-        new_tc[3] = new_tc[3] & ~termios.ICANON  # disable canonical mode - input available immediately
+        new_tc[3] = (
+            new_tc[3] & ~termios.ICANON
+        )  # disable canonical mode - input available immediately
         # cc
         # VMIN | VTIME | Result
         # =0   | =0    | non-blocking read
@@ -713,22 +761,26 @@ class LinuxConsole(Console):
         new_tc[6][termios.VMIN] = 0
         new_tc[6][termios.VTIME] = 0
         termios.tcsetattr(sys.stdin, termios.TCSANOW, new_tc)  # TCSADRAIN?
-        self.app.log(f'stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}')
-        self.app.log(f'stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}')
-        self.app.log(f'stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}')
+        self.app.log(f"stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}")
+        self.app.log(
+            f"stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}"
+        )
+        self.app.log(
+            f"stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}"
+        )
 
         self.input_interpreter = InputInterpreter(sys.stdin)
 
     def __del__(self):
         # restore stdin
         if self.is_interactive_mode:
-            print('\x1B[?10001')
+            print("\x1B[?10001")
 
         termios.tcsetattr(sys.stdin, termios.TCSANOW, self.prev_tc)
         fcntl.fcntl(sys.stdin, fcntl.F_SETFL, self.prev_fl)
-        print('xRestore console done')
+        print("xRestore console done")
         if self.is_interactive_mode:
-            print('\x1B[?1006l\x1B[?1015l\x1B[?1003l')
+            print("\x1B[?1006l\x1B[?1015l\x1B[?1003l")
 
     window_change_event_ctx = None
 
@@ -747,11 +799,11 @@ class LinuxConsole(Console):
         # ctrl-z not allowed
         signal.signal(signal.SIGTSTP, signal.SIG_IGN)
         # enable mouse - xterm, sgr1006
-        print('\x1B[?1003h\x1B[?1006h')
+        print("\x1B[?1003h\x1B[?1006h")
         # focus event
         # CSI I on focus
         # CSI O on loss
-        print('\x1B[?1004h')
+        print("\x1B[?1004h")
 
     def read_events(self, callback, callback_ctx) -> bool:
         events_list = []
@@ -776,7 +828,7 @@ def no_print(fmt, *args):
 
 def demo_fun(app):
     app.demo_event.wait(app.demo_time_s)
-    print(f'DEMO MODE - {app.demo_time_s}s - END')
+    print(f"DEMO MODE - {app.demo_time_s}s - END")
     if app.demo_event.is_set():
         return
     app.running = False
@@ -823,7 +875,7 @@ class App:
     def inner_height(self):
         return self.height
 
-    def debug_print(self, text, end='\n'):
+    def debug_print(self, text, end="\n"):
         if self.log is not no_print:
             self.brush.print(text, color=self.debug_colors, end=end)
 
@@ -831,8 +883,10 @@ class App:
         self.width, self.height = self.console.update_size()
         if reuse:
             self.brush.MoveCursor(0, 0)
-        for line in ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, ' ', border=False, debug=False):
-            print(line, end='\n', flush=True)
+        for line in ConsoleBuffer.fill_buffer(
+            self.console.columns, self.console.rows, " ", border=False, debug=False
+        ):
+            print(line, end="\n", flush=True)
         self.requires_draw = True
 
     def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
@@ -882,11 +936,14 @@ class App:
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
                 if widget:
                     self.log(
-                        f'x: {event.coordinates[0]} y: {event.coordinates[1]} button:{event.button} press:{event.pressed} widget:{widget}')
+                        f"x: {event.coordinates[0]} y: {event.coordinates[1]} button:{event.button} press:{event.pressed} widget:{widget}"
+                    )
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
                 self.brush.MoveCursor(row=(self.console.rows + off) - 0)
-                self.debug_print(f'size: {self.console.columns:3}x{self.console.rows:3}')
+                self.debug_print(
+                    f"size: {self.console.columns:3}x{self.console.rows:3}"
+                )
             elif isinstance(event, KeyEvent):
                 self.brush.MoveCursor(row=(self.console.rows + off) - 2)
                 self.debug_print(event)
@@ -966,7 +1023,9 @@ class App:
         success = self.console.set_color_mode(True)
         if success:
             self.brush.color_mode()
-            self.debug_colors = ConsoleColor(Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8))
+            self.debug_colors = ConsoleColor(
+                Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8)
+            )
         return success
 
     def nocolor_mode(self) -> bool:
@@ -978,7 +1037,9 @@ class App:
         widget.parent = self
         self.widgets.append(widget)
 
-    def add_widget_after(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
+    def add_widget_after(
+        self, widget: ConsoleWidget, widget_on_list: ConsoleWidget
+    ) -> bool:
         try:
             idx = self.widgets.index(widget_on_list)
         except ValueError as e:
@@ -988,7 +1049,9 @@ class App:
         self.widgets.insert(idx + 1, widget)
         return True
 
-    def add_widget_before(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
+    def add_widget_before(
+        self, widget: ConsoleWidget, widget_on_list: ConsoleWidget
+    ) -> bool:
         try:
             idx = self.widgets.index(widget_on_list)
         except ValueError as e:
@@ -1002,22 +1065,22 @@ class App:
 class WindowsConsole(Console):
     def __init__(self, app):
         super().__init__(app)
-        self.kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
+        self.kernel32 = ctypes.WinDLL("kernel32.dll", use_last_error=True)
         set_console_mode_proto = ctypes.WINFUNCTYPE(
-            ctypes.wintypes.BOOL,
-            ctypes.wintypes.HANDLE,
-            ctypes.wintypes.DWORD
+            ctypes.wintypes.BOOL, ctypes.wintypes.HANDLE, ctypes.wintypes.DWORD
         )
         set_console_mode_params = (1, "hConsoleHandle", 0), (1, "dwMode", 0)
-        self.setConsoleMode = set_console_mode_proto(('SetConsoleMode', self.kernel32), set_console_mode_params)
+        self.setConsoleMode = set_console_mode_proto(
+            ("SetConsoleMode", self.kernel32), set_console_mode_params
+        )
 
         get_console_mode_proto = ctypes.WINFUNCTYPE(
-            ctypes.wintypes.BOOL,
-            ctypes.wintypes.HANDLE,
-            ctypes.wintypes.LPDWORD
+            ctypes.wintypes.BOOL, ctypes.wintypes.HANDLE, ctypes.wintypes.LPDWORD
         )
         get_console_mode_params = (1, "hConsoleHandle", 0), (1, "lpMode", 0)
-        self.getConsoleMode = get_console_mode_proto(('GetConsoleMode', self.kernel32), get_console_mode_params)
+        self.getConsoleMode = get_console_mode_proto(
+            ("GetConsoleMode", self.kernel32), get_console_mode_params
+        )
         self.consoleHandleOut = msvcrt.get_osfhandle(sys.stdout.fileno())
         self.consoleHandleIn = msvcrt.get_osfhandle(sys.stdin.fileno())
 
@@ -1026,22 +1089,30 @@ class WindowsConsole(Console):
             ctypes.wintypes.HANDLE,
             ctypes.wintypes.LPVOID,  # PINPUT_RECORD
             ctypes.wintypes.DWORD,
-            ctypes.wintypes.LPDWORD
+            ctypes.wintypes.LPDWORD,
         )
-        read_console_input_params = (1, "hConsoleInput", 0), (1, "lpBuffer", 0), (1, "nLength", 0), (
-            1, "lpNumberOfEventsRead", 0)
-        self.readConsoleInput = read_console_input_proto(('ReadConsoleInputW', self.kernel32),
-                                                         read_console_input_params)
+        read_console_input_params = (
+            (1, "hConsoleInput", 0),
+            (1, "lpBuffer", 0),
+            (1, "nLength", 0),
+            (1, "lpNumberOfEventsRead", 0),
+        )
+        self.readConsoleInput = read_console_input_proto(
+            ("ReadConsoleInputW", self.kernel32), read_console_input_params
+        )
 
         get_number_of_console_input_events_proto = ctypes.WINFUNCTYPE(
-            ctypes.wintypes.BOOL,
-            ctypes.wintypes.HANDLE,
-            ctypes.wintypes.LPDWORD
+            ctypes.wintypes.BOOL, ctypes.wintypes.HANDLE, ctypes.wintypes.LPDWORD
         )
-        get_number_of_console_input_events_params = (1, "hConsoleInput", 0), (1, "lpcNumberOfEvents", 0)
+        get_number_of_console_input_events_params = (1, "hConsoleInput", 0), (
+            1,
+            "lpcNumberOfEvents",
+            0,
+        )
         self.getNumberOfConsoleInputEvents = get_number_of_console_input_events_proto(
-            ('GetNumberOfConsoleInputEvents', self.kernel32),
-            get_number_of_console_input_events_params)
+            ("GetNumberOfConsoleInputEvents", self.kernel32),
+            get_number_of_console_input_events_params,
+        )
         self.blocking = True
 
     KEY_EVENT = 0x1
@@ -1059,11 +1130,18 @@ class WindowsConsole(Console):
         record = INPUT_RECORD()
         number_of_events = ctypes.wintypes.DWORD(0)
         if self.blocking is False:
-            ret_val = self.getNumberOfConsoleInputEvents(self.consoleHandleIn, ctypes.byref(number_of_events))
+            ret_val = self.getNumberOfConsoleInputEvents(
+                self.consoleHandleIn, ctypes.byref(number_of_events)
+            )
             if number_of_events.value == 0:
                 return None
 
-        ret_val = self.readConsoleInput(self.consoleHandleIn, ctypes.byref(record), 1, ctypes.byref(number_of_events))
+        ret_val = self.readConsoleInput(
+            self.consoleHandleIn,
+            ctypes.byref(record),
+            1,
+            ctypes.byref(number_of_events),
+        )
         return record
 
     def read_events(self, callback, callback_ctx) -> bool:
@@ -1079,13 +1157,17 @@ class WindowsConsole(Console):
             if event:
                 events_list.append(event)
         elif record.EventType == self.KEY_EVENT:
-            events_list.append(KeyEvent(key_down=bool(record.Event.KeyEvent.bKeyDown),
-                                        repeat_count=record.Event.KeyEvent.wRepeatCount,
-                                        vk_code=record.Event.KeyEvent.wVirtualKeyCode,
-                                        vs_code=record.Event.KeyEvent.wVirtualScanCode,
-                                        char=record.Event.KeyEvent.uChar.AsciiChar,
-                                        wchar=record.Event.KeyEvent.uChar.UnicodeChar,
-                                        control_key_state=record.Event.KeyEvent.dwControlKeyState))
+            events_list.append(
+                KeyEvent(
+                    key_down=bool(record.Event.KeyEvent.bKeyDown),
+                    repeat_count=record.Event.KeyEvent.wRepeatCount,
+                    vk_code=record.Event.KeyEvent.wVirtualKeyCode,
+                    vs_code=record.Event.KeyEvent.wVirtualScanCode,
+                    char=record.Event.KeyEvent.uChar.AsciiChar,
+                    wchar=record.Event.KeyEvent.uChar.UnicodeChar,
+                    control_key_state=record.Event.KeyEvent.dwControlKeyState,
+                )
+            )
         else:
             pass
 
@@ -1121,7 +1203,9 @@ class WindowsConsole(Console):
 
     def SetVirtualTerminalProcessing(self, enable: bool) -> bool:
         ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4
-        return self.SetMode(self.consoleHandleOut, ENABLE_VIRTUAL_TERMINAL_PROCESSING, enable)
+        return self.SetMode(
+            self.consoleHandleOut, ENABLE_VIRTUAL_TERMINAL_PROCESSING, enable
+        )
 
     def set_color_mode(self, enable: bool) -> bool:
         success = self.SetVirtualTerminalProcessing(enable)
@@ -1149,14 +1233,14 @@ class Theme:
 
         @classmethod
         def monokai(cls):
-            cyan = 0x00b9d7
-            gold_brown = 0xabaa98
-            green = 0x82cdb9
-            off_white = 0xf5f5f5
-            orange = 0xf37259
-            pink = 0xff3d70
-            pink_magenta = 0xf7208b
-            yellow = 0xf9f5c2
+            cyan = 0x00B9D7
+            gold_brown = 0xABAA98
+            green = 0x82CDB9
+            off_white = 0xF5F5F5
+            orange = 0xF37259
+            pink = 0xFF3D70
+            pink_magenta = 0xF7208B
+            yellow = 0xF9F5C2
 
     def __init__(self, border: list[Point]):
         # border string
@@ -1177,10 +1261,9 @@ class Theme:
 
         if len(self.border) < 9:
             # invalid border TODO
-            self.border = 9 * [Point(' ')]
+            self.border = 9 * [Point(" ")]
 
         self.selectors = Selectors()
-
 
     def border_set_color(self, color):
         for i in range(1, 9):
@@ -1193,7 +1276,9 @@ class Theme:
     def border_from_str(border_str: str) -> list[Point]:
         border = []
         if len(border_str) < 9:
-            raise Exception(f'border_str must have at least len of 9 - got {len(border_str)}')
+            raise Exception(
+                f"border_str must have at least len of 9 - got {len(border_str)}"
+            )
         for i in range(0, 9):
             border.append(Point(border_str[i]))
         return border
@@ -1201,90 +1286,90 @@ class Theme:
     @classmethod
     def default_theme(cls):
         border = [
-            Point(' '),
-            Point('+'),
-            Point('+'),
-            Point('+'),
-            Point('+'),
-            Point('-'),
-            Point('|'),
-            Point('|'),
-            Point('-'),
+            Point(" "),
+            Point("+"),
+            Point("+"),
+            Point("+"),
+            Point("+"),
+            Point("-"),
+            Point("|"),
+            Point("|"),
+            Point("-"),
         ]
         return cls(border=border)
 
     @classmethod
     def other_theme(cls):
         border = [
-            Point(' '),
-            Point(' '),
-            Point(' '),
-            Point('|'),
-            Point('|'),
-            Point('_'),
-            Point('|'),
-            Point('|'),
-            Point('_'),
+            Point(" "),
+            Point(" "),
+            Point(" "),
+            Point("|"),
+            Point("|"),
+            Point("_"),
+            Point("|"),
+            Point("|"),
+            Point("_"),
         ]
         return cls(border=border)
 
     @classmethod
     def double_line_theme(cls):
         border = [
-            Point(' '),
-            Point('╔'),
-            Point('╗'),
-            Point('╚'),
-            Point('╝'),
-            Point('═'),
-            Point('║'),
-            Point('║'),
-            Point('═'),
+            Point(" "),
+            Point("╔"),
+            Point("╗"),
+            Point("╚"),
+            Point("╝"),
+            Point("═"),
+            Point("║"),
+            Point("║"),
+            Point("═"),
         ]
         return cls(border=border)
 
     @classmethod
     def single_line_light_theme(cls):
         border = [
-            Point(' '),
-            Point('┌'),
-            Point('┐'),
-            Point('└'),
-            Point('┘'),
-            Point('─'),
-            Point('│'),
-            Point('│'),
-            Point('─'),
+            Point(" "),
+            Point("┌"),
+            Point("┐"),
+            Point("└"),
+            Point("┘"),
+            Point("─"),
+            Point("│"),
+            Point("│"),
+            Point("─"),
         ]
         return cls(border=border)
 
     @classmethod
     def single_line_heavy_theme(cls):
         border = [
-            Point(' '),
-            Point('┏'),
-            Point('┓'),
-            Point('┗'),
-            Point('┛'),
-            Point('━'),
-            Point('┃'),
-            Point('┃'),
-            Point('━'),
+            Point(" "),
+            Point("┏"),
+            Point("┓"),
+            Point("┗"),
+            Point("┛"),
+            Point("━"),
+            Point("┃"),
+            Point("┃"),
+            Point("━"),
         ]
         return cls(border=border)
 
     @classmethod
     def single_line_heavy_top_light_rest_theme(cls):
         border = [
-            Point(' '),
-            Point('┍'),
-            Point('┑'),
-            Point('└'),
-            Point('┘'),
-            Point('━'),
-            Point('│'),
-            Point('│'),
-            Point('─'),
+            Point(" "),
+            Point("┍"),
+            Point("┑"),
+            Point("└"),
+            Point("┘"),
+            Point("━"),
+            Point("│"),
+            Point("│"),
+            Point("─"),
         ]
         return cls(border=border)
 
@@ -1292,15 +1377,15 @@ class Theme:
     def single_line_light_rounded_corners_theme(cls):
         # unciode chars box drawing https://www.w3.org/TR/xml-entity-names/025.html
         border = [
-            Point(' '),
-            Point('╭'),
-            Point('╮'),
-            Point('╰'),
-            Point('╯'),
-            Point('─'),
-            Point('│'),
-            Point('│'),
-            Point('─'),
+            Point(" "),
+            Point("╭"),
+            Point("╮"),
+            Point("╰"),
+            Point("╯"),
+            Point("─"),
+            Point("│"),
+            Point("│"),
+            Point("─"),
         ]
         return cls(border=border)
 
@@ -1314,7 +1399,7 @@ class Brush:
         self.bgcolor = None
         self.use_color = use_color
 
-    RESET = '\x1B[0m'
+    RESET = "\x1B[0m"
 
     def color_mode(self):
         self.use_color = True
@@ -1325,42 +1410,50 @@ class Brush:
     def FgColor(self, color, check_last=False, bits: ColorBits = ColorBits.Bit24):
         if check_last:
             if self.fgcolor == color:
-                return ''
+                return ""
         self.fgcolor = color
         if self.fgcolor is None:
-            return ''
-        return f'\x1B[38;{int(self.fgcolor.bits)};{self.fgcolor.color}m'
+            return ""
+        return f"\x1B[38;{int(self.fgcolor.bits)};{self.fgcolor.color}m"
 
     def BgColor(self, color: Color, check_last=False):
         if check_last:
             if self.bgcolor == color:
-                return ''
+                return ""
         self.bgcolor = color
         if self.bgcolor is None:
-            return ''
-        return f'\x1B[48;{int(self.bgcolor.bits)};{self.bgcolor.color}m'
+            return ""
+        return f"\x1B[48;{int(self.bgcolor.bits)};{self.bgcolor.color}m"
 
     def FgBgColor(self, console_color: ConsoleColor, check_last=False):
-        ret_val = ''
-        if (console_color.fgcolor is None and self.fgcolor != console_color.fgcolor) or (
-                console_color.bgcolor is None and self.bgcolor != console_color.bgcolor):
+        ret_val = ""
+        if (
+            console_color.fgcolor is None and self.fgcolor != console_color.fgcolor
+        ) or (console_color.bgcolor is None and self.bgcolor != console_color.bgcolor):
             ret_val = self.ResetColor()
         ret_val += self.FgColor(console_color.fgcolor, check_last)
         ret_val += self.BgColor(console_color.bgcolor, check_last)
         return ret_val
 
-    def print(self, *args, sep=' ', end='', file=None, color: Union[ConsoleColor, None] = None):
+    def print(
+        self, *args, sep=" ", end="", file=None, color: Union[ConsoleColor, None] = None
+    ):
         if color is None or color.no_color():
             print(*args, sep=sep, end=end, file=file)
         else:
             color = self.BgColor(color.bgcolor) + self.FgColor(color.fgcolor)
-            print(color + " ".join(map(str, args)) + self.RESET, sep=sep, end=end, file=file)
+            print(
+                color + " ".join(map(str, args)) + self.RESET,
+                sep=sep,
+                end=end,
+                file=file,
+            )
 
     def SetFgColor(self, color):
-        print(self.FgColor(color), end='')
+        print(self.FgColor(color), end="")
 
     def SetBgColor(self, color):
-        print(self.BgColor(color), end='')
+        print(self.BgColor(color), end="")
 
     def ResetColor(self):
         self.bgcolor = None
@@ -1369,71 +1462,75 @@ class Brush:
 
     @staticmethod
     def Reset():
-        print(Brush.RESET, end='')
+        print(Brush.RESET, end="")
 
     @staticmethod
     def MoveUp(cells: int = 1):
-        print(f'\x1B[{cells}A')
+        print(f"\x1B[{cells}A")
 
     @staticmethod
     def MoveDown(cells: int = 1):
-        print(f'\x1B[{cells}B')
+        print(f"\x1B[{cells}B")
 
     @staticmethod
     def MoveRight(cells: int = 1) -> str:
         if cells != 0:
-            return f'\x1B[{cells}C'
-        return ''
+            return f"\x1B[{cells}C"
+        return ""
 
     @staticmethod
     def MoveLeft(cells: int = 1) -> str:
         if cells != 0:
-            return f'\x1B[{cells}D'
-        return ''
+            return f"\x1B[{cells}D"
+        return ""
 
     @staticmethod
     def MoveLineDown(lines: int = 1):
-        print(f'\x1B[{lines}E')  # not ANSI.SYS
+        print(f"\x1B[{lines}E")  # not ANSI.SYS
 
     @staticmethod
     def MoveLineUp(lines: int = 1):
-        print(f'\x1B[{lines}F')  # not ANSI.SYS
+        print(f"\x1B[{lines}F")  # not ANSI.SYS
 
     @staticmethod
     def MoveColumnAbsolute(column: int = 1):
-        print(f'\x1B[{column}G')  # not ANSI.SYS
+        print(f"\x1B[{column}G")  # not ANSI.SYS
 
     @staticmethod
     def MoveCursor(row: int = 0, column: int = 0):
-        print(f'\x1B[{row + 1};{column + 1}H')
+        print(f"\x1B[{row + 1};{column + 1}H")
 
     @staticmethod
     def HorizontalVerticalPosition(row: int = 1, column: int = 1):
-        print(f'\x1B[{row};{column}f')
+        print(f"\x1B[{row};{column}f")
 
     @staticmethod
     def HideCursor():
-        print('\x1b[?25l')
+        print("\x1b[?25l")
         # alternative on windows without vt:
         # https://docs.microsoft.com/en-us/windows/console/setconsolecursorinfo?redirectedfrom=MSDN
 
     @staticmethod
     def ShowCursor():
-        print('\x1b[?25h')
+        print("\x1b[?25h")
 
 
 class Test:
     @staticmethod
-    def ColorLine(start, end, text='  ', use_color=False, width=2):
+    def ColorLine(start, end, text="  ", use_color=False, width=2):
         for color in range(start, end):
-            print(f'\x1B[48;5;{color}m{("{:" + str(width) + "}").format(color) if use_color else text}', end='')
-        print('\x1B[0m')
+            print(
+                f'\x1B[48;5;{color}m{("{:" + str(width) + "}").format(color) if use_color else text}',
+                end="",
+            )
+        print("\x1B[0m")
 
     @staticmethod
     def ColorLine24bit(start, end, step=0):
         for color in range(start, end, step):
-            print(f'\x1B[48;2;{color};{color};{color}mXD', end='')
-        print('\x1B[0m')
+            print(f"\x1B[48;2;{color};{color};{color}mXD", end="")
+        print("\x1B[0m")
+
 
 # TODO:
 # CMD - mouse coordinates include a big buffer scroll up, so instead of 30 we get 1300 for y-val
