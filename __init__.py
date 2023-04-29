@@ -164,10 +164,10 @@ class MouseEvent(ConsoleEvent):
     dwButtonState_to_Buttons = [[0, 0], [1, 2], [2, 1]]
 
     class Buttons(IntEnum):
-        LMB = 0,
-        RMB = 2,
-        MIDDLE = 1,
-        WHEEL_UP = 64,
+        LMB = 0
+        RMB = 2
+        MIDDLE = 1
+        WHEEL_UP = 64
         WHEEL_DOWN = 65
 
     class ControlKeys(Flag):
