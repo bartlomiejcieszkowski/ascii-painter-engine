@@ -14,9 +14,7 @@ class Color:
 
 
 class ConsoleColor:
-    def __init__(
-        self, fgcolor: Union[Color, None] = None, bgcolor: Union[Color, None] = None
-    ):
+    def __init__(self, fgcolor: Union[Color, None] = None, bgcolor: Union[Color, None] = None):
         self.fgcolor = fgcolor
         self.bgcolor = bgcolor
 

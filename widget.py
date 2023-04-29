@@ -59,9 +59,7 @@ class BorderWidget(ConsoleWidget):
 
     def border_from_str(self, border_str: str):
         if len(border_str) < 9:
-            raise Exception(
-                f"border_str must have at least len of 9 - got {len(border_str)}"
-            )
+            raise Exception(f"border_str must have at least len of 9 - got {len(border_str)}")
         self.border = []
         for i in range(0, 9):
             self.border.append(Point(border_str[i]))
@@ -84,11 +82,7 @@ class BorderWidget(ConsoleWidget):
             self.app.brush.FgBgColor(left_top_corner.color)
             + left_top_corner.c
             + self.app.brush.FgBgColor(top_border.color)
-            + (
-                (title[: width_middle - 2] + "..")
-                if len(title) > width_middle
-                else title
-            )
+            + ((title[: width_middle - 2] + "..") if len(title) > width_middle else title)
             + (top_border.c * (width_middle - len(self.title)))
             + self.app.brush.FgBgColor(right_top_corner.color)
             + right_top_corner.c
@@ -123,9 +117,7 @@ class BorderWidget(ConsoleWidget):
         self.app.brush.MoveCursor(row=offset_rows)
         offset_str = self.app.brush.MoveRight(offset_cols)
         if self.borderless is False:
-            self.app.brush.print(
-                offset_str + self.border_get_top(width_middle, title), end=""
-            )
+            self.app.brush.print(offset_str + self.border_get_top(width_middle, title), end="")
         text = inside_text
         start = 0 if self.borderless else 1
         end = height if self.borderless else (height - 1)
@@ -147,11 +139,7 @@ class BorderWidget(ConsoleWidget):
                 line += self.app.brush.FgBgColor(left_border.color) + left_border.c
 
             inside_border = self.border_get_point(0)
-            line += (
-                self.app.brush.FgBgColor(inside_border.color)
-                + print_text
-                + (inside_border.c * leftover)
-            )
+            line += self.app.brush.FgBgColor(inside_border.color) + print_text + (inside_border.c * leftover)
 
             if self.borderless is False:
                 right_border = self.border_get_point(7)
@@ -162,9 +150,7 @@ class BorderWidget(ConsoleWidget):
 
         if self.borderless is False:
             self.app.brush.MoveCursor(row=offset_rows + height - 1)
-            self.app.brush.print(
-                offset_str + self.border_get_bottom(width_middle), end="\n"
-            )
+            self.app.brush.print(offset_str + self.border_get_bottom(width_middle), end="\n")
         pass
 
     def local_point(self, point: Tuple[int, int]) -> Tuple[int, int]:
@@ -178,12 +164,7 @@ class BorderWidget(ConsoleWidget):
         local_column = point[0] - offset_cols
         local_row = point[1] - offset_rows
 
-        if (
-            local_column < 0
-            or local_column >= width
-            or local_row < 0
-            or local_row >= height
-        ):
+        if local_column < 0 or local_column >= width or local_row < 0 or local_row >= height:
             return None, None
 
         # x, y

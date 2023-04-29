@@ -212,9 +212,7 @@ class CssParser:
                             state = State.property
                             pass
                         else:
-                            failed = Exception(
-                                f'{line_num}: state: {state} - got "{c}" - line: "{line}"'
-                            )
+                            failed = Exception(f'{line_num}: state: {state} - got "{c}" - line: "{line}"')
                             break
                         idx += 1
                         continue
@@ -241,9 +239,7 @@ class CssParser:
                         # elif c == ' ':
                         #    pass
                         else:
-                            failed = Exception(
-                                f'{line_num}: state: {state} - got "{c}" - line: "{line}"'
-                            )
+                            failed = Exception(f'{line_num}: state: {state} - got "{c}" - line: "{line}"')
                             break
                         idx += 1
                         continue
@@ -269,9 +265,7 @@ class CssParser:
                         # elif c == ' ':
                         #    pass
                         else:
-                            failed = Exception(
-                                f'{line_num}: state: {state} - got "{c}" - line: "{line}"'
-                            )
+                            failed = Exception(f'{line_num}: state: {state} - got "{c}" - line: "{line}"')
                             break
                         idx += 1
                         continue

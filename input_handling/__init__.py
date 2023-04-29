@@ -163,18 +163,30 @@ class VirtualKeyCodes(IntEnum):
     VK_LAUNCH_APP1 = 0xB6  # Start Application 1 key
     VK_LAUNCH_APP2 = 0xB7  # Start Application 2 key
     # - # 0xB8-B9 # Reserved
-    VK_OEM_1 = 0xBA  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ';:' key
+    VK_OEM_1 = (
+        0xBA  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ';:' key
+    )
     VK_OEM_PLUS = 0xBB  # For any country/region, the '+' key
     VK_OEM_COMMA = 0xBC  # For any country/region, the ',' key
     VK_OEM_MINUS = 0xBD  # For any country/region, the '-' key
     VK_OEM_PERIOD = 0xBE  # For any country/region, the '.' key
-    VK_OEM_2 = 0xBF  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '/?' key
-    VK_OEM_3 = 0xC0  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '`~' key
+    VK_OEM_2 = (
+        0xBF  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '/?' key
+    )
+    VK_OEM_3 = (
+        0xC0  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '`~' key
+    )
     # - # 0xC1-D7 # Reserved
     # - # 0xD8-DA # Unassigned
-    VK_OEM_4 = 0xDB  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '[{' key
-    VK_OEM_5 = 0xDC  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '\|' key
-    VK_OEM_6 = 0xDD  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key
+    VK_OEM_4 = (
+        0xDB  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '[{' key
+    )
+    VK_OEM_5 = (
+        0xDC  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '\|' key
+    )
+    VK_OEM_6 = (
+        0xDD  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key
+    )
     VK_OEM_7 = 0xDE  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the 'single-quote/double-quote' key
     VK_OEM_8 = 0xDF  # Used for miscellaneous characters; it can vary by keyboard.
     # - = 0xE0 # Reserved

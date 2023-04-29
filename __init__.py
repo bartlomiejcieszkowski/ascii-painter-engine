@@ -175,9 +175,7 @@ class MouseEvent(ConsoleEvent):
     class ControlKeys(Flag):
         LEFT_CTRL = 0x8
 
-    def __init__(
-        self, x, y, button: Buttons, pressed: bool, control_key_state, hover: bool
-    ):
+    def __init__(self, x, y, button: Buttons, pressed: bool, control_key_state, hover: bool):
         super().__init__()
         self.coordinates = (x, y)
         self.button = button
@@ -206,10 +204,7 @@ class MouseEvent(ConsoleEvent):
                 return cls(
                     mouse_event_record.dwMousePosition.X,
                     mouse_event_record.dwMousePosition.Y - 1,
-                    MouseEvent.Buttons(
-                        MouseEvent.Buttons.WHEEL_UP
-                        + ((mouse_event_record.dwButtonState >> 31) & 0x1)
-                    ),
+                    MouseEvent.Buttons(MouseEvent.Buttons.WHEEL_UP + ((mouse_event_record.dwButtonState >> 31) & 0x1)),
                     True,
                     None,
                     False,
@@ -432,9 +427,7 @@ class InputInterpreter:
             # meta    8
             # control 16
             # print(f"0X{values[0]:X} 0X{values[1]:X} 0x{values[2]:X}, press={press}", file=sys.stderr)
-            mouse_event = MouseEvent.from_sgr_csi(
-                values[0], values[1], values[2], press
-            )
+            mouse_event = MouseEvent.from_sgr_csi(values[0], values[1], values[2], press)
             if mouse_event:
                 self.payload.append(mouse_event)
             return
@@ -746,9 +739,7 @@ class LinuxConsole(Console):
         new_tc = termios.tcgetattr(sys.stdin)
         # manipulating lflag
         new_tc[3] = new_tc[3] & ~termios.ECHO  # disable input echo
-        new_tc[3] = (
-            new_tc[3] & ~termios.ICANON
-        )  # disable canonical mode - input available immediately
+        new_tc[3] = new_tc[3] & ~termios.ICANON  # disable canonical mode - input available immediately
         # cc
         # VMIN | VTIME | Result
         # =0   | =0    | non-blocking read
@@ -759,12 +750,8 @@ class LinuxConsole(Console):
         new_tc[6][termios.VTIME] = 0
         termios.tcsetattr(sys.stdin, termios.TCSANOW, new_tc)  # TCSADRAIN?
         self.app.log(f"stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}")
-        self.app.log(
-            f"stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}"
-        )
-        self.app.log(
-            f"stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}"
-        )
+        self.app.log(f"stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}")
+        self.app.log(f"stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}")
 
         self.input_interpreter = InputInterpreter(sys.stdin)
 
@@ -880,9 +867,7 @@ class App:
         self.width, self.height = self.console.update_size()
         if reuse:
             self.brush.MoveCursor(0, 0)
-        for line in ConsoleBuffer.fill_buffer(
-            self.console.columns, self.console.rows, " ", border=False, debug=False
-        ):
+        for line in ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, " ", border=False, debug=False):
             print(line, end="\n", flush=True)
         self.requires_draw = True
 
@@ -938,9 +923,7 @@ class App:
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
                 self.brush.MoveCursor(row=(self.console.rows + off) - 0)
-                self.debug_print(
-                    f"size: {self.console.columns:3}x{self.console.rows:3}"
-                )
+                self.debug_print(f"size: {self.console.columns:3}x{self.console.rows:3}")
             elif isinstance(event, KeyEvent):
                 self.brush.MoveCursor(row=(self.console.rows + off) - 2)
                 self.debug_print(event)
@@ -1020,9 +1003,7 @@ class App:
         success = self.console.set_color_mode(True)
         if success:
             self.brush.color_mode()
-            self.debug_colors = ConsoleColor(
-                Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8)
-            )
+            self.debug_colors = ConsoleColor(Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8))
         return success
 
     def nocolor_mode(self) -> bool:
@@ -1034,9 +1015,7 @@ class App:
         widget.parent = self
         self.widgets.append(widget)
 
-    def add_widget_after(
-        self, widget: ConsoleWidget, widget_on_list: ConsoleWidget
-    ) -> bool:
+    def add_widget_after(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
         try:
             idx = self.widgets.index(widget_on_list)
         except ValueError as e:
@@ -1046,9 +1025,7 @@ class App:
         self.widgets.insert(idx + 1, widget)
         return True
 
-    def add_widget_before(
-        self, widget: ConsoleWidget, widget_on_list: ConsoleWidget
-    ) -> bool:
+    def add_widget_before(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
         try:
             idx = self.widgets.index(widget_on_list)
         except ValueError as e:
@@ -1063,21 +1040,15 @@ class WindowsConsole(Console):
     def __init__(self, app):
         super().__init__(app)
         self.kernel32 = ctypes.WinDLL("kernel32.dll", use_last_error=True)
-        set_console_mode_proto = ctypes.WINFUNCTYPE(
-            ctypes.wintypes.BOOL, ctypes.wintypes.HANDLE, ctypes.wintypes.DWORD
-        )
+        set_console_mode_proto = ctypes.WINFUNCTYPE(ctypes.wintypes.BOOL, ctypes.wintypes.HANDLE, ctypes.wintypes.DWORD)
         set_console_mode_params = (1, "hConsoleHandle", 0), (1, "dwMode", 0)
-        self.setConsoleMode = set_console_mode_proto(
-            ("SetConsoleMode", self.kernel32), set_console_mode_params
-        )
+        self.setConsoleMode = set_console_mode_proto(("SetConsoleMode", self.kernel32), set_console_mode_params)
 
         get_console_mode_proto = ctypes.WINFUNCTYPE(
             ctypes.wintypes.BOOL, ctypes.wintypes.HANDLE, ctypes.wintypes.LPDWORD
         )
         get_console_mode_params = (1, "hConsoleHandle", 0), (1, "lpMode", 0)
-        self.getConsoleMode = get_console_mode_proto(
-            ("GetConsoleMode", self.kernel32), get_console_mode_params
-        )
+        self.getConsoleMode = get_console_mode_proto(("GetConsoleMode", self.kernel32), get_console_mode_params)
         self.consoleHandleOut = msvcrt.get_osfhandle(sys.stdout.fileno())
         self.consoleHandleIn = msvcrt.get_osfhandle(sys.stdin.fileno())
 
@@ -1127,9 +1098,7 @@ class WindowsConsole(Console):
         record = INPUT_RECORD()
         number_of_events = ctypes.wintypes.DWORD(0)
         if self.blocking is False:
-            ret_val = self.getNumberOfConsoleInputEvents(
-                self.consoleHandleIn, ctypes.byref(number_of_events)
-            )
+            ret_val = self.getNumberOfConsoleInputEvents(self.consoleHandleIn, ctypes.byref(number_of_events))
             if number_of_events.value == 0:
                 return None
 
@@ -1200,9 +1169,7 @@ class WindowsConsole(Console):
 
     def SetVirtualTerminalProcessing(self, enable: bool) -> bool:
         ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4
-        return self.SetMode(
-            self.consoleHandleOut, ENABLE_VIRTUAL_TERMINAL_PROCESSING, enable
-        )
+        return self.SetMode(self.consoleHandleOut, ENABLE_VIRTUAL_TERMINAL_PROCESSING, enable)
 
     def set_color_mode(self, enable: bool) -> bool:
         success = self.SetVirtualTerminalProcessing(enable)
@@ -1273,9 +1240,7 @@ class Theme:
     def border_from_str(border_str: str) -> list[Point]:
         border = []
         if len(border_str) < 9:
-            raise Exception(
-                f"border_str must have at least len of 9 - got {len(border_str)}"
-            )
+            raise Exception(f"border_str must have at least len of 9 - got {len(border_str)}")
         for i in range(0, 9):
             border.append(Point(border_str[i]))
         return border
@@ -1424,17 +1389,15 @@ class Brush:
 
     def FgBgColor(self, console_color: ConsoleColor, check_last=False):
         ret_val = ""
-        if (
-            console_color.fgcolor is None and self.fgcolor != console_color.fgcolor
-        ) or (console_color.bgcolor is None and self.bgcolor != console_color.bgcolor):
+        if (console_color.fgcolor is None and self.fgcolor != console_color.fgcolor) or (
+            console_color.bgcolor is None and self.bgcolor != console_color.bgcolor
+        ):
             ret_val = self.ResetColor()
         ret_val += self.FgColor(console_color.fgcolor, check_last)
         ret_val += self.BgColor(console_color.bgcolor, check_last)
         return ret_val
 
-    def print(
-        self, *args, sep=" ", end="", file=None, color: Union[ConsoleColor, None] = None
-    ):
+    def print(self, *args, sep=" ", end="", file=None, color: Union[ConsoleColor, None] = None):
         if color is None or color.no_color():
             print(*args, sep=sep, end=end, file=file)
         else:

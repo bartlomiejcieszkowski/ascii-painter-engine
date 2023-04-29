@@ -10,9 +10,7 @@ def test(handle_sigint=True, demo_time_s=None):
     app.title = "sample_main.py"
     app.color_mode()
 
-    widget = TextBox(
-        app=app, x=0, y=0, height=4, width=20, alignment=ape.Alignment.LeftTop
-    )
+    widget = TextBox(app=app, x=0, y=0, height=4, width=20, alignment=ape.Alignment.LeftTop)
     widget.text = "Test"
     app.add_widget(widget)
 
@@ -24,21 +22,15 @@ def test(handle_sigint=True, demo_time_s=None):
     pane.title = "Bigger Pane"
     app.add_widget(pane)
 
-    test_color = ape.ConsoleColor(
-        ape.Color(13, ape.ColorBits.Bit8), ape.Color(7, ape.ColorBits.Bit8)
-    )
+    test_color = ape.ConsoleColor(ape.Color(13, ape.ColorBits.Bit8), ape.Color(7, ape.ColorBits.Bit8))
 
-    widget = TextBox(
-        app=app, x=0, y=0, height=3, width=10, alignment=ape.Alignment.LeftTop
-    )
+    widget = TextBox(app=app, x=0, y=0, height=3, width=10, alignment=ape.Alignment.LeftTop)
     widget.text = "Sample text in pane"
     widget.border_from_str(" /\\\\/-||-")
     widget.border_set_color(test_color)
     pane.add_widget(widget)
 
-    widget = TextBox(
-        app=app, x=10, y=0, height=3, width=25, alignment=ape.Alignment.LeftTop
-    )
+    widget = TextBox(app=app, x=10, y=0, height=3, width=25, alignment=ape.Alignment.LeftTop)
     widget.text = "TextBox without borders"
     widget.borderless = True
     pane.add_widget(widget)

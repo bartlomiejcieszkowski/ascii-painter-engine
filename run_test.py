@@ -18,9 +18,7 @@ import tests
 
 def test_run(module_name, demo_time_s):
     print(module_name)
-    sys.path.append(
-        os.path.abspath(os.path.join(os.path.abspath(__file__), os.pardir, ".."))
-    )
+    sys.path.append(os.path.abspath(os.path.join(os.path.abspath(__file__), os.pardir, "..")))
     x = importlib.import_module(f"tests.{module_name}")
     log.log_file(f"{module_name}")
     x.test(demo_time_s=demo_time_s)
