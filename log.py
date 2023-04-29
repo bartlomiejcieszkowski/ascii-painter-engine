@@ -1,7 +1,7 @@
 import enum
+import sys
 import threading
 import time
-import sys
 from pathlib import Path
 
 

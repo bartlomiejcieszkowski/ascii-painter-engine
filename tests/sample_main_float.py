@@ -1,5 +1,5 @@
 import ascii_painter_engine as ape
-from ascii_painter_engine.widget import TextBox, Pane
+from ascii_painter_engine.widget import Pane, TextBox
 
 
 def test(handle_sigint=True, demo_time_s=None):

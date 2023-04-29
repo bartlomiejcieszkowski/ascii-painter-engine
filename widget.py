@@ -1,10 +1,10 @@
 from typing import Tuple, Union
 
 from ascii_painter_engine import (
-    ConsoleWidget,
-    Alignment,
-    DimensionsFlag,
     APP_THEME,
+    Alignment,
+    ConsoleWidget,
+    DimensionsFlag,
     Point,
 )
 

@@ -1,7 +1,7 @@
 from abc import ABC
 from enum import IntEnum
 
-from ascii_painter_engine import ConsoleColor, Color
+from ascii_painter_engine import Color, ConsoleColor
 
 
 class Selector:

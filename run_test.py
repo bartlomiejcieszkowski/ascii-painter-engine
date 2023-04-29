@@ -2,20 +2,18 @@
 
 
 import argparse
+import importlib
+import os
 import os.path
 import pkgutil
 import signal
 import subprocess
-
-import tests
-import importlib
 import sys
+import time
+from multiprocessing import Process
 
 import log
-
-from multiprocessing import Process
-import time
-import os
+import tests
 
 
 def test_run(module_name, demo_time_s):

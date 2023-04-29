@@ -5,6 +5,10 @@
 # You can have extra line of console, which wont be fully visible - as w/a just don't use last line
 # If new size is greater, then fill with new lines so we wont be drawing in the middle of screen
 
+import ctypes
+import ctypes.wintypes
+import os
+
 # TASK LIST:
 # TODO: alignment - current impl always assumes alignment is LEFT_TOP, - handle other cases
 # TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
@@ -16,24 +20,17 @@
 # TODO: trim line to screen width on debug prints
 import selectors
 import shutil
-import os
-import ctypes
-import ctypes.wintypes
+import signal
 import sys
+import threading
 import time
-
-from enum import Flag, Enum, auto, IntEnum
 from abc import ABC, abstractmethod
 from collections import deque
-
-import signal
-from typing import Tuple, Union, List
+from enum import Enum, Flag, IntEnum, auto
+from typing import List, Tuple, Union
 
 import ascii_painter_engine.log
-
-import threading
-
-from ascii_painter_engine.base import ConsoleColor, Color, ColorBits, Point
+from ascii_painter_engine.base import Color, ColorBits, ConsoleColor, Point
 from ascii_painter_engine.theme import Selectors
 
 
