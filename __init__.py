@@ -256,18 +256,22 @@ class MouseEvent(ConsoleEvent):
             # OPT1: dont support move
             # return None
             # OPT2: support move like normal click
-            # button_hex = button_hex & (0xFFFFFFFF - 0x20)
+            button_hex = button_hex & (0xFFFFFFFF - 0x20)
             # FINAL: TODO: pass it as Move mouse event and let
             # button = None
             # 0x23 on simple move.. with M..
-            return None
-        else:
-            wheel_event = button_hex & 0x40
-            ctrl_button = 0x8 if button_hex & 0x10 else 0x0
+            # 0x20 on move with lmb
+            # 0x22 on move with rmb
+            # 0x21 on move with wheel
+            if button_hex & 0xF == 0x3:
+                return None
 
-            # remove ctrl button
-            button_hex = button_hex & (0xFFFFFFFF - 0x10)
-            button = MouseEvent.Buttons(button_hex)
+        wheel_event = button_hex & 0x40
+        ctrl_button = 0x8 if button_hex & 0x10 else 0x0
+
+        # remove ctrl button
+        button_hex = button_hex & (0xFFFFFFFF - 0x10)
+        button = MouseEvent.Buttons(button_hex)
         # sgr - 1-based
         if y < 2:
             return None
