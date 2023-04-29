@@ -23,7 +23,6 @@ import shutil
 import signal
 import sys
 import threading
-import time
 from abc import ABC, abstractmethod
 from collections import deque
 from enum import Enum, Flag, IntEnum, auto
@@ -31,6 +30,7 @@ from typing import List, Tuple, Union
 
 import ascii_painter_engine.log
 from ascii_painter_engine.base import Color, ColorBits, ConsoleColor, Point
+from ascii_painter_engine.input_handling import VirtualKeyCodes
 from ascii_painter_engine.theme import Selectors
 
 
@@ -186,7 +186,10 @@ class MouseEvent(ConsoleEvent):
         self.control_key_state = control_key_state
 
     def __str__(self):
-        return f"x: {self.coordinates[0]} y: {self.coordinates[1]} button: {self.button} pressed: {self.pressed} control_key: {self.control_key_state} hover: {self.hover}"
+        return (
+            f"x: {self.coordinates[0]} y: {self.coordinates[1]} button: {self.button} pressed: {self.pressed} "
+            f"control_key: {self.control_key_state} hover: {self.hover}"
+        )
 
     @classmethod
     def from_windows_event(cls, mouse_event_record: MOUSE_EVENT_RECORD):
@@ -306,8 +309,8 @@ class KeyEvent(ConsoleEvent):
 
     def __str__(self):
         return (
-            f'KeyEvent: vk_code={self.vk_code} vs_code={self.vs_code} char="{self.char}" wchar="{self.wchar}" repeat={self.repeat_count}'
-            f" ctrl=0x{self.control_key_state:X} key_down={self.key_down} "
+            f"KeyEvent: vk_code={self.vk_code} vs_code={self.vs_code} char='{self.char}' wchar='{self.wchar}' "
+            f"repeat={self.repeat_count} ctrl=0x{self.control_key_state:X} key_down={self.key_down} "
         )
 
 
@@ -341,9 +344,6 @@ class Rectangle:
             or (self.column > column)
             or (self.column + self.width - 1 < column)
         )
-
-
-from ascii_painter_engine.input_handling import VirtualKeyCodes
 
 
 class InputInterpreter:
@@ -608,7 +608,8 @@ class ConsoleWidget(ABC):
         self.tab_index = tab_index
         # register handlers here
         # when handling click - cache what was there to speed up lookup - invalidate on re-draw
-        # iterate in reverse order on widgets - the order on widget list determines Z order - higher idx covers lower one
+        # iterate in reverse order on widgets - the order on widget list determines Z order
+        # - higher idx covers lower one
         self.last_dimensions = Rectangle(0, 0, 0, 0)
 
     def update_dimensions(self):
@@ -686,7 +687,10 @@ class ConsoleWidget(ABC):
         return self.last_dimensions.contains_point(column, row)
 
     def __str__(self):
-        return f"[x:{self.x} y:{self.x} width:{self.width} height:{self.height} alignment:{self.alignment} dimensions:{self.dimensions} type:{type(self)} 0x{hash(self):X}]"
+        return (
+            f"[x:{self.x} y:{self.x} width:{self.width} height:{self.height}"
+            f"alignment:{self.alignment} dimensions:{self.dimensions} type:{type(self)} 0x{hash(self):X}]"
+        )
 
 
 class Console:
@@ -918,7 +922,8 @@ class App:
                 self.brush.MoveCursor(row=(self.console.rows + off) - 1)
                 if widget:
                     self.log(
-                        f"x: {event.coordinates[0]} y: {event.coordinates[1]} button:{event.button} press:{event.pressed} widget:{widget}"
+                        f"x: {event.coordinates[0]} y: {event.coordinates[1]} "
+                        f"button:{event.button} press:{event.pressed} widget:{widget}"
                     )
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
@@ -1018,7 +1023,7 @@ class App:
     def add_widget_after(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
         try:
             idx = self.widgets.index(widget_on_list)
-        except ValueError as e:
+        except ValueError:
             return False
 
         widget.parent = self
@@ -1028,7 +1033,7 @@ class App:
     def add_widget_before(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
         try:
             idx = self.widgets.index(widget_on_list)
-        except ValueError as e:
+        except ValueError:
             return False
 
         widget.parent = self
