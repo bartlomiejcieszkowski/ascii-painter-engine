@@ -37,7 +37,7 @@ class Attributes:
         else:
             self.color = ConsoleColor(fgcolor=None, bgcolor=None)
 
-    def __add__(self, other):
+    def add(self, other):
         if other.color.fgcolor is not None:
             self.color.fgcolor = other.color.fgcolor
         if other.color.bgcolor is not None:
@@ -107,25 +107,47 @@ class Selectors(ABC):
             selectors = [selectors]
 
         for selector in selectors:
+            if " " in selector:
+                # "div p" unsupported
+                continue
+            # div p, div -> ["div p", "div"] so if we were to handle them properly it is still some parsing to do
             print(f"adding: {selector} {{ {prop}: {value}; }}")
+            selector_type = self.Type.from_name(selector)
+            if selector_type == self.Type.Unsupported:
+                continue
             attributes = Attributes.from_prop(prop, value)
             print(attributes)
-            curr_selector = self.selectors.get(selector)
-            print(curr_selector)
-            # property_handler = self.property_handlers.get(prop)
-            # if property_handler:
-            #    property_handler(selector, prop,
-        # TODO
+            if attributes is None:
+                continue
+            self.add_selector(selector_type, selector, attributes)
 
     def add_selector(self, selector_type: Type, name: str, attributes):
         if selector_type == self.Type.Universal:
-            self.universal_selector = attributes
+            if self.universal_selector is None:
+                self.universal_selector = attributes
+            else:
+                self.universal_selector.add(attributes)
         elif selector_type == self.Type.Id:
-            self.id_selectors[name] = attributes
+            selector_attributes = self.id_selectors.get(name)
+            if selector_attributes:
+                selector_attributes.add(attributes)
+            else:
+                selector_attributes = attributes
+            self.id_selectors[name] = selector_attributes
         elif selector_type == self.Type.Class:
-            self.class_selectors[name] = attributes
+            selector_attributes = self.class_selectors.get(name)
+            if selector_attributes:
+                selector_attributes.add(attributes)
+            else:
+                selector_attributes = attributes
+            self.class_selectors[name] = selector_attributes
         elif selector_type == self.Type.Element:
-            self.selectors[name] = attributes
+            selector_attributes = self.selectors.get(name)
+            if selector_attributes:
+                selector_attributes.add(attributes)
+            else:
+                selector_attributes = attributes
+            self.selectors[name] = selector_attributes
         else:
             pass
 
