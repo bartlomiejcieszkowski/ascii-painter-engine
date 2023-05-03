@@ -1,7 +1,7 @@
 from abc import ABC
-from enum import IntEnum
+from enum import Enum, IntEnum, auto
 
-from ascii_painter_engine import Color, ConsoleColor
+from ascii_painter_engine import Color, ColorBits, ConsoleColor
 
 
 class Selector:
@@ -11,15 +11,40 @@ class Selector:
         self.element_classes = element_classes
 
 
+def CssColorToColor(text: str):
+    value = None
+    try:
+        if text.startswith("#"):
+            value = int(text[1:], 16)
+        elif text.endswith(")"):
+            if text.startswith("rgb("):
+                r, g, b = text[4:-1].split(",")
+                r = int(r)
+                g = int(g)
+                b = int(b)
+                value = b & 0xFF + ((g & 0xFF) << 8) + ((r & 0xFF) << 16)
+    except Exception:
+        value = None
+    if value:
+        return Color(value, ColorBits.Bit24)
+    return None
+
+
 class Attributes:
-    def __init__(self):
-        self.color = ConsoleColor(fgcolor=Color(None), bgcolor=Color(None))
+    def __init__(self, color: ConsoleColor = None):
+        if color:
+            self.color = color
+        else:
+            self.color = ConsoleColor(fgcolor=None, bgcolor=None)
 
     def __add__(self, other):
         if other.color.fgcolor is not None:
             self.color.fgcolor = other.color.fgcolor
         if other.color.bgcolor is not None:
             self.color.bgcolor = other.color.bgcolor
+
+    def __str__(self):
+        return f"Attributes({self.color})"
 
     @staticmethod
     def handle_background_color(this, prop, value):
@@ -29,8 +54,40 @@ class Attributes:
     def handle_color(this, prop, value):
         pass
 
+    @classmethod
+    def from_prop(cls, prop: str, value: str):
+        color = None
+        if prop == "background-color":
+            single_color = CssColorToColor(value)
+            if single_color:
+                color = ConsoleColor(fgcolor=None, bgcolor=single_color)
+        elif prop == "color":
+            single_color = CssColorToColor(value)
+            if single_color:
+                color = ConsoleColor(fgcolor=single_color, bgcolor=None)
+        return cls(color=color)
+
 
 class Selectors(ABC):
+    class Type(Enum):
+        Universal = auto()
+        Element = auto()
+        Id = auto()
+        Class = auto()
+        # ElementClass = auto()
+        Unsupported = auto()
+
+        @classmethod
+        def from_name(cls, name: str):
+            if name == "*":
+                return cls.Universal
+            elif name.startswith("#"):
+                return cls.Id
+            elif name.startswith("."):
+                return cls.Class
+            # place to log
+            return cls.Unsupported
+
     property_handlers = {
         "background-color": Attributes.handle_background_color,
         "color": Attributes.handle_color,
@@ -51,20 +108,26 @@ class Selectors(ABC):
 
         for selector in selectors:
             print(f"adding: {selector} {{ {prop}: {value}; }}")
+            attributes = Attributes.from_prop(prop, value)
+            print(attributes)
+            curr_selector = self.selectors.get(selector)
+            print(curr_selector)
             # property_handler = self.property_handlers.get(prop)
             # if property_handler:
             #    property_handler(selector, prop,
         # TODO
 
-    def add_selector(self, name: str, attributes):
-        if name == "*":
+    def add_selector(self, selector_type: Type, name: str, attributes):
+        if selector_type == self.Type.Universal:
             self.universal_selector = attributes
-        elif name.startswith("#"):
+        elif selector_type == self.Type.Id:
             self.id_selectors[name] = attributes
-        elif name.startswith("."):
+        elif selector_type == self.Type.Class:
             self.class_selectors[name] = attributes
-        else:
+        elif selector_type == self.Type.Element:
             self.selectors[name] = attributes
+        else:
+            pass
 
     def effective_selector(self, selector: Selector):
         none_attributes = Attributes()
