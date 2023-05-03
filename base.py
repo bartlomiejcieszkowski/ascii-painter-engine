@@ -12,6 +12,9 @@ class Color:
         self.color = color
         self.bits = bits
 
+    def __str__(self):
+        return f"Color(0x{self.color:X}, {self.bits.name})"
+
 
 class ConsoleColor:
     def __init__(self, fgcolor: Union[Color, None] = None, bgcolor: Union[Color, None] = None):
@@ -20,6 +23,9 @@ class ConsoleColor:
 
     def no_color(self):
         return self.fgcolor is None and self.bgcolor is None
+
+    def __str__(self):
+        return f"ConsoleColor({self.fgcolor}, {self.bgcolor})"
 
 
 class Point:

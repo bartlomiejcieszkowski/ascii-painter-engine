@@ -76,6 +76,14 @@ class Selectors(ABC):
         attributes += self.id_selectors.get(name, none_attributes)
         return attributes
 
+    def __str__(self):
+        return (
+            f"selectors: {self.selectors}\n"
+            f"id_selectors: {self.id_selectors}\n"
+            f"class_selectors: {self.class_selectors}\n"
+            f"universal_selector: {self.universal_selector}\n"
+        )
+
 
 class State(IntEnum):
     selector = (0,)
