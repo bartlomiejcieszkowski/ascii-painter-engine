@@ -51,8 +51,6 @@ class Selectors(ABC):
 
         for selector in selectors:
             print(f"adding: {selector} {{ {prop}: {value}; }}")
-            curr_selector = self.selectors.get("*")
-            # curr_selector.
             # property_handler = self.property_handlers.get(prop)
             # if property_handler:
             #    property_handler(selector, prop,
@@ -176,7 +174,6 @@ class CssParser:
                         c = " "
 
                     if state == State.selector:
-                        word_len = len(word)
                         if len(word) > 0:
                             if c == "{":
                                 # '*{'
