@@ -124,6 +124,7 @@ class BorderWidget(ConsoleWidget):
         for h in range(start, end):
             self.app.brush.MoveCursor(row=offset_rows + h)
             # split string ?
+            # TODO: Strings with new lines
             print_text = text
             if len(text) > width_middle and len(text) != 0:
                 # split
