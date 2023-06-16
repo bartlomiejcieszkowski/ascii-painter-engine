@@ -4,7 +4,8 @@ import time
 import ascii_painter_engine as ape
 
 
-def test(handle_sigint=True, demo_time_s=None) -> int:
+def test(handle_sigint=True, demo_time_s=None, title=None) -> int:
+    print(title)
     cv = ape.App()
     if cv.color_mode() is False:
         print("Abort")

@@ -182,6 +182,7 @@ class TextBox(BorderWidget):
         alignment: Alignment,
         dimensions: DimensionsFlag = DimensionsFlag.Absolute,
         borderless: bool = False,
+        text: str = "",
     ):
         super().__init__(
             app=app,
@@ -193,7 +194,7 @@ class TextBox(BorderWidget):
             dimensions=dimensions,
             borderless=borderless,
         )
-        self.text = ""
+        self.text = text
 
     def draw(self):
         return self.draw_bordered(inside_text=self.text, title=self.title)

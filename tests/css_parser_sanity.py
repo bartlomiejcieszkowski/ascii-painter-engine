@@ -2,7 +2,8 @@
 from ascii_painter_engine.theme import CssParser
 
 
-def test(handle_sigint=True, demo_time_s=None):
+def test(handle_sigint=True, demo_time_s=None, title=None):
+    print(title)
     working_directory = "tests"
     files = [
         "css_parser/long_one_line_wykop_pl.css",

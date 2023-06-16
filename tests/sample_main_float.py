@@ -2,9 +2,9 @@ import ascii_painter_engine as ape
 from ascii_painter_engine.widget import Pane, TextBox
 
 
-def test(handle_sigint=True, demo_time_s=None):
+def test(handle_sigint=True, demo_time_s=None, title=None):
     app = ape.App(log=ape.log.log)
-    app.title = "sample_main_float.py"
+    app.title = title
     app.color_mode()
 
     pane = Pane(
