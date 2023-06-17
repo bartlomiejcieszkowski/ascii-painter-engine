@@ -106,33 +106,42 @@ class BorderWidget(ConsoleWidget):
     def draw(self):
         self.draw_bordered(title=self.title)
 
-    def draw_bordered(self, inside_text: str = "", title: str = ""):
+    def draw_bordered(self, inside_text: str = "", title: str = "", text_wrap: bool = True):
         offset_rows = self.last_dimensions.row
         offset_cols = self.last_dimensions.column
         width = self.last_dimensions.width
         height = self.last_dimensions.height
-        width_middle = width
+        width_inner = width
         if self.borderless is False:
-            width_middle -= 2
+            width_inner -= 2
         self.app.brush.MoveCursor(row=offset_rows)
         offset_str = self.app.brush.MoveRight(offset_cols)
         if self.borderless is False:
-            self.app.brush.print(offset_str + self.border_get_top(width_middle, title), end="")
-        text = inside_text
+            self.app.brush.print(offset_str + self.border_get_top(width_inner, title), end="")
+
         start = 0 if self.borderless else 1
         end = height if self.borderless else (height - 1)
+
+        # prepare text
+        text_lines = inside_text.splitlines(keepends=False)
+        if text_wrap:
+            wrapped_text_lines = []
+            # if goes past width, create new line and move it to next one
+            for line in text_lines:
+                while len(line) > width_inner:
+                    # split
+                    wrapped_text_lines.append(line[:width_inner])
+                    line = line[width_inner:]
+                wrapped_text_lines.append(line)
+            text_lines = wrapped_text_lines
+
         for h in range(start, end):
             self.app.brush.MoveCursor(row=offset_rows + h)
-            # split string ?
-            # TODO: Strings with new lines
-            print_text = text
-            if len(text) > width_middle and len(text) != 0:
-                # split
-                print_text = text[0:width_middle]
-                text = text[width_middle:]
+            if len(text_lines) > 0:
+                text = text_lines.pop(0)
             else:
                 text = ""
-            leftover = width_middle - len(print_text)
+            leftover = width_inner - len(text)
             line = offset_str
 
             if self.borderless is False:
@@ -140,7 +149,7 @@ class BorderWidget(ConsoleWidget):
                 line += self.app.brush.FgBgColor(left_border.color) + left_border.c
 
             inside_border = self.border_get_point(0)
-            line += self.app.brush.FgBgColor(inside_border.color) + print_text + (inside_border.c * leftover)
+            line += self.app.brush.FgBgColor(inside_border.color) + text[:width_inner] + (inside_border.c * leftover)
 
             if self.borderless is False:
                 right_border = self.border_get_point(7)
@@ -151,7 +160,7 @@ class BorderWidget(ConsoleWidget):
 
         if self.borderless is False:
             self.app.brush.MoveCursor(row=offset_rows + height - 1)
-            self.app.brush.print(offset_str + self.border_get_bottom(width_middle), end="\n")
+            self.app.brush.print(offset_str + self.border_get_bottom(width_inner), end="\n")
         pass
 
     def local_point(self, point: Tuple[int, int]) -> Tuple[int, int]:

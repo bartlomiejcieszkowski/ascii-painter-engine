@@ -28,8 +28,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             width=20,
             alignment=ape.Alignment.LeftTop,
             dimensions=ape.DimensionsFlag.Fill,
-            text='The pane has 80 width and height. But has "Fill" so it should fill the screen and '
-            "ignore dimensions.",
+            text="The pane has 80 width and height.\nBut has 'Fill' so it should fill the screen and "
+            "ignore dimensions.\n012345678911234567892123456789312345678941234567895123456789\n",
         )
     )
 
