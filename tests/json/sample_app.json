@@ -1,0 +1,76 @@
+{
+  "name": "sample_app",
+  "_desc_name": "name of the application",
+  "title": "",
+  "_desc_title": "if the title is empty or doesn't exist then the name will be used",
+  "color": true,
+  "_decs_color": "can be omitted, defaults to true, if the app is supposed to use default console color set to false",
+  "widgets": [
+    {
+      "tab_index": 0,
+      "_desc_tab_index": "allows specifying in which order tab should move from to another object, if omitted auto generated value will be used",
+      "type": "TextBox",
+      "x": 0,
+      "y": 0,
+      "height": 4,
+      "width": 20,
+      "alignment": "LeftTop",
+      "text": "Test"
+    },
+    {
+      "tab_index": 1,
+      "type": "Pane",
+      "title": "Little Pane",
+      "x": 2,
+      "y": 8,
+      "height": 4,
+      "width": 8,
+      "alignment": "LeftTop"
+    },
+    {
+      "id": "pane2",
+      "tab_index": 2,
+      "type": "Pane",
+      "title": "Bigger Pane",
+      "x": 11,
+      "y": 8,
+      "height": 5,
+      "width": 40,
+      "alignment": "LeftTop"
+    },
+    {
+      "parent_id": "pane2",
+      "_desc_parent_id": "id of earlier specified parent, if omitted widget is added to main app",
+      "type": "TextBox",
+      "x": 0,
+      "y": 0,
+      "height": 3,
+      "width": 10,
+      "alignment": "LeftTop",
+      "text": "Sample text in pane",
+      "border_str": "/\\\\/-||-",
+      "border_color": {
+        "fg": {
+          "val": 13,
+          "color_bits": "Bit8"
+        },
+        "bg": {
+          "val": 7,
+          "color_bits": "Bit8"
+        }
+      }
+    },
+    {
+      "parent_id": "pane2",
+      "_desc_parent_id": "id of earlier specified parent, if omitted widget is added to main app",
+      "type": "TextBox",
+      "x": 10,
+      "y": 0,
+      "height": 3,
+      "width": 25,
+      "alignment": "LeftTop",
+      "text": "TextBox without borders",
+      "borderless": true
+    }
+  ]
+}
