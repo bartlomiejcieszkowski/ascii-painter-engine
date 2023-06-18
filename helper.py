@@ -1,6 +1,6 @@
 import json
 
-from ascii_painter_engine import Alignment, App, mapping
+from ascii_painter_engine import App, mapping
 
 
 def app_from_json(filename):
@@ -24,9 +24,8 @@ def app_from_json(filename):
             widget_class = mapping.GetWidgetClass(widget_type)
             if widget_class is None:
                 raise Exception(f"Unknown widget type: '{widget_type}'")
-            widget = widget_class(app=app, x=0, y=0, height=1, width=1, alignment=Alignment.LeftTop)
-            # TODO
-            # widget = widget_class.from_dict(widget_json)
+            widget_json["app"] = app
+            widget = widget_class.from_dict(**widget_json)
 
             widget_id = widget_json.get("id", None)
             if widget_id:

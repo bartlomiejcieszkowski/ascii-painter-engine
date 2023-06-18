@@ -587,16 +587,14 @@ class TabIndex:
 class ConsoleWidget(ABC):
     @classmethod
     def from_dict(cls, **kwargs):
-        # TODO: alignment from string
-        # TODO: dimensions from string
         return cls(
             app=kwargs.pop("app"),
             x=kwargs.pop("x"),
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=Alignment.LeftTop,
-            dimensions=DimensionsFlag.Absolute,
+            alignment=Alignment[kwargs.pop("alignment", None)],
+            dimensions=DimensionsFlag[kwargs.pop("dimensions", "Absolute")],
             tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
         )
 

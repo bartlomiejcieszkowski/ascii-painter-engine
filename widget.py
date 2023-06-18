@@ -11,18 +11,17 @@ from ascii_painter_engine import (
 
 
 class BorderWidget(ConsoleWidget):
+    # TODO Border from str
     @classmethod
     def from_dict(cls, **kwargs):
-        # TODO: alignment from string
-        # TODO: dimensions from string
         return cls(
             app=kwargs.pop("app"),
             x=kwargs.pop("x"),
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=Alignment.LeftTop,
-            dimensions=DimensionsFlag.Absolute,
+            alignment=Alignment[kwargs.pop("alignment", None)],
+            dimensions=DimensionsFlag[kwargs.pop("dimensions", "Absolute")],
             tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
             borderless=kwargs.pop("borderless", False),
         )
@@ -201,16 +200,14 @@ class BorderWidget(ConsoleWidget):
 class TextBox(BorderWidget):
     @classmethod
     def from_dict(cls, **kwargs):
-        # TODO: alignment from string
-        # TODO: dimensions from string
         return cls(
             app=kwargs.pop("app"),
             x=kwargs.pop("x"),
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=Alignment.LeftTop,
-            dimensions=DimensionsFlag.Absolute,
+            alignment=Alignment[kwargs.pop("alignment", None)],
+            dimensions=DimensionsFlag[kwargs.pop("dimensions", "Absolute")],
             tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
             borderless=kwargs.pop("borderless", False),
             text=kwargs.pop("text", ""),
@@ -225,6 +222,7 @@ class TextBox(BorderWidget):
         height: int,
         alignment: Alignment,
         dimensions: DimensionsFlag = DimensionsFlag.Absolute,
+        tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
         borderless: bool = False,
         text: str = "",
     ):
@@ -236,6 +234,7 @@ class TextBox(BorderWidget):
             height=height,
             alignment=alignment,
             dimensions=dimensions,
+            tab_index=tab_index,
             borderless=borderless,
         )
         self.text = text
@@ -247,16 +246,14 @@ class TextBox(BorderWidget):
 class Pane(BorderWidget):
     @classmethod
     def from_dict(cls, **kwargs):
-        # TODO: alignment from string
-        # TODO: dimensions from string
         return cls(
             app=kwargs.pop("app"),
             x=kwargs.pop("x"),
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=Alignment.LeftTop,
-            dimensions=DimensionsFlag.Absolute,
+            alignment=Alignment[kwargs.pop("alignment", None)],
+            dimensions=DimensionsFlag[kwargs.pop("dimensions", "Absolute")],
             borderless=kwargs.pop("borderless", False),
         )
 
