@@ -26,7 +26,7 @@ def app_from_json(filename):
                 raise Exception(f"Unknown widget type: '{widget_type}'")
             widget = widget_class(app=app, x=0, y=0, height=1, width=1, alignment=Alignment.LeftTop)
             # TODO
-            # widget = widget_class.from_json(widget_json)
+            # widget = widget_class.from_dict(widget_json)
 
             widget_id = widget_json.get("id", None)
             if widget_id:

@@ -6,6 +6,7 @@ from ascii_painter_engine import (
     ConsoleWidget,
     DimensionsFlag,
     Point,
+    TabIndex,
 )
 
 
@@ -19,7 +20,7 @@ class BorderWidget(ConsoleWidget):
         height: int,
         alignment: Alignment,
         dimensions: DimensionsFlag = DimensionsFlag.Absolute,
-        tab_index: int = ConsoleWidget.TAB_INDEX_NOT_SELECTABLE,
+        tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
         borderless: bool = False,
     ):
         super().__init__(
