@@ -3,6 +3,7 @@ from typing import Tuple, Union
 from ascii_painter_engine import (
     APP_THEME,
     Alignment,
+    ConsoleColor,
     ConsoleWidget,
     DimensionsFlag,
     Point,
@@ -24,6 +25,9 @@ class BorderWidget(ConsoleWidget):
             dimensions=DimensionsFlag[kwargs.pop("dimensions", "Absolute")],
             tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
             borderless=kwargs.pop("borderless", False),
+            border_str=kwargs.pop("border_str", None),
+            border_color=kwargs.pop("border_color", None),
+            title=kwargs.pop("title", ""),
         )
 
     def __init__(
@@ -37,6 +41,9 @@ class BorderWidget(ConsoleWidget):
         dimensions: DimensionsFlag = DimensionsFlag.Absolute,
         tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
         borderless: bool = False,
+        border_str=None,
+        border_color=None,
+        title="",
     ):
         super().__init__(
             app=app,
@@ -49,8 +56,14 @@ class BorderWidget(ConsoleWidget):
             tab_index=tab_index,
         )
         self.borderless = borderless
-        self.title = ""
+        self.title = title
         self.border = None
+        if border_str:
+            self.border_from_str(border_str)
+        if border_color:
+            if type(border_color) is not ConsoleColor:
+                raise Exception(f"border_color needs to be of type {ConsoleColor}, got {type(border_color)}")
+            self.border_set_color(border_color)
         # None implies use theme
 
     def inner_x(self):
@@ -211,6 +224,9 @@ class TextBox(BorderWidget):
             tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
             borderless=kwargs.pop("borderless", False),
             text=kwargs.pop("text", ""),
+            border_str=kwargs.pop("border_str", None),
+            border_color=kwargs.pop("border_color", None),
+            title=kwargs.pop("title", ""),
         )
 
     def __init__(
@@ -225,6 +241,9 @@ class TextBox(BorderWidget):
         tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
         borderless: bool = False,
         text: str = "",
+        border_str=None,
+        border_color=None,
+        title="",
     ):
         super().__init__(
             app=app,
@@ -236,6 +255,9 @@ class TextBox(BorderWidget):
             dimensions=dimensions,
             tab_index=tab_index,
             borderless=borderless,
+            border_str=border_str,
+            border_color=border_color,
+            title=title,
         )
         self.text = text
 
@@ -255,6 +277,9 @@ class Pane(BorderWidget):
             alignment=Alignment[kwargs.pop("alignment", None)],
             dimensions=DimensionsFlag[kwargs.pop("dimensions", "Absolute")],
             borderless=kwargs.pop("borderless", False),
+            border_str=kwargs.pop("border_str", None),
+            border_color=kwargs.pop("border_color", None),
+            title=kwargs.pop("title", ""),
         )
 
     def __init__(
@@ -267,6 +292,9 @@ class Pane(BorderWidget):
         alignment: Alignment,
         dimensions: DimensionsFlag = DimensionsFlag.Absolute,
         borderless: bool = False,
+        border_str=None,
+        border_color=None,
+        title="",
     ):
         super().__init__(
             app=app,
@@ -277,6 +305,9 @@ class Pane(BorderWidget):
             alignment=alignment,
             dimensions=dimensions,
             borderless=borderless,
+            border_str=border_str,
+            border_color=border_color,
+            title=title,
         )
         self.widgets = []
 
