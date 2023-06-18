@@ -1002,17 +1002,17 @@ class App:
         self.brush.ShowCursor()
         return 0
 
-    def color_mode(self) -> bool:
-        success = self.console.set_color_mode(True)
-        if success:
-            self.brush.color_mode()
-            self.debug_colors = ConsoleColor(Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8))
+    def color_mode(self, enable=True) -> bool:
+        if enable:
+            success = self.console.set_color_mode(enable)
+            if success:
+                self.brush.color_mode(enable)
+                self.debug_colors = ConsoleColor(Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8))
+        else:
+            self.debug_colors = ConsoleColor(None, None)
+            self.brush.color_mode(enable)
+            success = self.console.set_color_mode(enable)
         return success
-
-    def nocolor_mode(self) -> bool:
-        self.debug_colors = ConsoleColor(None, None)
-        self.brush.nocolor_mode()
-        return self.console.set_color_mode(False)
 
     def add_widget(self, widget: ConsoleWidget) -> None:
         widget.parent = self
@@ -1369,11 +1369,8 @@ class Brush:
 
     RESET = "\x1B[0m"
 
-    def color_mode(self):
-        self.use_color = True
-
-    def nocolor_mode(self):
-        self.use_color = False
+    def color_mode(self, enable=True):
+        self.use_color = enable
 
     def FgColor(self, color, check_last=False, bits: ColorBits = ColorBits.Bit24):
         if check_last:
