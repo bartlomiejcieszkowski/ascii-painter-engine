@@ -28,7 +28,6 @@ from collections import deque
 from enum import Enum, Flag, IntEnum, auto
 from typing import List, Tuple, Union
 
-import ascii_painter_engine.log
 from ascii_painter_engine.base import Color, ColorBits, ConsoleColor, Point
 from ascii_painter_engine.input_handling import VirtualKeyCodes
 from ascii_painter_engine.theme import Selectors
@@ -273,7 +272,7 @@ class MouseEvent(ConsoleEvent):
             if button_hex & 0xF == 0x3:
                 return None
 
-        wheel_event = button_hex & 0x40
+        # TODO: wheel_event = button_hex & 0x40
         ctrl_button = 0x8 if button_hex & 0x10 else 0x0
 
         # remove ctrl button
@@ -502,8 +501,7 @@ class InputInterpreter:
             return
         # https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
         # key a is for both upper and lower case
-        # wchar.lower()
-        vk_code = wchar.lower()
+        # vk_code = wchar.lower()
         self.payload.append(
             KeyEvent(
                 key_down=True,
@@ -1113,6 +1111,8 @@ class WindowsConsole(Console):
             1,
             ctypes.byref(number_of_events),
         )
+        if ret_val == 0:
+            return None
         return record
 
     def read_events(self, callback, callback_ctx) -> bool:
@@ -1202,14 +1202,15 @@ class Theme:
 
         @classmethod
         def monokai(cls):
-            cyan = 0x00B9D7
-            gold_brown = 0xABAA98
-            green = 0x82CDB9
-            off_white = 0xF5F5F5
-            orange = 0xF37259
-            pink = 0xFF3D70
-            pink_magenta = 0xF7208B
-            yellow = 0xF9F5C2
+            # cyan = 0x00B9D7
+            # gold_brown = 0xABAA98
+            # green = 0x82CDB9
+            # off_white = 0xF5F5F5
+            # orange = 0xF37259
+            # pink = 0xFF3D70
+            # pink_magenta = 0xF7208B
+            # yellow = 0xF9F5C2
+            pass
 
     def __init__(self, border: list[Point]):
         # border string
