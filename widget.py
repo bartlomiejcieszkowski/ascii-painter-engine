@@ -11,6 +11,22 @@ from ascii_painter_engine import (
 
 
 class BorderWidget(ConsoleWidget):
+    @classmethod
+    def from_dict(cls, **kwargs):
+        # TODO: alignment from string
+        # TODO: dimensions from string
+        return cls(
+            app=kwargs.pop("app"),
+            x=kwargs.pop("x"),
+            y=kwargs.pop("y"),
+            width=kwargs.pop("width"),
+            height=kwargs.pop("height"),
+            alignment=Alignment.LeftTop,
+            dimensions=DimensionsFlag.Absolute,
+            tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
+            borderless=kwargs.pop("borderless", False),
+        )
+
     def __init__(
         self,
         app,
@@ -183,6 +199,23 @@ class BorderWidget(ConsoleWidget):
 
 
 class TextBox(BorderWidget):
+    @classmethod
+    def from_dict(cls, **kwargs):
+        # TODO: alignment from string
+        # TODO: dimensions from string
+        return cls(
+            app=kwargs.pop("app"),
+            x=kwargs.pop("x"),
+            y=kwargs.pop("y"),
+            width=kwargs.pop("width"),
+            height=kwargs.pop("height"),
+            alignment=Alignment.LeftTop,
+            dimensions=DimensionsFlag.Absolute,
+            tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
+            borderless=kwargs.pop("borderless", False),
+            text=kwargs.pop("text", ""),
+        )
+
     def __init__(
         self,
         app,
@@ -212,6 +245,21 @@ class TextBox(BorderWidget):
 
 
 class Pane(BorderWidget):
+    @classmethod
+    def from_dict(cls, **kwargs):
+        # TODO: alignment from string
+        # TODO: dimensions from string
+        return cls(
+            app=kwargs.pop("app"),
+            x=kwargs.pop("x"),
+            y=kwargs.pop("y"),
+            width=kwargs.pop("width"),
+            height=kwargs.pop("height"),
+            alignment=Alignment.LeftTop,
+            dimensions=DimensionsFlag.Absolute,
+            borderless=kwargs.pop("borderless", False),
+        )
+
     def __init__(
         self,
         app,
