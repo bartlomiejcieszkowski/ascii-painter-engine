@@ -576,12 +576,29 @@ class InputInterpreter:
         return None
 
 
-class ConsoleWidget(ABC):
+class TabIndex:
     # tab_index:
     # -1 - not selectable TODO
     TAB_INDEX_NOT_SELECTABLE = -1
     # -2 - auto - parent would go from top-left line by line and auto assign tab index TODO
     TAB_INDEX_AUTO = -2
+
+
+class ConsoleWidget(ABC):
+    @classmethod
+    def from_dict(cls, **kwargs):
+        # TODO: alignment from string
+        # TODO: dimensions from string
+        return cls(
+            app=kwargs.pop("app"),
+            x=kwargs.pop("x"),
+            y=kwargs.pop("y"),
+            width=kwargs.pop("width"),
+            height=kwargs.pop("height"),
+            alignment=Alignment.LeftTop,
+            dimensions=DimensionsFlag.Absolute,
+            tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
+        )
 
     def __init__(
         self,
@@ -592,7 +609,7 @@ class ConsoleWidget(ABC):
         height: int,
         alignment: Alignment,
         dimensions: DimensionsFlag = DimensionsFlag.Absolute,
-        tab_index: int = TAB_INDEX_NOT_SELECTABLE,
+        tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
     ):
         self.x = x
         self.y = y
