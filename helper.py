@@ -1,6 +1,6 @@
 import json
 
-from ascii_painter_engine import App, mapping
+from ascii_painter_engine import App, Color, ColorBits, ConsoleColor, mapping
 
 
 def app_from_json(filename):
@@ -25,6 +25,16 @@ def app_from_json(filename):
             if widget_class is None:
                 raise Exception(f"Unknown widget type: '{widget_type}'")
             widget_json["app"] = app
+
+            if "border_color" in widget_json:
+                fg_color = Color(
+                    widget_json["border_color"]["fg"]["val"], ColorBits[widget_json["border_color"]["fg"]["color_bits"]]
+                )
+                bg_color = Color(
+                    widget_json["border_color"]["bg"]["val"], ColorBits[widget_json["border_color"]["bg"]["color_bits"]]
+                )
+                widget_json["border_color"] = ConsoleColor(fg_color, bg_color)
+
             widget = widget_class.from_dict(**widget_json)
 
             widget_id = widget_json.get("id", None)
