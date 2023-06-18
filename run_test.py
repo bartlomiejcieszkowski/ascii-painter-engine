@@ -7,7 +7,7 @@ import os.path
 import pkgutil
 import sys
 
-import log
+import logger
 import tests
 
 DIAGNOSTICS = False
@@ -49,7 +49,7 @@ def test_run(module_name, demo_time_s, title):
     print(module_name)
     sys.path.append(os.path.abspath(os.path.join(os.path.abspath(__file__), os.pardir, "..")))
     x = importlib.import_module(f"tests.{module_name}")
-    log.log_file(f"{module_name}")
+    logger.log_file(f"{module_name}")
     x.test(demo_time_s=demo_time_s, title=title)
 
 

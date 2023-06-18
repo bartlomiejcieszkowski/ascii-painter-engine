@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-
+import logging
 
 import ascii_painter_engine as ape
 from ascii_painter_engine.widget import Pane, TextBox
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
-    app = ape.App(log=ape.log.log)
+    app = ape.App(log=logging.log)
     app.title = title
     app.color_mode()
 
