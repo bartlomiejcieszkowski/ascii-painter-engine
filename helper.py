@@ -37,6 +37,8 @@ def app_from_json(filename):
         # widgets
 
         for widget_json in app_json["widgets"]:
+            if widget_json.get("ignore", False):
+                continue
             # mapping app dict values
             for key, value in widget_json.items():
                 if type(value) is str and value.startswith("__"):
