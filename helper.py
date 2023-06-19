@@ -1,6 +1,20 @@
 import json
 
-from ascii_painter_engine import App, Color, ColorBits, ConsoleColor, mapping
+from ascii_painter_engine import (
+    App,
+    Color,
+    ColorBits,
+    ConsoleColor,
+    ConsoleWidget,
+    mapping,
+)
+
+APP_DICT = {}
+
+
+def register_app_dict(name, dict):
+    global APP_DICT
+    APP_DICT[name] = dict
 
 
 def app_from_json(filename):
@@ -19,11 +33,36 @@ def app_from_json(filename):
 
         widget_id_dict = {}
         # widgets
+
         for widget_json in app_json["widgets"]:
+            # mapping app dict values
+            for key, value in widget_json.items():
+                if type(value) is str and value.startswith("__"):
+                    # this value needs mapping
+                    path = value[2:]
+                    steps = path.split("#")
+                    curr_dict = APP_DICT
+                    for step in steps[:-1]:
+                        curr_dict = curr_dict.get(step, None)
+                        if curr_dict is None:
+                            raise Exception(f"No mapping for '{value}', recheck register_app_dict calls")
+                    mapping_value = curr_dict.get(steps[-1], None)
+                    if mapping_value is None:
+                        raise Exception(f"No mapping for '{value}', recheck register_app_dict calls")
+                    widget_json[key] = mapping_value
+
             widget_type = widget_json.get("type", None)
-            widget_class = mapping.GetWidgetClass(widget_type)
-            if widget_class is None:
-                raise Exception(f"Unknown widget type: '{widget_type}'")
+            if type(widget_type) is str:
+                widget_class = mapping.get_widget_class(widget_type)
+                if widget_class is None:
+                    widget_class = mapping.import_widget_class(widget_type)
+                    if widget_class is None:
+                        raise Exception(f"Unknown widget type: '{widget_type}'")
+            elif issubclass(type(widget_type), ConsoleWidget):
+                widget_class = widget_type
+            else:
+                raise Exception(f"widget[{widget_json['id']}] is of type: {type(widget_type)}")
+
             widget_json["app"] = app
 
             if "border_color" in widget_json:
