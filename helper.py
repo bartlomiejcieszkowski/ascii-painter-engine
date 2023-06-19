@@ -19,7 +19,7 @@ def register_app_dict(name, dict):
     APP_DICT[name] = dict
 
 
-def app_from_json(filename):
+def app_from_json(filename, ctx_globals=None):
     with open(filename, "r") as f:
         app_json = json.load(f)
 
@@ -66,7 +66,7 @@ def app_from_json(filename):
             if type(widget_type) is str:
                 widget_class = mapping.get_widget_class(widget_type)
                 if widget_class is None:
-                    widget_class = mapping.import_widget_class(widget_type)
+                    widget_class = mapping.import_widget_class(widget_type, ctx_globals)
                     if widget_class is None:
                         raise Exception(f"Unknown widget type: '{widget_type}'")
             elif issubclass(type(widget_type), ConsoleWidget):
