@@ -16,7 +16,7 @@ def get_widget_class(name: str):
     return WIDGET_DICT.get(name, None)
 
 
-def import_widget_class(name: str):
+def import_widget_class(name: str, ctx_globals):
     # New widgets are registered in WIDGET_DICT
     # using full name
     # Modules imported are also cached
@@ -37,7 +37,7 @@ def import_widget_class(name: str):
         cls = getattr(m, class_name)
     else:
         # this should be class name without dots, so it should be in theory available in globals
-        cls = globals().get(name)
+        cls = ctx_globals.get(name)
 
     if cls is None:
         return None
