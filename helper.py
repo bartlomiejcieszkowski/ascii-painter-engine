@@ -1,11 +1,13 @@
 import json
 
 from ascii_painter_engine import (
+    Alignment,
     App,
     Color,
     ColorBits,
     ConsoleColor,
     ConsoleWidget,
+    DimensionsFlag,
     mapping,
 )
 
@@ -50,6 +52,13 @@ def app_from_json(filename):
                     if mapping_value is None:
                         raise Exception(f"No mapping for '{value}', recheck register_app_dict calls")
                     widget_json[key] = mapping_value
+
+            # convert enums
+            if type(widget_json["alignment"]) is str:
+                widget_json["alignment"] = Alignment[widget_json["alignment"]]
+
+            if type(widget_json["dimensions"]) is str:
+                widget_json["dimensions"] = DimensionsFlag[widget_json["dimensions"]]
 
             widget_type = widget_json.get("type", None)
             if type(widget_type) is str:
