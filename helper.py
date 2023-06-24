@@ -10,13 +10,19 @@ from ascii_painter_engine import (
     DimensionsFlag,
     mapping,
 )
+from ascii_painter_engine.mapping import get_mapping, is_mapping, register_mapping_dict
 
-APP_DICT = {}
+FUNCTION_THIS_ARG = "##this"
 
 
 def register_app_dict(name, dict):
-    global APP_DICT
-    APP_DICT[name] = dict
+    register_mapping_dict(name, dict)
+
+
+def callback_wrapper(function, *args):
+    print(f"{function} - type({type(function)})")
+    print(f"{args} - type({type(args)})")
+    function(*args)
 
 
 def app_from_json(filename, ctx_globals=None):
@@ -41,19 +47,8 @@ def app_from_json(filename, ctx_globals=None):
                 continue
             # mapping app dict values
             for key, value in widget_json.items():
-                if type(value) is str and value.startswith("__"):
-                    # this value needs mapping
-                    path = value[2:]
-                    steps = path.split("#")
-                    curr_dict = APP_DICT
-                    for step in steps[:-1]:
-                        curr_dict = curr_dict.get(step, None)
-                        if curr_dict is None:
-                            raise Exception(f"No mapping for '{value}', recheck register_app_dict calls")
-                    mapping_value = curr_dict.get(steps[-1], None)
-                    if mapping_value is None:
-                        raise Exception(f"No mapping for '{value}', recheck register_app_dict calls")
-                    widget_json[key] = mapping_value
+                if is_mapping(value):
+                    widget_json[key] = get_mapping(value)
 
             # convert enums
             if type(widget_json["alignment"]) is str:
@@ -98,4 +93,35 @@ def app_from_json(filename, ctx_globals=None):
                 if parent is None:
                     raise Exception(f"Given parent_id: '{parent_id}' doesnt match already defined id of widget")
             parent.add_widget(widget)
+            # post_create_callbacks
+            post_create_callbacks = widget_json.get("post_create_callbacks")
+            if post_create_callbacks:
+                for callback in post_create_callbacks:
+                    print(callback)
+                    for key, value in callback.items():
+                        if is_mapping(value):
+                            callback[key] = get_mapping(value)
+
+                    fun = callback.get("function", None)
+                    # todo get callback from mappings
+                    if callable(fun):
+                        args = None
+                        callback_args = callback.get("args", None)
+                        if callback_args:
+                            if type(callback_args) is list:
+                                args = []
+                                # replace __this__
+                                for arg in callback_args:
+                                    if is_mapping(arg):
+                                        arg = get_mapping(arg)
+                                    if type(arg) is str:
+                                        if arg == FUNCTION_THIS_ARG:
+                                            args.append(widget)
+                                            continue
+                                    args.append(arg)
+                            elif type(callback_args) is dict:
+                                raise Exception("Dict is not implemented.")
+                            else:
+                                raise Exception("Unsupported args type.")
+                    callback_wrapper(fun, *args)
         return app
