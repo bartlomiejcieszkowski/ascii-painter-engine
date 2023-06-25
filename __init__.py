@@ -878,7 +878,8 @@ class App:
 
     def debug_print(self, text, end="\n"):
         if self.log is not no_print:
-            self.brush.print(text, color=self.debug_colors, end=end)
+            self.log(text)
+            # self.brush.print(text, color=self.debug_colors, end=end)
 
     def clear(self, reuse=True):
         self.width, self.height = self.console.update_size()
