@@ -13,6 +13,7 @@ from ascii_painter_engine import (
 from ascii_painter_engine.mapping import get_mapping, is_mapping, register_mapping_dict
 
 FUNCTION_THIS_ARG = "##this"
+KEY_POST_CALLBACKS = "post_callbacks"
 
 
 def register_app_dict(name, dict):
@@ -93,10 +94,9 @@ def app_from_json(filename, ctx_globals=None):
                 if parent is None:
                     raise Exception(f"Given parent_id: '{parent_id}' doesnt match already defined id of widget")
             parent.add_widget(widget)
-            # post_create_callbacks
-            post_create_callbacks = widget_json.get("post_create_callbacks")
-            if post_create_callbacks:
-                for callback in post_create_callbacks:
+            post_callbacks = widget_json.get(KEY_POST_CALLBACKS)
+            if post_callbacks:
+                for callback in post_callbacks:
                     print(callback)
                     for key, value in callback.items():
                         if is_mapping(value):
