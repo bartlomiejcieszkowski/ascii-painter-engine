@@ -6,8 +6,11 @@ from ascii_painter_engine import (
     ConsoleColor,
     ConsoleWidget,
     DimensionsFlag,
+    KeyEvent,
+    MouseEvent,
     Point,
     TabIndex,
+    VirtualKeyCodes,
 )
 
 
@@ -341,7 +344,71 @@ class Pane(BorderWidget):
 
 
 class Button(TextBox):
-    def __init__(self):
-        # TODO: distinct border
+    def __init__(
+        self,
+        app,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        alignment: Alignment,
+        dimensions: DimensionsFlag = DimensionsFlag.Absolute,
+        tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
+        borderless: bool = False,
+        text: str = "",
+        border_str=None,
+        border_color=None,
+        click_handler=None,
+    ):
+        """
+        Init function
+        :param app:
+        :param x:
+        :param y:
+        :param width:
+        :param height:
+        :param alignment:
+        :param dimensions:
+        :param tab_index:
+        :param borderless:
+        :param text:
+        :param border_str:
+        :param border_color:
+        :param click_handler: function signature should be def click_handler(this: Button) -> bool:
+         where return value is True if handled
+        """
+        super().__init__(
+            app=app,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            alignment=alignment,
+            dimensions=dimensions,
+            tab_index=tab_index,
+            borderless=borderless,
+            text=text,
+            border_str=border_str,
+            border_color=border_color,
+            title="",
+        )
+        if click_handler is not None and not callable(click_handler):
+            raise Exception(
+                f"click_handler needs to be callable! click_handler: {click_handler}, type({click_handler})"
+            )
+        self.click_handler = click_handler
 
-        pass
+    @staticmethod
+    def is_click(event):
+        if isinstance(event, MouseEvent):
+            if event.button in [event.button.LMB] and event.pressed:
+                return True
+        elif isinstance(event, KeyEvent):
+            if event.vk_code in [VirtualKeyCodes.VK_RETURN, VirtualKeyCodes.VK_SPACE]:
+                return True
+        return False
+
+    def handle(self, event):
+        # TODO shortcut alt+letter? Like on buttons "_O_k" and alt+o presses it
+        if self.click_handler and self.is_click(event):
+            return self.click_handler(this=self)
