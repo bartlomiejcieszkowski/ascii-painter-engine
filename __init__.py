@@ -11,6 +11,7 @@ import os
 
 # TASK LIST:
 # TODO: alignment - current impl always assumes alignment is TopLeft, - handle other cases
+# TODO: text_align
 # TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
 # TODO: Float layout support
 # TODO: Check if whole layout fits console - complain if not
@@ -18,6 +19,7 @@ import os
 # TODO: Handlers - when clicking given point - pass the event to the widget underneath - required for color selection
 # TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
 # TODO: trim line to screen width on debug prints
+# TODO: shortcut alt+letter? Like on buttons "_O_k" and alt+o presses it
 import selectors
 import shutil
 import signal
@@ -117,6 +119,21 @@ class TextAlign(IntEnum):
     BottomLeft = 12
     BottomCenter = 13
     BottomRight = 14
+
+
+def json_convert(key, value):
+    if key == "alignment":
+        if value is None:
+            value = "TopLeft"
+        value = Alignment[value]
+    elif key == "dimensions":
+        if value is None:
+            value = "Absolute"
+        value = DimensionsFlag[value]
+    elif key == "text_align":
+        if value is None:
+            value = TextAlign.TopLeft
+    return value
 
 
 class COORD(ctypes.Structure):
@@ -608,8 +625,8 @@ class ConsoleWidget(ABC):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=Alignment[kwargs.pop("alignment", None)],
-            dimensions=DimensionsFlag[kwargs.pop("dimensions", "Absolute")],
+            alignment=json_convert("alignment", kwargs.pop("alignment", None)),
+            dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
             tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
         )
 

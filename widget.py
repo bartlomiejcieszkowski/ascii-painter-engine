@@ -10,7 +10,9 @@ from ascii_painter_engine import (
     MouseEvent,
     Point,
     TabIndex,
+    TextAlign,
     VirtualKeyCodes,
+    json_convert,
 )
 
 
@@ -24,8 +26,8 @@ class BorderWidget(ConsoleWidget):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=kwargs.pop("alignment", None),
-            dimensions=kwargs.pop("dimensions", "Absolute"),
+            alignment=json_convert("alignment", kwargs.pop("alignment", None)),
+            dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
             tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
             borderless=kwargs.pop("borderless", False),
             border_str=kwargs.pop("border_str", None),
@@ -222,14 +224,15 @@ class TextBox(BorderWidget):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=kwargs.pop("alignment", None),
-            dimensions=kwargs.pop("dimensions", "Absolute"),
+            alignment=json_convert("alignment", kwargs.pop("alignment", None)),
+            dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
             tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
             borderless=kwargs.pop("borderless", False),
             text=kwargs.pop("text", ""),
             border_str=kwargs.pop("border_str", None),
             border_color=kwargs.pop("border_color", None),
             title=kwargs.pop("title", ""),
+            text_align=json_convert("text_align", kwargs.pop("text_align", None)),
         )
 
     def __init__(
@@ -247,6 +250,7 @@ class TextBox(BorderWidget):
         border_str=None,
         border_color=None,
         title="",
+        text_align: TextAlign = TextAlign.TopLeft,
     ):
         super().__init__(
             app=app,
@@ -263,6 +267,7 @@ class TextBox(BorderWidget):
             title=title,
         )
         self.text = text
+        self.text_align = text_align
 
     def draw(self):
         return self.draw_bordered(inside_text=self.text, title=self.title)
@@ -277,8 +282,8 @@ class Pane(BorderWidget):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=kwargs.pop("alignment", None),
-            dimensions=kwargs.pop("dimensions", "Absolute"),
+            alignment=json_convert("alignment", kwargs.pop("alignment", None)),
+            dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
             borderless=kwargs.pop("borderless", False),
             border_str=kwargs.pop("border_str", None),
             border_color=kwargs.pop("border_color", None),
@@ -359,6 +364,7 @@ class Button(TextBox):
         border_str=None,
         border_color=None,
         click_handler=None,
+        text_align=TextAlign.MiddleCenter,
     ):
         """
         Init function
@@ -391,6 +397,7 @@ class Button(TextBox):
             border_str=border_str,
             border_color=border_color,
             title="",
+            text_align=text_align,
         )
         if click_handler is not None and not callable(click_handler):
             raise Exception(
