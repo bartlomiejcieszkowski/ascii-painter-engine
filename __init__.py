@@ -104,6 +104,21 @@ class DimensionsFlag(Flag):
     FillHeightRelativeWidth = FillHeight | RelativeWidth
 
 
+class TextAlign(IntEnum):
+    # bYYXX
+    # isTop = value & 0xC == 0x0, middle &0xC == 0x4, bottom &0xC ==0x8
+    # isLeft = value & 0x3 == 0x0, center &0x3 == 0x1, bottom &0x3 == 0x2
+    TopLeft = 0
+    TopCenter = 1
+    TopRight = 2
+    MiddleLeft = 4
+    MiddleCenter = 5
+    MiddleRight = 6
+    BottomLeft = 12
+    BottomCenter = 13
+    BottomRight = 14
+
+
 class COORD(ctypes.Structure):
     _fields_ = [("X", ctypes.wintypes.SHORT), ("Y", ctypes.wintypes.SHORT)]
 
