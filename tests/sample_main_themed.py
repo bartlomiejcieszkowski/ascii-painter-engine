@@ -20,27 +20,27 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
 
     input("Press any key")
 
-    widget = TextBox(app=app, x=0, y=0, height=4, width=20, alignment=ape.Alignment.LeftTop)
+    widget = TextBox(app=app, x=0, y=0, height=4, width=20, alignment=ape.Alignment.TopLeft)
     widget.text = "This app should be themed"
     app.add_widget(widget)
 
-    widget = Pane(app=app, x=2, y=8, height=4, width=8, alignment=ape.Alignment.LeftTop)
+    widget = Pane(app=app, x=2, y=8, height=4, width=8, alignment=ape.Alignment.TopLeft)
     widget.title = "Little Pane"
     app.add_widget(widget)
 
-    pane = Pane(app=app, x=11, y=8, height=5, width=40, alignment=ape.Alignment.LeftTop)
+    pane = Pane(app=app, x=11, y=8, height=5, width=40, alignment=ape.Alignment.TopLeft)
     pane.title = "Bigger Pane"
     app.add_widget(pane)
 
     test_color = ape.ConsoleColor(ape.Color(13, ape.ColorBits.Bit8), ape.Color(7, ape.ColorBits.Bit8))
 
-    widget = TextBox(app=app, x=0, y=0, height=3, width=10, alignment=ape.Alignment.LeftTop)
+    widget = TextBox(app=app, x=0, y=0, height=3, width=10, alignment=ape.Alignment.TopLeft)
     widget.text = "Sample text in pane"
     widget.border_from_str(" /\\\\/-||-")
     widget.border_set_color(test_color)
     pane.add_widget(widget)
 
-    widget = TextBox(app=app, x=10, y=0, height=3, width=25, alignment=ape.Alignment.LeftTop)
+    widget = TextBox(app=app, x=10, y=0, height=3, width=25, alignment=ape.Alignment.TopLeft)
     widget.text = "TextBox without borders"
     widget.borderless = True
     pane.add_widget(widget)

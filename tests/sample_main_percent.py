@@ -14,11 +14,11 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=1,
         height=80,
         width=80,
-        alignment=ape.Alignment.LeftTop,
+        alignment=ape.Alignment.TopLeft,
         dimensions=ape.DimensionsFlag.Relative,
     )
 
-    # TODO: alignment, only LeftTop does something
+    # TODO: alignment, only TopLeft does something
     pane.title = "Test"
 
     app.add_widget(pane)

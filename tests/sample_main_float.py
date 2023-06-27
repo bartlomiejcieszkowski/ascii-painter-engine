@@ -13,7 +13,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=1,
         height=80,
         width=100,
-        alignment=ape.Alignment.LeftTop,
+        alignment=ape.Alignment.TopLeft,
         dimensions=ape.DimensionsFlag.Fill,
     )
     pane.title = "Test"
@@ -24,7 +24,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=20,
         width=40,
-        alignment=ape.Alignment.FloatLeftTop,
+        alignment=ape.Alignment.FloatTopLeft,
         dimensions=ape.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"1st float {widget}"
@@ -42,7 +42,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=30,
         width=60,
-        alignment=ape.Alignment.FloatLeftTop,
+        alignment=ape.Alignment.FloatTopLeft,
         dimensions=ape.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"2nd float {widget}"
@@ -60,7 +60,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=20,
         width=30,
-        alignment=ape.Alignment.FloatLeftTop,
+        alignment=ape.Alignment.FloatTopLeft,
         dimensions=ape.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"3rd float {widget}"

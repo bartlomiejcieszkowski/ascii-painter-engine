@@ -10,7 +10,7 @@ import ctypes.wintypes
 import os
 
 # TASK LIST:
-# TODO: alignment - current impl always assumes alignment is LEFT_TOP, - handle other cases
+# TODO: alignment - current impl always assumes alignment is TopLeft, - handle other cases
 # TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
 # TODO: Float layout support
 # TODO: Check if whole layout fits console - complain if not
@@ -77,15 +77,15 @@ class Alignment(Flag):
     Right = 2
     Top = 4
     Bottom = 8
-    LeftTop = Left | Top
-    RightTop = Right | Top
-    LeftBottom = Left | Bottom
-    RightBottom = Right | Bottom
+    TopLeft = Left | Top
+    TopRight = Right | Top
+    BottomLeft = Left | Bottom
+    BottomRight = Right | Bottom
     Float = 16
-    FloatLeftTop = Float | LeftTop
-    FloatRightTop = Float | RightTop
-    FloatLeftBottom = Float | LeftBottom
-    FloatRightBottom = Float | LeftTop
+    FloatTopLeft = Float | TopLeft
+    FloatTopRight = Float | TopRight
+    FloatBottomLeft = Float | BottomLeft
+    FloatBottomRight = Float | BottomRight
     FloatLeft = Float | Left
     FloatRight = Float | Right
     FloatTop = Float | Top
