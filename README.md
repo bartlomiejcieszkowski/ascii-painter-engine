@@ -1,7 +1,6 @@
-# ascii_painter_engine
-short: ape  
+# retui
 
-a simple TUI library
+reTUI, retUI, retui - simple TUI framework
 
 ## Features
 - cross-platform
