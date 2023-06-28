@@ -7,7 +7,7 @@ import os.path
 import pkgutil
 import sys
 
-import logger
+import retui.logger as logger
 import tests
 
 DIAGNOSTICS = False

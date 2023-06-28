@@ -187,7 +187,8 @@ class VirtualKeyCodes(IntEnum):
     VK_OEM_6 = (
         0xDD  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key
     )
-    VK_OEM_7 = 0xDE  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the 'single-quote/double-quote' key
+    VK_OEM_7 = 0xDE  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard,
+    # the 'single-quote/double-quote' key
     VK_OEM_8 = 0xDF  # Used for miscellaneous characters; it can vary by keyboard.
     # - = 0xE0 # Reserved
     # 0xE1 # OEM specific
@@ -195,7 +196,9 @@ class VirtualKeyCodes(IntEnum):
     # 0xE3-E4 # OEM specific
     VK_PROCESSKEY = 0xE5  # IME PROCESS key
     # 0xE6 # OEM specific
-    VK_PACKET = 0xE7  # Used to pass Unicode characters as if they were keystrokes. The VK_PACKET key is the low word of a 32-bit Virtual Key value used for non-keyboard input methods. For more information, see Remark in KEYBDINPUT, SendInput, WM_KEYDOWN, and WM_KEYUP
+    VK_PACKET = 0xE7  # Used to pass Unicode characters as if they were keystrokes.
+    # The VK_PACKET key is the low word of a 32-bit Virtual Key value used for non-keyboard input methods.
+    # For more information, see Remark in KEYBDINPUT, SendInput, WM_KEYDOWN, and WM_KEYUP
     # - = 0xE8 # Unassigned
     # 0xE9-F5 # OEM specific
     VK_ATTN = 0xF6  # Attn key

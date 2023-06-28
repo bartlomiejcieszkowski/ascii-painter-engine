@@ -75,6 +75,6 @@ def log(fmt, *args):
         + "[{:<10.10}] ".format(threading.current_thread().name)
         + str(fmt),
         *args,
-        file=__log_file
+        file=__log_file,
     )
     log_flush()
