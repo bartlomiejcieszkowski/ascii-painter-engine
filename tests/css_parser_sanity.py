@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from ascii_painter_engine.theme import CssParser
+from retui.theme import CssParser
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):

@@ -1,6 +1,6 @@
 from typing import Tuple, Union
 
-from ascii_painter_engine import (
+from . import (
     APP_THEME,
     Alignment,
     ConsoleColor,

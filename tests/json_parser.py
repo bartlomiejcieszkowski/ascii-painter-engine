@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import json
 
-from ascii_painter_engine import helper
+from retui import helper
+from retui.logger import log
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
@@ -17,7 +18,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             data = json.load(f)
             for widget in data["widgets"]:
                 print(widget)
-        app = helper.app_from_json(filename)
+        app = helper.app_from_json(filename, log_fun=log)
         app.handle_sigint = handle_sigint
         app.demo_mode(demo_time_s)
         app.run()

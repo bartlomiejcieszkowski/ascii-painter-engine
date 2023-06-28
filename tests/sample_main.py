@@ -1,36 +1,35 @@
 #!/usr/bin/env python3
-import logging
-
-import ascii_painter_engine as ape
-from ascii_painter_engine.widget import Pane, TextBox
+import retui
+from retui.logger import log
+from retui.widget import Pane, TextBox
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
-    app = ape.App(log=logging.log)
+    app = retui.App(log=log)
     app.title = title
     app.color_mode()
 
-    widget = TextBox(app=app, x=0, y=0, height=4, width=20, alignment=ape.Alignment.TopLeft)
+    widget = TextBox(app=app, x=0, y=0, height=4, width=20, alignment=retui.Alignment.TopLeft)
     widget.text = "Test"
     app.add_widget(widget)
 
-    widget = Pane(app=app, x=2, y=8, height=4, width=8, alignment=ape.Alignment.TopLeft)
+    widget = Pane(app=app, x=2, y=8, height=4, width=8, alignment=retui.Alignment.TopLeft)
     widget.title = "Little Pane"
     app.add_widget(widget)
 
-    pane = Pane(app=app, x=11, y=8, height=5, width=40, alignment=ape.Alignment.TopLeft)
+    pane = Pane(app=app, x=11, y=8, height=5, width=40, alignment=retui.Alignment.TopLeft)
     pane.title = "Bigger Pane"
     app.add_widget(pane)
 
-    test_color = ape.ConsoleColor(ape.Color(13, ape.ColorBits.Bit8), ape.Color(7, ape.ColorBits.Bit8))
+    test_color = retui.ConsoleColor(retui.Color(13, retui.ColorBits.Bit8), retui.Color(7, retui.ColorBits.Bit8))
 
-    widget = TextBox(app=app, x=0, y=0, height=3, width=10, alignment=ape.Alignment.TopLeft)
+    widget = TextBox(app=app, x=0, y=0, height=3, width=10, alignment=retui.Alignment.TopLeft)
     widget.text = "Sample text in pane"
     widget.border_from_str(" /\\\\/-||-")
     widget.border_set_color(test_color)
     pane.add_widget(widget)
 
-    widget = TextBox(app=app, x=10, y=0, height=3, width=25, alignment=ape.Alignment.TopLeft)
+    widget = TextBox(app=app, x=10, y=0, height=3, width=25, alignment=retui.Alignment.TopLeft)
     widget.text = "TextBox without borders"
     widget.borderless = True
     pane.add_widget(widget)

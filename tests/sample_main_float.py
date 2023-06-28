@@ -1,9 +1,10 @@
-import ascii_painter_engine as ape
-from ascii_painter_engine.widget import Pane, TextBox
+import retui
+from retui.logger import log
+from retui.widget import Pane, TextBox
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
-    app = ape.App(log=ape.log.log)
+    app = retui.App(log=log)
     app.title = title
     app.color_mode()
 
@@ -13,8 +14,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=1,
         height=80,
         width=100,
-        alignment=ape.Alignment.TopLeft,
-        dimensions=ape.DimensionsFlag.Fill,
+        alignment=retui.Alignment.TopLeft,
+        dimensions=retui.DimensionsFlag.Fill,
     )
     pane.title = "Test"
 
@@ -24,8 +25,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=20,
         width=40,
-        alignment=ape.Alignment.FloatTopLeft,
-        dimensions=ape.DimensionsFlag.FillHeightRelativeWidth,
+        alignment=retui.Alignment.FloatTopLeft,
+        dimensions=retui.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"1st float {widget}"
     pane.add_widget(widget)
@@ -42,8 +43,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=30,
         width=60,
-        alignment=ape.Alignment.FloatTopLeft,
-        dimensions=ape.DimensionsFlag.FillHeightRelativeWidth,
+        alignment=retui.Alignment.FloatTopLeft,
+        dimensions=retui.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"2nd float {widget}"
     pane.add_widget(widget)
@@ -60,8 +61,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=20,
         width=30,
-        alignment=ape.Alignment.FloatTopLeft,
-        dimensions=ape.DimensionsFlag.FillHeightRelativeWidth,
+        alignment=retui.Alignment.FloatTopLeft,
+        dimensions=retui.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"3rd float {widget}"
     pane.add_widget(widget)

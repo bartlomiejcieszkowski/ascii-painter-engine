@@ -1,9 +1,10 @@
-import ascii_painter_engine as ape
-from ascii_painter_engine.widget import Pane, TextBox
+import retui
+from retui.logger import log
+from retui.widget import Pane, TextBox
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
-    app = ape.App(log=ape.log.log)
+    app = retui.App(log=log)
     app.title = title
     app.color_mode()
 
@@ -13,8 +14,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=80,
         width=80,
-        alignment=ape.Alignment.Center,
-        dimensions=ape.DimensionsFlag.Fill,
+        alignment=retui.Alignment.Center,
+        dimensions=retui.DimensionsFlag.Fill,
     )
     # dimensions should be ignored for Fill
     pane.title = "Test"
@@ -26,8 +27,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             y=0,
             height=4,
             width=20,
-            alignment=ape.Alignment.TopLeft,
-            dimensions=ape.DimensionsFlag.Fill,
+            alignment=retui.Alignment.TopLeft,
+            dimensions=retui.DimensionsFlag.Fill,
             text="The pane has 80 width and height.\nBut has 'Fill' so it should fill the screen and "
             "ignore dimensions.\n012345678911234567892123456789312345678941234567895123456789\n",
         )

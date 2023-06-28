@@ -1,6 +1,6 @@
 import importlib
 
-from ascii_painter_engine import widget
+from . import widget
 
 APP_DICT = {}
 

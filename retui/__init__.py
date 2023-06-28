@@ -30,9 +30,9 @@ from collections import deque
 from enum import Enum, Flag, IntEnum, auto
 from typing import List, Tuple, Union
 
-from ascii_painter_engine.base import Color, ColorBits, ConsoleColor, Point
-from ascii_painter_engine.input_handling import VirtualKeyCodes
-from ascii_painter_engine.theme import Selectors
+from .base import Color, ColorBits, ConsoleColor, Point
+from .input_handling import VirtualKeyCodes
+from .theme import Selectors
 
 
 def is_windows() -> bool:
@@ -910,6 +910,7 @@ class App:
 
     def debug_print(self, text, end="\n"):
         if self.log is not no_print:
+            print(self.log)
             self.log(text)
             # self.brush.print(text, color=self.debug_colors, end=end)
 

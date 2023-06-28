@@ -1,9 +1,10 @@
-import ascii_painter_engine as ape
-from ascii_painter_engine.widget import Pane
+import retui
+from retui.logger import log
+from retui.widget import Pane
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
-    app = ape.App(log=ape.log.log)
+    app = retui.App(log=log)
     app.title = title
     app.color_mode()
 
@@ -14,8 +15,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=1,
         height=80,
         width=80,
-        alignment=ape.Alignment.TopLeft,
-        dimensions=ape.DimensionsFlag.Relative,
+        alignment=retui.Alignment.TopLeft,
+        dimensions=retui.DimensionsFlag.Relative,
     )
 
     # TODO: alignment, only TopLeft does something

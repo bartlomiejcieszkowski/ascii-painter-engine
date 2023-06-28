@@ -1,16 +1,7 @@
 import json
 
-from ascii_painter_engine import (
-    Alignment,
-    App,
-    Color,
-    ColorBits,
-    ConsoleColor,
-    ConsoleWidget,
-    DimensionsFlag,
-    mapping,
-)
-from ascii_painter_engine.mapping import get_mapping, is_mapping, register_mapping_dict
+from . import App, Color, ColorBits, ConsoleColor, ConsoleWidget, mapping, no_print
+from .mapping import get_mapping, is_mapping, register_mapping_dict
 
 FUNCTION_THIS_ARG = "##this"
 KEY_POST_CALLBACKS = "post_callbacks"
@@ -26,7 +17,7 @@ def callback_wrapper(function, *args):
     function(*args)
 
 
-def app_from_json(filename, ctx_globals=None):
+def app_from_json(filename, ctx_globals=None, log_fun=no_print):
     with open(filename, "r") as f:
         app_json = json.load(f)
 
@@ -50,13 +41,6 @@ def app_from_json(filename, ctx_globals=None):
             for key, value in widget_json.items():
                 if is_mapping(value):
                     widget_json[key] = get_mapping(value)
-
-            # convert enums
-            if type(widget_json["alignment"]) is str:
-                widget_json["alignment"] = Alignment[widget_json["alignment"]]
-
-            if type(widget_json["dimensions"]) is str:
-                widget_json["dimensions"] = DimensionsFlag[widget_json["dimensions"]]
 
             widget_type = widget_json.get("type", None)
             if type(widget_type) is str:
