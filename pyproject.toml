@@ -1,8 +1,27 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "retui"
+authors = [
+    {name = "Bartlomiej Cieszkowski", email = "bartlomiej.cieszkowski@gmail.com"},
+]
+description = "retui - simple TUI framework"
+readme = "README.md"
+requires-python = ">=3.6"
+keywords = ["tui", "console", "framework"]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+dynamic = ["version"]
+
+
 [tool.isort]
 profile = "black"
 [tool.flake8]
 max-line-length = 120
 [tool.black]
 line-length = 120
-
-
