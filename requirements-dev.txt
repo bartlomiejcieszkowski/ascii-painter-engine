@@ -3,3 +3,5 @@ isort==5.12.0
 flake8==6.0.0
 pyproject-flake8==6.0.0.post1
 pre-commit==3.2.2
+build
+twine

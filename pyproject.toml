@@ -19,6 +19,12 @@ classifiers = [
 dependencies = []
 dynamic = ["version"]
 
+[project.urls]
+"Homepage" = "https://github.com/bartlomiejcieszkowski/retui"
+"Bug Tracker" = "https://github.com/bartlomiejcieszkowski/retui/issues"
+
+[tool.setuptools.dynamic]
+version = {attr = "retui.__version__"}
 
 [tool.isort]
 profile = "black"

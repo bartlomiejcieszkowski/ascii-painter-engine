@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+__version__ = "0.0.1"
 
 # Notes:
 # You can have extra line of console, which wont be fully visible - as w/a just don't use last line
