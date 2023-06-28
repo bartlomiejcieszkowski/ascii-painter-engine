@@ -23,6 +23,9 @@ dynamic = ["version"]
 "Homepage" = "https://github.com/bartlomiejcieszkowski/retui"
 "Bug Tracker" = "https://github.com/bartlomiejcieszkowski/retui/issues"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
 [tool.setuptools.dynamic]
 version = {attr = "retui.__version__"}
 
