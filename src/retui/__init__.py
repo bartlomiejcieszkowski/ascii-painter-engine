@@ -910,7 +910,6 @@ class App:
 
     def debug_print(self, text, end="\n"):
         if self.log is not no_print:
-            print(self.log)
             self.log(text)
             # self.brush.print(text, color=self.debug_colors, end=end)
 

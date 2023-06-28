@@ -7,8 +7,11 @@ import os.path
 import pkgutil
 import sys
 
-import retui.logger as logger
-import tests
+sys.path.append(os.path.abspath("./src/"))
+
+
+import retui.logger as logger  # noqa: E402
+import tests  # noqa: E402
 
 DIAGNOSTICS = False
 try:
