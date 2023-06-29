@@ -10,16 +10,9 @@ import ctypes.wintypes
 import os
 
 # TASK LIST:
-# TODO: alignment - current impl always assumes alignment is TopLeft, - handle other cases
-# TODO: text_align
 # TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
-# TODO: Float layout support
-# TODO: Check if whole layout fits console - complain if not
-# TODO: Keys and mouse support under Linux
-# TODO: Handlers - when clicking given point - pass the event to the widget underneath - required for color selection
 # TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
 # TODO: trim line to screen width on debug prints
-# TODO: shortcut alt+letter? Like on buttons "_O_k" and alt+o presses it
 import selectors
 import shutil
 import signal
