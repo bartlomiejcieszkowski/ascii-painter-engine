@@ -12,8 +12,77 @@ from . import (
     TabIndex,
     TextAlign,
     VirtualKeyCodes,
+    WordWrap,
     json_convert,
 )
+
+
+class Text:
+    """
+    This class abstracts text
+    """
+
+    def __init__(self, text: str = "", text_align: TextAlign = TextAlign.TopLeft, text_wrap: WordWrap = WordWrap.Wrap):
+        # maybe word wrap?
+        self.text = text
+        self.text_align = text_align
+        self.text_wrap = text_wrap
+        self.word_wrap_fun = Text.get_word_wrap_function(text_wrap)
+        self.width = -1
+        self.height = -1
+        self.lines = []
+        self.empty_line = ""
+
+    @staticmethod
+    def word_wrap_trim(width: int, line: str):
+        return line[:width], None
+
+    @staticmethod
+    def word_wrap_wrap(width: int, line: str):
+        return line[:width], line[width:]
+
+    @staticmethod
+    def word_wrap_word_end(width: int, line: str):
+        return line[:width], None
+
+    @staticmethod
+    def get_word_wrap_function(word_wrap: WordWrap):
+        if word_wrap == WordWrap.Trim:
+            return Text.word_wrap_trim
+        elif word_wrap == WordWrap.Wrap:
+            return Text.word_wrap_wrap
+        elif word_wrap == WordWrap.WrapWordEnd:
+            return Text.word_wrap_word_end
+        else:
+            return None
+
+    def prepare_lines(self, width: int, height: int):
+        if self.dimensions_match(width, height):
+            return
+
+        lines = self.text.splitlines(keepends=False)
+        self.lines.clear()
+        leftover = None
+        while lines or leftover:
+            if leftover:
+                line = leftover
+            else:
+                line = lines.pop(0)
+            wrapped_line, leftover = self.word_wrap_fun(width, line)
+            if leftover and len(leftover) == 0:
+                leftover = None
+
+            self.lines.append(wrapped_line)
+        # TODO: prepare_lines should add spaces around and align
+        self.empty_line = " " * width
+        self.width = width
+        self.height = height
+
+    def dimensions_match(self, width: int, height: int):
+        return self.width == width and self.height == height
+
+    def get_line(self, idx):
+        return self.lines[idx] if idx < len(self.lines) else self.empty_line
 
 
 class BorderWidget(ConsoleWidget):
@@ -140,7 +209,7 @@ class BorderWidget(ConsoleWidget):
     def draw(self):
         self.draw_bordered(title=self.title)
 
-    def draw_bordered(self, inside_text: str = "", title: str = "", text_wrap: bool = True):
+    def draw_bordered(self, inside_text: Text = None, title: str = "", text_wrap: bool = True):
         offset_rows = self.last_dimensions.row
         offset_cols = self.last_dimensions.column
         width = self.last_dimensions.width
@@ -150,48 +219,42 @@ class BorderWidget(ConsoleWidget):
             width_inner -= 2
         self.app.brush.MoveCursor(row=offset_rows)
         offset_str = self.app.brush.MoveRight(offset_cols)
+
+        # Top border
         if self.borderless is False:
             self.app.brush.print(offset_str + self.border_get_top(width_inner, title), end="")
 
         start = 0 if self.borderless else 1
         end = height if self.borderless else (height - 1)
+        height_inner = end - start
 
-        # prepare text
-        text_lines = inside_text.splitlines(keepends=False)
-        if text_wrap:
-            wrapped_text_lines = []
-            # if goes past width, create new line and move it to next one
-            for line in text_lines:
-                while len(line) > width_inner:
-                    # split
-                    wrapped_text_lines.append(line[:width_inner])
-                    line = line[width_inner:]
-                wrapped_text_lines.append(line)
-            text_lines = wrapped_text_lines
+        if inside_text:
+            inside_text.prepare_lines(width=width_inner, height=height_inner)
 
-        for h in range(start, end):
-            self.app.brush.MoveCursor(row=offset_rows + h)
-            if len(text_lines) > 0:
-                text = text_lines.pop(0)
-            else:
-                text = ""
+        inside_border = self.border_get_point(0)
+        left_border = None if self.borderless else self.border_get_point(6)
+        right_border = None if self.borderless else self.border_get_point(7)
+        empty_line = inside_border.c * width_inner
+
+        # Middle part
+        for h in range(0, height_inner):
+            self.app.brush.MoveCursor(row=(offset_rows + start + h))
+            text = inside_text.get_line(h) if inside_text else empty_line
             leftover = width_inner - len(text)
             line = offset_str
 
             if self.borderless is False:
-                left_border = self.border_get_point(6)
                 line += self.app.brush.FgBgColor(left_border.color) + left_border.c
 
-            inside_border = self.border_get_point(0)
             line += self.app.brush.FgBgColor(inside_border.color) + text[:width_inner] + (inside_border.c * leftover)
 
             if self.borderless is False:
-                right_border = self.border_get_point(7)
                 line += self.app.brush.FgBgColor(right_border.color) + right_border.c
 
             line += self.app.brush.ResetColor()
             self.app.brush.print(line, end="")
 
+        # Bottom border
         if self.borderless is False:
             self.app.brush.MoveCursor(row=offset_rows + height - 1)
             self.app.brush.print(offset_str + self.border_get_bottom(width_inner), end="\n")
@@ -233,6 +296,7 @@ class TextBox(BorderWidget):
             border_color=kwargs.pop("border_color", None),
             title=kwargs.pop("title", ""),
             text_align=json_convert("text_align", kwargs.pop("text_align", None)),
+            text_wrap=json_convert("text_wrap", kwargs.pop("text_wrap", None)),
         )
 
     def __init__(
@@ -251,6 +315,7 @@ class TextBox(BorderWidget):
         border_color=None,
         title="",
         text_align: TextAlign = TextAlign.TopLeft,
+        text_wrap: WordWrap = WordWrap.Wrap,
     ):
         super().__init__(
             app=app,
@@ -266,11 +331,20 @@ class TextBox(BorderWidget):
             border_color=border_color,
             title=title,
         )
-        self.text = text
+        self._text = Text(text=text, text_align=text_align, text_wrap=text_wrap)
         self.text_align = text_align
+        self.text_wrap = text_wrap
+
+    @property
+    def text(self):
+        return self._text.text
+
+    @text.setter
+    def text(self, new_text):
+        self._text = Text(text=new_text, text_align=self.text_align, text_wrap=self.text_wrap)
 
     def draw(self):
-        return self.draw_bordered(inside_text=self.text, title=self.title)
+        return self.draw_bordered(inside_text=self._text, title=self.title)
 
 
 class Pane(BorderWidget):
@@ -320,7 +394,7 @@ class Pane(BorderWidget):
         self.widgets = []
 
     def draw(self):
-        self.draw_bordered(inside_text="", title=self.title)
+        self.draw_bordered(title=self.title)
         for widget in self.widgets:
             widget.draw()
 

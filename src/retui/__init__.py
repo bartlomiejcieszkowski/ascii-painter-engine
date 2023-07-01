@@ -114,6 +114,12 @@ class TextAlign(IntEnum):
     BottomRight = 14
 
 
+class WordWrap(IntEnum):
+    Trim = 0
+    Wrap = 1
+    WrapWordEnd = 2
+
+
 def json_convert(key, value):
     if key == "alignment":
         if value is None:
@@ -125,7 +131,12 @@ def json_convert(key, value):
         value = DimensionsFlag[value]
     elif key == "text_align":
         if value is None:
-            value = TextAlign.TopLeft
+            value = "TopLeft"
+        value = TextAlign[value]
+    elif key == "text_wrap":
+        if value is None:
+            value = "Wrap"
+        value = WordWrap[value]
     return value
 
 
