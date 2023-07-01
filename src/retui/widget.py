@@ -32,6 +32,8 @@ class Text:
         self.height = -1
         self.lines = []
         self.empty_line = ""
+        self.lines_count = 0
+        self.shift = 0
 
     @staticmethod
     def word_wrap_trim(width: int, line: str):
@@ -74,6 +76,20 @@ class Text:
 
             self.lines.append(wrapped_line)
         # TODO: prepare_lines should add spaces around and align
+        # Top, bottom, middle
+        self.lines_count = len(self.lines)
+        self.shift = 0
+
+        if self.lines_count < height:
+            if self.text_align.is_top():
+                pass
+            elif self.text_align.is_middle():
+                # e.g 3 lines, 8 height = 3, zero indexing - so we need 2
+                self.shift = (height // 2) - ((self.lines_count - 1) // 2) - (height % 2)
+            elif self.text_align.is_bottom():
+                # e.g. 3 lines, 8 height = 5
+                self.shift = height - self.lines_count
+
         self.empty_line = " " * width
         self.width = width
         self.height = height
@@ -82,7 +98,11 @@ class Text:
         return self.width == width and self.height == height
 
     def get_line(self, idx):
-        return self.lines[idx] if idx < len(self.lines) else self.empty_line
+        return (
+            self.empty_line
+            if idx < self.shift or idx >= (self.lines_count + self.shift)
+            else self.lines[idx - self.shift]
+        )
 
 
 class BorderWidget(ConsoleWidget):
