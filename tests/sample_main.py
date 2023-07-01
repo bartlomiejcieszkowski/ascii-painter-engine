@@ -23,13 +23,23 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
 
     test_color = retui.ConsoleColor(retui.Color(13, retui.ColorBits.Bit8), retui.Color(7, retui.ColorBits.Bit8))
 
-    widget = TextBox(app=app, x=0, y=0, height=3, width=10, alignment=retui.Alignment.TopLeft)
+    widget = TextBox(
+        app=app, x=0, y=0, height=3, width=10, alignment=retui.Alignment.TopLeft, text_align=retui.TextAlign.BottomRight
+    )
     widget.text = "Sample text in pane"
     widget.border_from_str(" /\\\\/-||-")
     widget.border_set_color(test_color)
     pane.add_widget(widget)
 
-    widget = TextBox(app=app, x=10, y=0, height=3, width=25, alignment=retui.Alignment.TopLeft)
+    widget = TextBox(
+        app=app,
+        x=10,
+        y=0,
+        height=3,
+        width=25,
+        alignment=retui.Alignment.TopLeft,
+        text_align=retui.TextAlign.BottomRight,
+    )
     widget.text = "TextBox without borders"
     widget.borderless = True
     pane.add_widget(widget)

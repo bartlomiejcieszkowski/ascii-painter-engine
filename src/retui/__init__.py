@@ -102,16 +102,34 @@ class DimensionsFlag(Flag):
 class TextAlign(IntEnum):
     # bYYXX
     # isTop = value & 0xC == 0x0, middle &0xC == 0x4, bottom &0xC ==0x8
-    # isLeft = value & 0x3 == 0x0, center &0x3 == 0x1, bottom &0x3 == 0x2
-    TopLeft = 0
-    TopCenter = 1
-    TopRight = 2
-    MiddleLeft = 4
-    MiddleCenter = 5
-    MiddleRight = 6
-    BottomLeft = 12
-    BottomCenter = 13
-    BottomRight = 14
+    # isLeft = value & 0x3 == 0x0, center &0x3 == 0x1, right &0x3 == 0x2
+    TopLeft = 0x0
+    TopCenter = 0x1
+    TopRight = 0x2
+    MiddleLeft = 0x4
+    MiddleCenter = 0x5
+    MiddleRight = 0x6
+    BottomLeft = 0x8
+    BottomCenter = 0x9
+    BottomRight = 0xA
+
+    def is_top(self):
+        return self.value & 0xC == 0x0
+
+    def is_middle(self):
+        return self.value & 0xC == 0x4
+
+    def is_bottom(self):
+        return self.value & 0xC == 0x8
+
+    def is_left(self):
+        return self.value & 0x3 == 0x0
+
+    def is_center(self):
+        return self.value & 0x3 == 0x1
+
+    def is_right(self):
+        return self.value & 0x3 == 0x2
 
 
 class WordWrap(IntEnum):
