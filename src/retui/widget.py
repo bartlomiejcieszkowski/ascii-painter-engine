@@ -28,6 +28,7 @@ class Text:
         self.text_align = text_align
         self.text_wrap = text_wrap
         self.word_wrap_fun = Text.get_word_wrap_function(text_wrap)
+        self.text_align_fun = Text.get_text_align_function(text_align)
         self.width = -1
         self.height = -1
         self.lines = []
@@ -58,24 +59,58 @@ class Text:
         else:
             return None
 
+    @staticmethod
+    def text_align_left(width: int, line: str):
+        return line + (width - len(line)) * " "
+
+    @staticmethod
+    def text_align_center(width: int, line: str):
+        halfway = width - len(line)
+        extra = halfway % 2
+        halfway = halfway // 2
+        # This can either favor left or right, right now we favor left
+        return halfway * " " + line + (halfway + extra) * " "
+
+    @staticmethod
+    def text_align_right(width: int, line: str):
+        return (width - len(line)) * " " + line
+
+    @staticmethod
+    def get_text_align_function(text_align: TextAlign):
+        if text_align.is_left():
+            return Text.text_align_left
+        elif text_align.is_center():
+            return Text.text_align_center
+        elif text_align.is_right():
+            return Text.text_align_right
+        else:
+            return None
+
     def prepare_lines(self, width: int, height: int):
         if self.dimensions_match(width, height):
             return
 
         lines = self.text.splitlines(keepends=False)
         self.lines.clear()
+        self.empty_line = " " * width
         leftover = None
         while lines or leftover:
             if leftover:
                 line = leftover
+                leftover = None
             else:
                 line = lines.pop(0)
-            wrapped_line, leftover = self.word_wrap_fun(width, line)
+            if len(line) < width:
+                nice_line = self.text_align_fun(width, line)
+                pass
+            else:
+                nice_line, leftover = self.word_wrap_fun(width, line)
             if leftover and len(leftover) == 0:
                 leftover = None
 
-            self.lines.append(wrapped_line)
+            self.lines.append(nice_line)
         # TODO: prepare_lines should add spaces around and align
+
         # Top, bottom, middle
         self.lines_count = len(self.lines)
         self.shift = 0
@@ -90,7 +125,6 @@ class Text:
                 # e.g. 3 lines, 8 height = 5
                 self.shift = height - self.lines_count
 
-        self.empty_line = " " * width
         self.width = width
         self.height = height
 
