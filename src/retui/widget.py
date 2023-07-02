@@ -452,8 +452,6 @@ class Pane(BorderWidget):
         for widget in self.widgets:
             widget.draw()
 
-        pass
-
     def add_widget(self, widget):
         # TODO widget should take offset from parent
         # right now we will adjust it when adding
