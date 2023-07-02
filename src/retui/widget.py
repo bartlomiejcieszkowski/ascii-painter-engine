@@ -232,6 +232,8 @@ class BorderWidget(ConsoleWidget):
         return self.border[idx] if self.border else APP_THEME.border[idx]
 
     def border_get_top(self, width_middle, title):
+        if title is None:
+            title = ""
         left_top_corner = self.border_get_point(1)
         right_top_corner = self.border_get_point(2)
         top_border = self.border_get_point(5)
