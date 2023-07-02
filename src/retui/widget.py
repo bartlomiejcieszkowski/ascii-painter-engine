@@ -265,7 +265,7 @@ class BorderWidget(ConsoleWidget):
     def draw(self):
         self.draw_bordered(title=self.title)
 
-    def draw_bordered(self, inside_text: Text = None, title: str = "", text_wrap: bool = True):
+    def draw_bordered(self, inside_text: Text = None, title: str = ""):
         offset_rows = self.last_dimensions.row
         offset_cols = self.last_dimensions.column
         width = self.last_dimensions.width
