@@ -87,7 +87,6 @@ def app_from_json(filename, ctx_globals=None, log_fun=no_print):
                             callback[key] = get_mapping(value)
 
                     fun = callback.get("function", None)
-                    # todo get callback from mappings
                     if callable(fun):
                         args = None
                         callback_args = callback.get("args", None)

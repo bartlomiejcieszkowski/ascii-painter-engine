@@ -109,7 +109,6 @@ class Text:
                 leftover = None
 
             self.lines.append(nice_line)
-        # TODO: prepare_lines should add spaces around and align
 
         # Top, bottom, middle
         self.lines_count = len(self.lines)
@@ -140,7 +139,6 @@ class Text:
 
 
 class BorderWidget(ConsoleWidget):
-    # TODO Border from str
     @classmethod
     def from_dict(cls, **kwargs):
         return cls(

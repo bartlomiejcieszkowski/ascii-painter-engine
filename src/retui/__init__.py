@@ -797,7 +797,6 @@ class Console:
 
 
 class LinuxConsole(Console):
-    # TODO
     def __init__(self, app):
         super().__init__(app)
         self.is_interactive_mode = False
