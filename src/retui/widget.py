@@ -316,7 +316,7 @@ class BorderWidget(ConsoleWidget):
             self.app.brush.print(offset_str + self.border_get_bottom(width_inner), end="\n")
         pass
 
-    def local_point(self, point: Tuple[int, int]) -> Tuple[int, int]:
+    def local_point(self, point: Tuple[int, int]) -> Union[Tuple[int, int], Tuple[None, None]]:
         # NOTE: this won't return point if we touch border
         border = 0 if self.borderless else 1
         offset_rows = self.last_dimensions.row + border
