@@ -57,7 +57,7 @@ def app_from_json(filename, ctx_globals=None, log_fun=no_print, app_dict_name="m
         app_json = json.load(f)
 
         # TODO: validate
-        app = App()
+        app = App(log=log_fun)
         title = app_json["name"]
         if "title" in app_json:
             if len(app_json["title"]) > 0:
