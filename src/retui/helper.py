@@ -11,10 +11,42 @@ def register_app_dict(name, dict):
     register_mapping_dict(name, dict)
 
 
-def callback_wrapper(function, *args):
+def __callback_wrapper(function, *args):
     print(f"{function} - type({type(function)})")
     print(f"{args} - type({type(args)})")
     function(*args)
+
+
+def __post_callback(this_json, this):
+    post_callbacks = this_json.get(KEY_POST_CALLBACKS)
+    if post_callbacks:
+        for callback in post_callbacks:
+            print(callback)
+            for key, value in callback.items():
+                if is_mapping(value):
+                    callback[key] = get_mapping(value)
+
+            fun = callback.get("function", None)
+            if callable(fun):
+                args = None
+                callback_args = callback.get("args", None)
+                if callback_args:
+                    if type(callback_args) is list:
+                        args = []
+                        # replace __this__
+                        for arg in callback_args:
+                            if is_mapping(arg):
+                                arg = get_mapping(arg)
+                            if type(arg) is str:
+                                if arg == FUNCTION_THIS_ARG:
+                                    args.append(this)
+                                    continue
+                            args.append(arg)
+                    elif type(callback_args) is dict:
+                        raise Exception("Dict is not implemented.")
+                    else:
+                        raise Exception("Unsupported args type.")
+            __callback_wrapper(fun, *args)
 
 
 def app_from_json(filename, ctx_globals=None, log_fun=no_print):
@@ -78,33 +110,7 @@ def app_from_json(filename, ctx_globals=None, log_fun=no_print):
                 if parent is None:
                     raise Exception(f"Given parent_id: '{parent_id}' doesnt match already defined id of widget")
             parent.add_widget(widget)
-            post_callbacks = widget_json.get(KEY_POST_CALLBACKS)
-            if post_callbacks:
-                for callback in post_callbacks:
-                    print(callback)
-                    for key, value in callback.items():
-                        if is_mapping(value):
-                            callback[key] = get_mapping(value)
+            __post_callback(widget_json, widget)
 
-                    fun = callback.get("function", None)
-                    if callable(fun):
-                        args = None
-                        callback_args = callback.get("args", None)
-                        if callback_args:
-                            if type(callback_args) is list:
-                                args = []
-                                # replace __this__
-                                for arg in callback_args:
-                                    if is_mapping(arg):
-                                        arg = get_mapping(arg)
-                                    if type(arg) is str:
-                                        if arg == FUNCTION_THIS_ARG:
-                                            args.append(widget)
-                                            continue
-                                    args.append(arg)
-                            elif type(callback_args) is dict:
-                                raise Exception("Dict is not implemented.")
-                            else:
-                                raise Exception("Unsupported args type.")
-                    callback_wrapper(fun, *args)
+        __post_callback(app_json, app)
         return app
