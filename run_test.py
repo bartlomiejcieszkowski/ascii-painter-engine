@@ -71,19 +71,39 @@ def main():
     demo_time_s = None
     if args.auto:
         demo_time_s = args.auto_time
+
+    test_status = []
     if args.all:
+        status = []
         for idx in range(0, len(tests_list)):
             title = f"Test {idx+1}/{len(tests_list)} - {tests_list[idx]}"
             diagnostics_start()
-            test_run(tests_list[idx], demo_time_s, title)
+            try:
+                test_run(tests_list[idx], demo_time_s, title)
+                test_status.append((0, tests_list[idx], None))
+            except Exception as e:
+                test_status.append((-1, tests_list[idx], e))
             diagnostics_end()
-
     else:
         title = f"Test {args.test}"
         diagnostics_start()
-        test_run(args.test, demo_time_s, title)
+        try:
+            test_run(args.test, demo_time_s, title)
+            test_status.append((0, args.test, None))
+        except Exception as e:
+            test_status.append((-1, args.test, e))
         diagnostics_end()
-    sys.exit(0)
+
+    ret = 0
+    i = 0
+    for status, test_name, exception in test_status:
+        i += 1
+        name_state = "PASS" if status == 0 else "FAIL"
+        print(f'[{name_state}] {i:3d}: "{test_name}" - exception? {exception} status: {status}')
+        if status != 0:
+            ret = -1
+
+    sys.exit(ret)
 
 
 if __name__ == "__main__":
