@@ -12,7 +12,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
     pane = Pane(
         app=app,
         x=0,
-        y=1,
+        y=0,
         height=80,
         width=80,
         alignment=retui.Alignment.TopLeft,
