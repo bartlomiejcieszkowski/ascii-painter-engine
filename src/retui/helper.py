@@ -49,7 +49,10 @@ def __post_callback(this_json, this):
             __callback_wrapper(fun, *args)
 
 
-def app_from_json(filename, ctx_globals=None, log_fun=no_print):
+def app_from_json(filename, ctx_globals=None, log_fun=no_print, app_dict_name="main", app_dict=None):
+    if app_dict_name and app_dict:
+        register_app_dict(app_dict_name, app_dict)
+
     with open(filename, "r") as f:
         app_json = json.load(f)
 
@@ -64,8 +67,8 @@ def app_from_json(filename, ctx_globals=None, log_fun=no_print):
         app.color_mode(app_json.get("color", True))
 
         widget_id_dict = {}
-        # widgets
 
+        # widgets
         for widget_json in app_json["widgets"]:
             if widget_json.get("ignore", False):
                 continue
