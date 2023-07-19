@@ -13,6 +13,8 @@ import os
 # TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
 # TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
 # TODO: trim line to screen width on debug prints
+# TODO: Widget Alignment other than TopLeft is broken, eg for BottomLeft, x,y should mean what? start at max y, x=0
+# TODO: Relative dimensions, 1 Top 80 percent, 2nd bottom 20 percent - got 1 free line..
 import selectors
 import shutil
 import signal
