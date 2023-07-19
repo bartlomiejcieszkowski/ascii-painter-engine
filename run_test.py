@@ -6,6 +6,7 @@ import os
 import os.path
 import pkgutil
 import sys
+import traceback
 
 sys.path.append(os.path.abspath("./src/"))
 
@@ -82,7 +83,8 @@ def main():
                 test_run(tests_list[idx], demo_time_s, title)
                 test_status.append((0, tests_list[idx], None))
             except Exception as e:
-                test_status.append((-1, tests_list[idx], e))
+                tb = traceback.format_tb(e.__traceback__)
+                test_status.append((-1, tests_list[idx], (e, tb)))
             diagnostics_end()
     else:
         title = f"Test {args.test}"
@@ -91,15 +93,20 @@ def main():
             test_run(args.test, demo_time_s, title)
             test_status.append((0, args.test, None))
         except Exception as e:
-            test_status.append((-1, args.test, e))
+            tb = traceback.format_tb(e.__traceback__)
+            test_status.append((-1, args.test, (e, tb)))
         diagnostics_end()
 
     ret = 0
     i = 0
-    for status, test_name, exception in test_status:
+    for status, test_name, e in test_status:
         i += 1
         name_state = "PASS" if status == 0 else "FAIL"
-        print(f'[{name_state}] {i:3d}: "{test_name}" - exception? {exception} status: {status}')
+        print(f'[{name_state}] {i:3d}: "{test_name}" - exception? {e is not None} status: {status}')
+        if e:
+            print(f"{e[0]} {type(e[1])}")
+            for i in reversed(range(0, len(e[1]))):
+                print(f"{e[1][i]}")
         if status != 0:
             ret = -1
 
