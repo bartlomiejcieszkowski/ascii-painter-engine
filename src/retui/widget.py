@@ -143,6 +143,7 @@ class BorderWidget(ConsoleWidget):
     def from_dict(cls, **kwargs):
         return cls(
             app=kwargs.pop("app"),
+            identifier=kwargs.pop("id", None),
             x=kwargs.pop("x"),
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
@@ -159,11 +160,12 @@ class BorderWidget(ConsoleWidget):
     def __init__(
         self,
         app,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-        alignment: Alignment,
+        identifier: Union[str, None] = None,
+        x: int = 0,
+        y: int = 0,
+        width: int = 0,
+        height: int = 0,
+        alignment: Alignment = Alignment.TopLeft,
         dimensions: DimensionsFlag = DimensionsFlag.Absolute,
         tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
         borderless: bool = False,
@@ -173,6 +175,7 @@ class BorderWidget(ConsoleWidget):
     ):
         super().__init__(
             app=app,
+            identifier=identifier,
             x=x,
             y=y,
             width=width,
@@ -337,6 +340,7 @@ class TextBox(BorderWidget):
     def from_dict(cls, **kwargs):
         return cls(
             app=kwargs.pop("app"),
+            identifier=kwargs.pop("id", None),
             x=kwargs.pop("x"),
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
@@ -356,11 +360,12 @@ class TextBox(BorderWidget):
     def __init__(
         self,
         app,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-        alignment: Alignment,
+        identifier: Union[str, None] = None,
+        x: int = 0,
+        y: int = 0,
+        width: int = 0,
+        height: int = 0,
+        alignment: Alignment = Alignment.TopLeft,
         dimensions: DimensionsFlag = DimensionsFlag.Absolute,
         tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
         borderless: bool = False,
@@ -373,6 +378,7 @@ class TextBox(BorderWidget):
     ):
         super().__init__(
             app=app,
+            identifier=identifier,
             x=x,
             y=y,
             width=width,
@@ -406,6 +412,7 @@ class Pane(BorderWidget):
     def from_dict(cls, **kwargs):
         return cls(
             app=kwargs.pop("app"),
+            identifier=kwargs.pop("id", None),
             x=kwargs.pop("x"),
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
@@ -421,11 +428,12 @@ class Pane(BorderWidget):
     def __init__(
         self,
         app,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-        alignment: Alignment,
+        identifier: Union[str, None] = None,
+        x: int = 0,
+        y: int = 0,
+        width: int = 0,
+        height: int = 0,
+        alignment: Alignment = Alignment.TopLeft,
         dimensions: DimensionsFlag = DimensionsFlag.Absolute,
         borderless: bool = False,
         border_str=None,
@@ -434,6 +442,7 @@ class Pane(BorderWidget):
     ):
         super().__init__(
             app=app,
+            identifier=identifier,
             x=x,
             y=y,
             width=width,
@@ -472,6 +481,18 @@ class Pane(BorderWidget):
                 return widget
 
         return super().get_widget(column, row)
+
+    def get_widget_by_id(self, identifier: str) -> Union["ConsoleWidget", None]:
+        widget = super().get_widget_by_id(identifier)
+        if widget:
+            return widget
+
+        for idx in range(0, len(self.widgets)):
+            widget = self.widgets[idx].get_widget_by_id(identifier)
+            if widget:
+                return widget
+
+        return None
 
 
 class Button(TextBox):
