@@ -569,3 +569,79 @@ class Button(TextBox):
         # TODO shortcut alt+letter? Like on buttons "_O_k" and alt+o presses it
         if self.click_handler and self.is_click(event):
             return self.click_handler(this=self)
+
+
+class WriteBox(TextBox):
+    @classmethod
+    def from_dict(cls, **kwargs):
+        return cls(
+            app=kwargs.pop("app"),
+            identifier=kwargs.pop("id", None),
+            x=kwargs.pop("x"),
+            y=kwargs.pop("y"),
+            width=kwargs.pop("width"),
+            height=kwargs.pop("height"),
+            alignment=json_convert("alignment", kwargs.pop("alignment", None)),
+            dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
+            tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
+            borderless=kwargs.pop("borderless", False),
+            text=kwargs.pop("text", ""),
+            border_str=kwargs.pop("border_str", None),
+            border_color=kwargs.pop("border_color", None),
+            title=kwargs.pop("title", ""),
+        )
+
+    def __init__(
+        self,
+        app,
+        identifier: Union[str, None] = None,
+        x: int = 0,
+        y: int = 0,
+        width: int = 0,
+        height: int = 0,
+        alignment: Alignment = Alignment.TopLeft,
+        dimensions: DimensionsFlag = DimensionsFlag.Absolute,
+        tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
+        borderless: bool = False,
+        text: str = "",
+        border_str=None,
+        border_color=None,
+        title="",
+    ):
+        """
+        Init function
+        :param app:
+        :param x:
+        :param y:
+        :param width:
+        :param height:
+        :param alignment:
+        :param dimensions:
+        :param tab_index:
+        :param borderless:
+        :param text:
+        :param border_str:
+        :param border_color:
+        :param click_handler: function signature should be def click_handler(this: Button) -> bool:
+         where return value is True if handled
+        """
+        super().__init__(
+            app=app,
+            identifier=identifier,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            alignment=alignment,
+            dimensions=dimensions,
+            tab_index=tab_index,
+            borderless=borderless,
+            text=text,
+            border_str=border_str,
+            border_color=border_color,
+            title="",
+            text_align=TextAlign.TopLeft,
+        )
+
+    def write(self, text):
+        self.text = text

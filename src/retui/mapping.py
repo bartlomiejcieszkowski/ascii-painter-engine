@@ -15,6 +15,7 @@ WIDGET_DICT = {
     "Pane": widget.Pane,
     "BorderWidget": widget.BorderWidget,
     "Button": widget.Button,
+    "WriteBox": widget.WriteBox,
 }
 
 MODULES_DICT = {}
