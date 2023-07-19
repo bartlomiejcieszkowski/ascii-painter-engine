@@ -154,6 +154,7 @@ class BorderWidget(ConsoleWidget):
             borderless=kwargs.pop("borderless", False),
             border_str=kwargs.pop("border_str", None),
             border_color=kwargs.pop("border_color", None),
+            soft_border=kwargs.pop("soft_border", True),
             title=kwargs.pop("title", ""),
         )
 
@@ -171,6 +172,7 @@ class BorderWidget(ConsoleWidget):
         borderless: bool = False,
         border_str=None,
         border_color=None,
+        soft_border=True,
         title="",
     ):
         super().__init__(
@@ -184,6 +186,7 @@ class BorderWidget(ConsoleWidget):
             dimensions=dimensions,
             tab_index=tab_index,
         )
+        self.soft_border = soft_border
         self.borderless = borderless
         self.title = title
         self.border = None
@@ -196,22 +199,22 @@ class BorderWidget(ConsoleWidget):
         # None implies use theme
 
     def inner_x(self):
-        if self.borderless:
+        if self.soft_border or self.borderless:
             return self.last_dimensions.column
         return self.last_dimensions.column + 1
 
     def inner_y(self):
-        if self.borderless:
+        if self.soft_border or self.borderless:
             return self.last_dimensions.row
         return self.last_dimensions.row + 1
 
     def inner_width(self):
-        if self.borderless:
+        if self.soft_border or self.borderless:
             return self.last_dimensions.width
         return self.last_dimensions.width - 2
 
     def inner_height(self):
-        if self.borderless:
+        if self.soft_border or self.borderless:
             return self.last_dimensions.height
         return self.last_dimensions.height - 2
 
