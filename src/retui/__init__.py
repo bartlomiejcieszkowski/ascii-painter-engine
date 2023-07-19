@@ -651,6 +651,7 @@ class ConsoleWidget(ABC):
     def from_dict(cls, **kwargs):
         return cls(
             app=kwargs.pop("app"),
+            identifier=kwargs.pop("id", None),
             x=kwargs.pop("x"),
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
@@ -663,14 +664,19 @@ class ConsoleWidget(ABC):
     def __init__(
         self,
         app,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-        alignment: Alignment,
+        identifier: Union[str, None] = None,
+        x: int = 0,
+        y: int = 0,
+        width: int = 0,
+        height: int = 0,
+        alignment: Alignment = Alignment.TopLeft,
         dimensions: DimensionsFlag = DimensionsFlag.Absolute,
         tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
     ):
+        if identifier is None:
+            identifier = f"{type(self).__qualname__}_{hash(self):x}"
+        # TODO: check if it is unique
+        self.identifier = identifier
         self.x = x
         self.y = y
         self.width = width
@@ -729,6 +735,9 @@ class ConsoleWidget(ABC):
 
     def get_widget(self, column: int, row: int) -> Union["ConsoleWidget", None]:
         return self if self.contains_point(column, row) else None
+
+    def get_widget_by_id(self, identifier: str) -> Union["ConsoleWidget", None]:
+        return self if self.identifier == identifier else None
 
     def handle(self, event):
         # guess we should pass also unknown args
@@ -953,6 +962,13 @@ class App:
     def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
         for idx in range(len(self.widgets) - 1, -1, -1):
             widget = self.widgets[idx].get_widget(column, row)
+            if widget:
+                return widget
+        return None
+
+    def get_widget_by_id(self, identifier) -> Union[ConsoleWidget, None]:
+        for idx in range(0, len(self.widgets)):
+            widget = self.widgets[idx].get_widget_by_id(identifier)
             if widget:
                 return widget
         return None
