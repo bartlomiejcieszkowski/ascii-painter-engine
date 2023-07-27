@@ -140,18 +140,26 @@ class WordWrap(IntEnum):
 
 def json_convert(key, value):
     if key == "alignment":
+        if type(value) is Alignment:
+            return value
         if value is None:
             value = "TopLeft"
         value = Alignment[value]
     elif key == "dimensions":
+        if type(value) is DimensionsFlag:
+            return value
         if value is None:
             value = "Absolute"
         value = DimensionsFlag[value]
     elif key == "text_align":
+        if type(value) is TextAlign:
+            return value
         if value is None:
             value = "TopLeft"
         value = TextAlign[value]
     elif key == "text_wrap":
+        if type(value) is WordWrap:
+            return value
         if value is None:
             value = "Wrap"
         value = WordWrap[value]
