@@ -1,7 +1,5 @@
 import importlib
 
-from . import widget
-
 APP_DICT = {}
 
 
@@ -10,15 +8,15 @@ def register_mapping_dict(name, dict):
     APP_DICT[name] = dict
 
 
-WIDGET_DICT = {
-    "TextBox": widget.TextBox,
-    "Pane": widget.Pane,
-    "BorderWidget": widget.BorderWidget,
-    "Button": widget.Button,
-    "WriteBox": widget.WriteBox,
-}
+WIDGET_DICT = {}
 
 MODULES_DICT = {}
+
+
+def official_widget(cls):
+    global WIDGET_DICT
+    WIDGET_DICT[cls.__name__] = cls
+    return cls
 
 
 def get_widget_class(name: str):

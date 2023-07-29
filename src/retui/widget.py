@@ -15,6 +15,7 @@ from . import (
     WordWrap,
     json_convert,
 )
+from .mapping import official_widget
 
 
 class Text:
@@ -138,6 +139,7 @@ class Text:
         )
 
 
+@official_widget
 class BorderWidget(ConsoleWidget):
     @classmethod
     def from_dict(cls, **kwargs):
@@ -338,6 +340,7 @@ class BorderWidget(ConsoleWidget):
         return local_column, local_row
 
 
+@official_widget
 class TextBox(BorderWidget):
     @classmethod
     def from_dict(cls, **kwargs):
@@ -410,6 +413,7 @@ class TextBox(BorderWidget):
         return self.draw_bordered(inside_text=self._text, title=self.title)
 
 
+@official_widget
 class Pane(BorderWidget):
     @classmethod
     def from_dict(cls, **kwargs):
@@ -498,6 +502,7 @@ class Pane(BorderWidget):
         return None
 
 
+@official_widget
 class Button(TextBox):
     def __init__(
         self,
@@ -571,6 +576,7 @@ class Button(TextBox):
             return self.click_handler(this=self)
 
 
+@official_widget
 class WriteBox(TextBox):
     @classmethod
     def from_dict(cls, **kwargs):
