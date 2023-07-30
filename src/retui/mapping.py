@@ -26,6 +26,16 @@ def app_widget(cls):
     return cls
 
 
+def log_widgets(log_fn):
+    log_fn = print
+    log_fn("OFFICIAL WIDGETS:")
+    for name, cls in _OFFICIAL_WIDGET_DICT.items():
+        log_fn(f'"{name}": {cls}')
+    log_fn("APP WIDGETS:")
+    for name, cls in _APP_WIDGET_DICT.items():
+        log_fn(f'"{name}": {cls}')
+
+
 def get_widget_class(name: str):
     return _APP_WIDGET_DICT.get(name, _OFFICIAL_WIDGET_DICT.get(name, None))
 

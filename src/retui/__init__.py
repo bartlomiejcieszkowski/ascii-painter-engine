@@ -27,6 +27,7 @@ from typing import List, Tuple, Union
 
 from .base import Color, ColorBits, ConsoleColor, Point
 from .input_handling import VirtualKeyCodes
+from .mapping import log_widgets
 from .theme import Selectors
 
 
@@ -910,7 +911,7 @@ def demo_fun(app):
 class App:
     log = no_print
 
-    def __init__(self, log=no_print, title=None):
+    def __init__(self, log=no_print, title=None, debug: bool = False):
         App.log = log
         self.title = title
         self.log = log
@@ -935,6 +936,7 @@ class App:
         self.demo_thread = None
         self.demo_time_s = None
         self.demo_event = None
+        self.debug = debug
 
     def inner_x(self):
         return 0
@@ -1047,6 +1049,9 @@ class App:
         self.demo_time_s = time_s
 
     def run(self) -> int:
+        if self.debug:
+            log_widgets(self.log)
+
         if self.running is True:
             return -1
 
