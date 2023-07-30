@@ -8,23 +8,30 @@ def register_mapping_dict(name, dict):
     APP_DICT[name] = dict
 
 
-WIDGET_DICT = {}
+_OFFICIAL_WIDGET_DICT = {}
+_APP_WIDGET_DICT = {}
 
 MODULES_DICT = {}
 
 
 def official_widget(cls):
-    global WIDGET_DICT
-    WIDGET_DICT[cls.__name__] = cls
+    global _OFFICIAL_WIDGET_DICT
+    _OFFICIAL_WIDGET_DICT[cls.__name__] = cls
+    return cls
+
+
+def app_widget(cls):
+    global _APP_WIDGET_DICT
+    _APP_WIDGET_DICT[cls.__name__] = cls
     return cls
 
 
 def get_widget_class(name: str):
-    return WIDGET_DICT.get(name, None)
+    return _APP_WIDGET_DICT.get(name, _OFFICIAL_WIDGET_DICT.get(name, None))
 
 
 def import_widget_class(name: str, ctx_globals):
-    # New widgets are registered in WIDGET_DICT
+    # New widgets are registered in _APP_WIDGET_DICT
     # using full name
     # Modules imported are also cached
     # As they might provide more widgets
@@ -49,8 +56,8 @@ def import_widget_class(name: str, ctx_globals):
     if cls is None:
         return None
 
-    global WIDGET_DICT
-    WIDGET_DICT[name] = cls
+    global _APP_WIDGET_DICT
+    _APP_WIDGET_DICT[name] = cls
     return cls
 
 
