@@ -49,7 +49,9 @@ def __post_callback(this_json, this):
             __callback_wrapper(fun, *args)
 
 
-def app_from_json(filename, ctx_globals=None, log_fun=no_print, app_dict_name="main", app_dict=None):
+def app_from_json(
+    filename, ctx_globals=None, log_fun=no_print, app_dict_name="main", app_dict=None, debug: bool = False
+):
     if app_dict_name and app_dict:
         register_app_dict(app_dict_name, app_dict)
 
@@ -57,7 +59,7 @@ def app_from_json(filename, ctx_globals=None, log_fun=no_print, app_dict_name="m
         app_json = json.load(f)
 
         # TODO: validate
-        app = App(log=log_fun)
+        app = App(log=log_fun, debug=debug)
         title = app_json["name"]
         if "title" in app_json:
             if len(app_json["title"]) > 0:
