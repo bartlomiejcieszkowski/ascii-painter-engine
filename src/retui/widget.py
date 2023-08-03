@@ -2,19 +2,16 @@ from typing import Tuple, Union
 
 from . import (
     APP_THEME,
-    Alignment,
     ConsoleColor,
     ConsoleWidget,
-    DimensionsFlag,
     KeyEvent,
     MouseEvent,
     Point,
-    TabIndex,
-    TextAlign,
     VirtualKeyCodes,
-    WordWrap,
     json_convert,
 )
+from .defaults import default_value
+from .enums import Alignment, DimensionsFlag, TextAlign, WordWrap
 from .mapping import official_widget
 
 
@@ -23,8 +20,12 @@ class Text:
     This class abstracts text
     """
 
-    def __init__(self, text: str = "", text_align: TextAlign = TextAlign.TopLeft, text_wrap: WordWrap = WordWrap.Wrap):
-        # maybe word wrap?
+    def __init__(
+        self,
+        text: str = "",
+        text_align: TextAlign = default_value("text_align"),
+        text_wrap: WordWrap = default_value("text_wrap"),
+    ):
         self.text = text
         self.text_align = text_align
         self.text_wrap = text_wrap
@@ -152,11 +153,11 @@ class BorderWidget(ConsoleWidget):
             height=kwargs.pop("height"),
             alignment=json_convert("alignment", kwargs.pop("alignment", None)),
             dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
-            tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
+            tab_index=kwargs.pop("tab_index", default_value("tab_index")),
             borderless=kwargs.pop("borderless", False),
             border_str=kwargs.pop("border_str", None),
             border_color=kwargs.pop("border_color", None),
-            soft_border=kwargs.pop("soft_border", True),
+            soft_border=kwargs.pop("soft_border", default_value("soft_border")),
             title=kwargs.pop("title", ""),
         )
 
@@ -168,13 +169,13 @@ class BorderWidget(ConsoleWidget):
         y: int = 0,
         width: int = 0,
         height: int = 0,
-        alignment: Alignment = Alignment.TopLeft,
-        dimensions: DimensionsFlag = DimensionsFlag.Absolute,
-        tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
+        alignment: Alignment = default_value("alignment"),
+        dimensions: DimensionsFlag = default_value("dimensions"),
+        tab_index: int = default_value("tab_index"),
         borderless: bool = False,
         border_str=None,
         border_color=None,
-        soft_border=True,
+        soft_border=default_value("soft_border"),
         title="",
     ):
         super().__init__(
@@ -351,13 +352,14 @@ class TextBox(BorderWidget):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=json_convert("alignment", kwargs.pop("alignment", None)),
+            alignment=json_convert("alignment", kwargs.pop("alignment", default_value("alignment"))),
             dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
-            tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
+            tab_index=kwargs.pop("tab_index", default_value("tab_index")),
             borderless=kwargs.pop("borderless", False),
             text=kwargs.pop("text", ""),
             border_str=kwargs.pop("border_str", None),
             border_color=kwargs.pop("border_color", None),
+            soft_border=kwargs.pop("soft_border", default_value("soft_border")),
             title=kwargs.pop("title", ""),
             text_align=json_convert("text_align", kwargs.pop("text_align", None)),
             text_wrap=json_convert("text_wrap", kwargs.pop("text_wrap", None)),
@@ -371,16 +373,17 @@ class TextBox(BorderWidget):
         y: int = 0,
         width: int = 0,
         height: int = 0,
-        alignment: Alignment = Alignment.TopLeft,
-        dimensions: DimensionsFlag = DimensionsFlag.Absolute,
-        tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
+        alignment: Alignment = default_value("alignment"),
+        dimensions: DimensionsFlag = default_value("dimensions"),
+        tab_index: int = default_value("tab_index"),
         borderless: bool = False,
         text: str = "",
         border_str=None,
         border_color=None,
+        soft_border=default_value("soft_border"),
         title="",
-        text_align: TextAlign = TextAlign.TopLeft,
-        text_wrap: WordWrap = WordWrap.Wrap,
+        text_align: TextAlign = default_value("text_align"),
+        text_wrap: WordWrap = default_value("text_wrap"),
     ):
         super().__init__(
             app=app,
@@ -395,6 +398,7 @@ class TextBox(BorderWidget):
             borderless=borderless,
             border_str=border_str,
             border_color=border_color,
+            soft_border=soft_border,
             title=title,
         )
         self._text = Text(text=text, text_align=text_align, text_wrap=text_wrap)
@@ -429,6 +433,7 @@ class Pane(BorderWidget):
             borderless=kwargs.pop("borderless", False),
             border_str=kwargs.pop("border_str", None),
             border_color=kwargs.pop("border_color", None),
+            soft_border=kwargs.pop("soft_border", default_value("soft_border")),
             title=kwargs.pop("title", ""),
         )
 
@@ -440,11 +445,12 @@ class Pane(BorderWidget):
         y: int = 0,
         width: int = 0,
         height: int = 0,
-        alignment: Alignment = Alignment.TopLeft,
-        dimensions: DimensionsFlag = DimensionsFlag.Absolute,
+        alignment: Alignment = default_value("alignment"),
+        dimensions: DimensionsFlag = default_value("dimensions"),
         borderless: bool = False,
         border_str=None,
         border_color=None,
+        soft_border=default_value("soft_border"),
         title="",
     ):
         super().__init__(
@@ -459,6 +465,7 @@ class Pane(BorderWidget):
             borderless=borderless,
             border_str=border_str,
             border_color=border_color,
+            soft_border=soft_border,
             title=title,
         )
         self.widgets = []
@@ -512,8 +519,8 @@ class Button(TextBox):
         width: int,
         height: int,
         alignment: Alignment,
-        dimensions: DimensionsFlag = DimensionsFlag.Absolute,
-        tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
+        dimensions: DimensionsFlag = default_value("dimensions"),
+        tab_index: int = default_value("tab_index"),
         borderless: bool = False,
         text: str = "",
         border_str=None,
@@ -589,7 +596,7 @@ class WriteBox(TextBox):
             height=kwargs.pop("height"),
             alignment=json_convert("alignment", kwargs.pop("alignment", None)),
             dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
-            tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
+            tab_index=kwargs.pop("tab_index", default_value("tab_index")),
             borderless=kwargs.pop("borderless", False),
             text=kwargs.pop("text", ""),
             border_str=kwargs.pop("border_str", None),
@@ -605,9 +612,9 @@ class WriteBox(TextBox):
         y: int = 0,
         width: int = 0,
         height: int = 0,
-        alignment: Alignment = Alignment.TopLeft,
-        dimensions: DimensionsFlag = DimensionsFlag.Absolute,
-        tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
+        alignment: Alignment = default_value("alignment"),
+        dimensions: DimensionsFlag = default_value("dimensions"),
+        tab_index: int = default_value("tab_index"),
         borderless: bool = False,
         text: str = "",
         border_str=None,
@@ -646,7 +653,7 @@ class WriteBox(TextBox):
             border_str=border_str,
             border_color=border_color,
             title="",
-            text_align=TextAlign.TopLeft,
+            text_align=default_value("text_align"),
         )
 
     def write(self, text):

@@ -26,6 +26,8 @@ from enum import Enum, Flag, IntEnum, auto
 from typing import List, Tuple, Union
 
 from .base import Color, ColorBits, ConsoleColor, Point
+from .defaults import default_value
+from .enums import Alignment, DimensionsFlag, TextAlign, WordWrap
 from .input_handling import VirtualKeyCodes
 from .mapping import log_widgets
 from .theme import Selectors
@@ -67,78 +69,6 @@ class ConsoleBuffer:
         for i in range(y):
             buffer.append(line)
         return buffer
-
-
-class Alignment(Flag):
-    Center = 0
-    Left = 1
-    Right = 2
-    Top = 4
-    Bottom = 8
-    TopLeft = Left | Top
-    TopRight = Right | Top
-    BottomLeft = Left | Bottom
-    BottomRight = Right | Bottom
-    Float = 16
-    FloatTopLeft = Float | TopLeft
-    FloatTopRight = Float | TopRight
-    FloatBottomLeft = Float | BottomLeft
-    FloatBottomRight = Float | BottomRight
-    FloatLeft = Float | Left
-    FloatRight = Float | Right
-    FloatTop = Float | Top
-    FloatBottom = Float | Bottom
-
-
-class DimensionsFlag(Flag):
-    Absolute = 0
-    RelativeWidth = 1
-    RelativeHeight = 2
-    Relative = RelativeWidth | RelativeHeight
-    FillWidth = 4
-    FillHeight = 8
-    Fill = FillWidth | FillHeight
-    FillWidthRelativeHeight = FillWidth | RelativeHeight
-    FillHeightRelativeWidth = FillHeight | RelativeWidth
-
-
-class TextAlign(IntEnum):
-    # bYYXX
-    # isTop = value & 0xC == 0x0, middle &0xC == 0x4, bottom &0xC ==0x8
-    # isLeft = value & 0x3 == 0x0, center &0x3 == 0x1, right &0x3 == 0x2
-    TopLeft = 0x0
-    TopCenter = 0x1
-    TopRight = 0x2
-    MiddleLeft = 0x4
-    MiddleCenter = 0x5
-    MiddleRight = 0x6
-    BottomLeft = 0x8
-    BottomCenter = 0x9
-    BottomRight = 0xA
-
-    def is_top(self):
-        return self.value & 0xC == 0x0
-
-    def is_middle(self):
-        return self.value & 0xC == 0x4
-
-    def is_bottom(self):
-        return self.value & 0xC == 0x8
-
-    def is_left(self):
-        return self.value & 0x3 == 0x0
-
-    def is_center(self):
-        return self.value & 0x3 == 0x1
-
-    def is_right(self):
-        return self.value & 0x3 == 0x2
-
-
-class WordWrap(IntEnum):
-    Trim = 0
-    Wrap = 1
-    WrapWordEnd = 2
 
 
 def json_convert(key, value):
@@ -641,14 +571,6 @@ class InputInterpreter:
         return None
 
 
-class TabIndex:
-    # tab_index:
-    # -1 - not selectable TODO
-    TAB_INDEX_NOT_SELECTABLE = -1
-    # -2 - auto - parent would go from top-left line by line and auto assign tab index TODO
-    TAB_INDEX_AUTO = -2
-
-
 class ConsoleWidget(ABC):
     @classmethod
     def from_dict(cls, **kwargs):
@@ -659,9 +581,9 @@ class ConsoleWidget(ABC):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=json_convert("alignment", kwargs.pop("alignment", None)),
-            dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
-            tab_index=kwargs.pop("tab_index", TabIndex.TAB_INDEX_NOT_SELECTABLE),
+            alignment=json_convert("alignment", kwargs.pop("alignment", default_value("alignment"))),
+            dimensions=json_convert("dimensions", kwargs.pop("dimensions", default_value("dimensions"))),
+            tab_index=kwargs.pop("tab_index", default_value("tab_index")),
         )
 
     def __init__(
@@ -672,9 +594,9 @@ class ConsoleWidget(ABC):
         y: int = 0,
         width: int = 0,
         height: int = 0,
-        alignment: Alignment = Alignment.TopLeft,
-        dimensions: DimensionsFlag = DimensionsFlag.Absolute,
-        tab_index: int = TabIndex.TAB_INDEX_NOT_SELECTABLE,
+        alignment: Alignment = default_value("alignment"),
+        dimensions: DimensionsFlag = default_value("dimensions"),
+        tab_index: int = default_value("tab_index"),
     ):
         if identifier is None:
             identifier = f"{type(self).__qualname__}_{hash(self):x}"
@@ -719,7 +641,6 @@ class ConsoleWidget(ABC):
                 #  2 1 0
                 x = self.parent.inner_x() + self.parent.inner_width() - width - x
                 pass
-
             if Alignment.Top in self.alignment:
                 #  y   0
                 #   [] 1
