@@ -187,9 +187,7 @@ class MouseEvent(ConsoleEvent):
 
     @classmethod
     def from_windows_event(cls, mouse_event_record: MOUSE_EVENT_RECORD):
-        # on windows position is 0-based, top-left corner, row 0 is inaccessible, translate Y as Y-1
-        if mouse_event_record.dwMousePosition.Y == 0:
-            return None
+        # on windows position is 0-based, top-left corner
 
         hover = False
         # zero indicates mouse button is pressed or released
@@ -200,7 +198,7 @@ class MouseEvent(ConsoleEvent):
                 # mouse wheel move, high word of dwButtonState is dir, positive up
                 return cls(
                     mouse_event_record.dwMousePosition.X,
-                    mouse_event_record.dwMousePosition.Y - 1,
+                    mouse_event_record.dwMousePosition.Y,
                     MouseEvent.Buttons(MouseEvent.Buttons.WHEEL_UP + ((mouse_event_record.dwButtonState >> 31) & 0x1)),
                     True,
                     None,
@@ -236,7 +234,7 @@ class MouseEvent(ConsoleEvent):
 
                 event = cls(
                     mouse_event_record.dwMousePosition.X,
-                    mouse_event_record.dwMousePosition.Y - 1,
+                    mouse_event_record.dwMousePosition.Y,
                     MouseEvent.Buttons(button),
                     press,
                     None,
@@ -277,8 +275,8 @@ class MouseEvent(ConsoleEvent):
         if y < 2:
             return None
 
-        # also we have 1st row inactive
-        return cls(x - 1, y - 2, button, press, ctrl_button, False)
+        # 1-based - translate to 0-based
+        return cls(x - 1, y - 1, button, press, ctrl_button, False)
 
 
 class KeyEvent(ConsoleEvent):
@@ -1465,10 +1463,12 @@ class Brush:
         return f"\x1B[{column}G"  # not ANSI.SYS
 
     def move_cursor(self, row: int = 0, column: int = 0):
+        # 0-based to 1-based
         print(f"\x1B[{row + 1};{column + 1}H", end="", file=self.file)
 
-    def horizontal_vertical_position(self, row: int = 1, column: int = 1):
-        print(f"\x1B[{row};{column}f", end="", file=self.file)
+    def horizontal_vertical_position(self, row: int = 0, column: int = 0):
+        # 0-based to 1-based
+        print(f"\x1B[{row + 1};{column + 1}f", end="", file=self.file)
 
     @staticmethod
     def cursor_hide():
