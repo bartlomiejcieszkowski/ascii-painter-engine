@@ -280,8 +280,8 @@ class BorderWidget(ConsoleWidget):
         width_inner = width
         if self.borderless is False:
             width_inner -= 2
-        self.app.brush.MoveCursor(row=offset_rows)
-        offset_str = self.app.brush.MoveRight(offset_cols)
+        self.app.brush.move_cursor(row=offset_rows)
+        offset_str = self.app.brush.move_right(offset_cols)
 
         # Top border
         if self.borderless is False:
@@ -301,7 +301,7 @@ class BorderWidget(ConsoleWidget):
 
         # Middle part
         for h in range(0, height_inner):
-            self.app.brush.MoveCursor(row=(offset_rows + start + h))
+            self.app.brush.move_cursor(row=(offset_rows + start + h))
             text = inside_text.get_line(h) if inside_text else empty_line
             leftover = width_inner - len(text)
             line = offset_str
@@ -319,7 +319,7 @@ class BorderWidget(ConsoleWidget):
 
         # Bottom border
         if self.borderless is False:
-            self.app.brush.MoveCursor(row=offset_rows + height - 1)
+            self.app.brush.move_cursor(row=offset_rows + height - 1)
             self.app.brush.print(offset_str + self.border_get_bottom(width_inner), end="\n")
         pass
 
