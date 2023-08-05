@@ -1453,7 +1453,7 @@ class Brush:
             return f"\x1B[{cells}D"
         return ""
 
-    def move_line_down(lines: int = 1):
+    def move_line_down(self, lines: int = 1):
         return f"\x1B[{lines}E"  # not ANSI.SYS
 
     def move_line_up(self, lines: int = 1):
