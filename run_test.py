@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath("./src/"))
 
 
 import retui.logger as logger  # noqa: E402
-import tests  # noqa: E402
+import tests.functional  # noqa: E402
 
 DIAGNOSTICS = False
 try:
@@ -52,13 +52,13 @@ def diagnostics_end():
 def test_run(module_name, demo_time_s, title):
     print(module_name)
     sys.path.append(os.path.abspath(os.path.join(os.path.abspath(__file__), os.pardir, "..")))
-    x = importlib.import_module(f"tests.{module_name}")
+    x = importlib.import_module(f"tests.functional.{module_name}")
     logger.log_file(f"{module_name}")
     x.test(demo_time_s=demo_time_s, title=title)
 
 
 def main():
-    tests_path = os.path.dirname(tests.__file__)
+    tests_path = os.path.dirname(tests.functional.__file__)
     tests_list = [name for _, name, _ in pkgutil.iter_modules([tests_path])]
     # print(tests_list)
     parser = argparse.ArgumentParser(description="Run tests.")
