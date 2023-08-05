@@ -1413,27 +1413,27 @@ class Brush:
         ret_val += self.background_color(console_color.background, check_last)
         return ret_val
 
-    def print(self, *args, sep=" ", end="", file=None, color: Union[ConsoleColor, None] = None):
+    def print(self, *args, sep=" ", end="", color: Union[ConsoleColor, None] = None):
         if color is None or color.no_color():
-            print(*args, sep=sep, end=end, file=file)
+            print(*args, sep=sep, end=end, file=self.file)
         else:
             color = self.color(color)
             print(
                 color + " ".join(map(str, args)) + self.RESET,
                 sep=sep,
                 end=end,
-                file=file,
+                file=self.file,
             )
 
     def set_foreground(self, color):
         fg_color = self.foreground_color(color)
         if fg_color != "":
-            print(fg_color, end="")
+            print(fg_color, end="", file=self.file)
 
     def set_background(self, color):
         bg_color = self.background_color(color)
         if bg_color != "":
-            print(bg_color, end="")
+            print(bg_color, end="", file=self.file)
 
     def reset_color(self):
         self.console_color.reset()
@@ -1468,7 +1468,7 @@ class Brush:
         print(f"\x1B[{row + 1};{column + 1}H", end="", file=self.file)
 
     def horizontal_vertical_position(self, row: int = 1, column: int = 1):
-        print(f"\x1B[{row};{column}f")
+        print(f"\x1B[{row};{column}f", end="", file=self.file)
 
     @staticmethod
     def cursor_hide():
