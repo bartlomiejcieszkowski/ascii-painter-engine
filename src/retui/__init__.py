@@ -1465,7 +1465,7 @@ class Brush:
         return f"\x1B[{column}G"  # not ANSI.SYS
 
     def move_cursor(self, row: int = 0, column: int = 0):
-        print(f"\x1B[{row + 1};{column + 1}H")
+        print(f"\x1B[{row + 1};{column + 1}H", end="", file=self.file)
 
     def horizontal_vertical_position(self, row: int = 1, column: int = 1):
         print(f"\x1B[{row};{column}f")
