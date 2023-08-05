@@ -1384,8 +1384,7 @@ APP_THEME = Theme.default_theme()
 
 class Brush:
     def __init__(self, use_color=True):
-        self.fgcolor = None
-        self.bgcolor = None
+        self.console_color = ConsoleColor()
         self.use_color = use_color
 
     RESET = "\x1B[0m"
@@ -1393,39 +1392,31 @@ class Brush:
     def color_mode(self, enable=True):
         self.use_color = enable
 
-    def FgColor(self, color, check_last=False, bits: ColorBits = ColorBits.Bit24):
-        if check_last:
-            if self.fgcolor == color:
-                return ""
-        self.fgcolor = color
-        if self.fgcolor is None:
+    def foreground_color(self, color: Color, check_last=False):
+        updated = self.console_color.update_foreground(color)
+        if (not updated and check_last) or (self.console_color.foreground is None):
             return ""
-        return f"\x1B[38;{int(self.fgcolor.bits)};{self.fgcolor.color}m"
+        return f"\x1B[38;{int(self.console_color.foreground.bits)};{self.console_color.foreground.color}m"
 
-    def BgColor(self, color: Color, check_last=False):
-        if check_last:
-            if self.bgcolor == color:
-                return ""
-        self.bgcolor = color
-        if self.bgcolor is None:
+    def background_color(self, color: Color, check_last=False):
+        updated = self.console_color.update_background(color)
+        if (not updated and check_last) or (self.console_color.background is None):
             return ""
-        return f"\x1B[48;{int(self.bgcolor.bits)};{self.bgcolor.color}m"
+        return f"\x1B[48;{int(self.console_color.background.bits)};{self.console_color.background.color}m"
 
-    def FgBgColor(self, console_color: ConsoleColor, check_last=False):
-        ret_val = ""
-        if (console_color.fgcolor is None and self.fgcolor != console_color.fgcolor) or (
-            console_color.bgcolor is None and self.bgcolor != console_color.bgcolor
-        ):
-            ret_val = self.ResetColor()
-        ret_val += self.FgColor(console_color.fgcolor, check_last)
-        ret_val += self.BgColor(console_color.bgcolor, check_last)
+    def color(self, console_color: ConsoleColor, check_last=False):
+        if self.console_color == console_color:
+            return ""
+        ret_val = self.reset_color()
+        ret_val += self.foreground_color(console_color.foreground, check_last)
+        ret_val += self.background_color(console_color.background, check_last)
         return ret_val
 
     def print(self, *args, sep=" ", end="", file=None, color: Union[ConsoleColor, None] = None):
         if color is None or color.no_color():
             print(*args, sep=sep, end=end, file=file)
         else:
-            color = self.BgColor(color.bgcolor) + self.FgColor(color.fgcolor)
+            color = self.color(color)
             print(
                 color + " ".join(map(str, args)) + self.RESET,
                 sep=sep,
@@ -1433,15 +1424,18 @@ class Brush:
                 file=file,
             )
 
-    def SetFgColor(self, color):
-        print(self.FgColor(color), end="")
+    def set_fg_color(self, color):
+        fg_color = self.foreground_color(color)
+        if fg_color != "":
+            print(fg_color, end="")
 
-    def SetBgColor(self, color):
-        print(self.BgColor(color), end="")
+    def set_bg_color(self, color):
+        bg_color = self.background_color(color)
+        if bg_color != "":
+            print(bg_color, end="")
 
-    def ResetColor(self):
-        self.bgcolor = None
-        self.fgcolor = None
+    def reset_color(self):
+        self.console_color.reset()
         return self.RESET
 
     @staticmethod
