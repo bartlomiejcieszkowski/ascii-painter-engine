@@ -879,7 +879,7 @@ class App:
     def clear(self, reuse=True):
         self.width, self.height = self.console.update_size()
         if reuse:
-            self.brush.MoveCursor(0, 0)
+            self.brush.move_cursor(0, 0)
         for line in ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, " ", border=False, debug=False):
             print(line, end="\n", flush=True)
         self.requires_draw = True
@@ -935,7 +935,7 @@ class App:
                 #    widget = self.handle_click(event)
                 widget = self.handle_click(event)
 
-                self.brush.MoveCursor(row=(self.console.rows + off) - 1)
+                self.brush.move_cursor(row=(self.console.rows + off) - 1)
                 if widget:
                     self.log(
                         f"x: {event.coordinates[0]} y: {event.coordinates[1]} "
@@ -943,13 +943,13 @@ class App:
                     )
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
-                self.brush.MoveCursor(row=(self.console.rows + off) - 0)
+                self.brush.move_cursor(row=(self.console.rows + off) - 0)
                 self.debug_print(f"size: {self.console.columns:3}x{self.console.rows:3}")
             elif isinstance(event, KeyEvent):
-                self.brush.MoveCursor(row=(self.console.rows + off) - 2)
+                self.brush.move_cursor(row=(self.console.rows + off) - 2)
                 self.debug_print(event)
             else:
-                self.brush.MoveCursor(row=(self.console.rows + off) - 0, column=col)
+                self.brush.move_cursor(row=(self.console.rows + off) - 0, column=col)
                 debug_string = f'type={type(event)} event="{event}", '
                 # col = len(debug_string)
                 self.debug_print(debug_string)
@@ -997,7 +997,7 @@ class App:
 
         self.console.interactive_mode()
 
-        self.brush.HideCursor()
+        self.brush.cursor_hide()
         self.handle_events([SizeChangeEvent()])
         i = 0
         while self.running:
@@ -1007,7 +1007,7 @@ class App:
                     widget.update_dimensions()
                 for widget in self.widgets:
                     widget.draw()
-                self.brush.MoveCursor(row=self.console.rows - 1)
+                self.brush.move_cursor(row=self.console.rows - 1)
                 self.requires_draw = False
             # this is blocking
             if not self.console.read_events(self.handle_events_callback, self):
@@ -1019,8 +1019,8 @@ class App:
             self.demo_thread.join()
 
         # Move to the end, so we wont end up writing in middle of screen
-        self.brush.MoveCursor(self.console.rows - 1)
-        self.brush.ShowCursor()
+        self.brush.move_cursor(self.console.rows - 1)
+        self.brush.cursor_show()
         return 0
 
     def color_mode(self, enable=True) -> bool:
@@ -1384,6 +1384,7 @@ APP_THEME = Theme.default_theme()
 
 class Brush:
     def __init__(self, use_color=True):
+        self.file = sys.stdout
         self.console_color = ConsoleColor()
         self.use_color = use_color
 
@@ -1424,12 +1425,12 @@ class Brush:
                 file=file,
             )
 
-    def set_fg_color(self, color):
+    def set_foreground(self, color):
         fg_color = self.foreground_color(color)
         if fg_color != "":
             print(fg_color, end="")
 
-    def set_bg_color(self, color):
+    def set_background(self, color):
         bg_color = self.background_color(color)
         if bg_color != "":
             print(bg_color, end="")
@@ -1438,58 +1439,45 @@ class Brush:
         self.console_color.reset()
         return self.RESET
 
-    @staticmethod
-    def Reset():
-        print(Brush.RESET, end="")
+    def move_up(self, cells: int = 1):
+        return f"\x1B[{cells}A"
 
-    @staticmethod
-    def MoveUp(cells: int = 1):
-        print(f"\x1B[{cells}A")
+    def move_down(self, cells: int = 1):
+        return f"\x1B[{cells}B"
 
-    @staticmethod
-    def MoveDown(cells: int = 1):
-        print(f"\x1B[{cells}B")
-
-    @staticmethod
-    def MoveRight(cells: int = 1) -> str:
+    def move_right(self, cells: int = 1) -> str:
         if cells != 0:
             return f"\x1B[{cells}C"
         return ""
 
-    @staticmethod
-    def MoveLeft(cells: int = 1) -> str:
+    def move_left(self, cells: int = 1) -> str:
         if cells != 0:
             return f"\x1B[{cells}D"
         return ""
 
-    @staticmethod
-    def MoveLineDown(lines: int = 1):
-        print(f"\x1B[{lines}E")  # not ANSI.SYS
+    def move_line_down(lines: int = 1):
+        return f"\x1B[{lines}E"  # not ANSI.SYS
 
-    @staticmethod
-    def MoveLineUp(lines: int = 1):
-        print(f"\x1B[{lines}F")  # not ANSI.SYS
+    def move_line_up(self, lines: int = 1):
+        return f"\x1B[{lines}F"  # not ANSI.SYS
 
-    @staticmethod
-    def MoveColumnAbsolute(column: int = 1):
-        print(f"\x1B[{column}G")  # not ANSI.SYS
+    def move_column_absolute(self, column: int = 1):
+        return f"\x1B[{column}G"  # not ANSI.SYS
 
-    @staticmethod
-    def MoveCursor(row: int = 0, column: int = 0):
+    def move_cursor(self, row: int = 0, column: int = 0):
         print(f"\x1B[{row + 1};{column + 1}H")
 
-    @staticmethod
-    def HorizontalVerticalPosition(row: int = 1, column: int = 1):
+    def horizontal_vertical_position(self, row: int = 1, column: int = 1):
         print(f"\x1B[{row};{column}f")
 
     @staticmethod
-    def HideCursor():
+    def cursor_hide():
         print("\x1b[?25l")
         # alternative on windows without vt:
         # https://docs.microsoft.com/en-us/windows/console/setconsolecursorinfo?redirectedfrom=MSDN
 
     @staticmethod
-    def ShowCursor():
+    def cursor_show():
         print("\x1b[?25h")
 
 
