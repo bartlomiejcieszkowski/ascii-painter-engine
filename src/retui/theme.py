@@ -35,13 +35,13 @@ class Attributes:
         if color:
             self.color = color
         else:
-            self.color = ConsoleColor(fgcolor=None, bgcolor=None)
+            self.color = ConsoleColor(foreground=None, background=None)
 
     def add(self, other):
-        if other.color.fgcolor is not None:
-            self.color.fgcolor = other.color.fgcolor
-        if other.color.bgcolor is not None:
-            self.color.bgcolor = other.color.bgcolor
+        if other.color.foreground is not None:
+            self.color.foreground = other.color.foreground
+        if other.color.background is not None:
+            self.color.background = other.color.background
 
     def __str__(self):
         return f"Attributes({self.color})"
@@ -60,11 +60,11 @@ class Attributes:
         if prop == "background-color":
             single_color = CssColorToColor(value)
             if single_color:
-                color = ConsoleColor(fgcolor=None, bgcolor=single_color)
+                color = ConsoleColor(foreground=None, background=single_color)
         elif prop == "color":
             single_color = CssColorToColor(value)
             if single_color:
-                color = ConsoleColor(fgcolor=single_color, bgcolor=None)
+                color = ConsoleColor(foreground=single_color, background=None)
         return cls(color=color)
 
 

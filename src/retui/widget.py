@@ -245,14 +245,14 @@ class BorderWidget(ConsoleWidget):
         right_top_corner = self.border_get_point(2)
         top_border = self.border_get_point(5)
         return (
-            self.app.brush.FgBgColor(left_top_corner.color)
+            self.app.brush.color(left_top_corner.color)
             + left_top_corner.c
-            + self.app.brush.FgBgColor(top_border.color)
+            + self.app.brush.color(top_border.color)
             + ((title[: width_middle - 2] + "..") if len(title) > width_middle else title)
             + (top_border.c * (width_middle - len(self.title)))
-            + self.app.brush.FgBgColor(right_top_corner.color)
+            + self.app.brush.color(right_top_corner.color)
             + right_top_corner.c
-            + self.app.brush.ResetColor()
+            + self.app.brush.reset_color()
         )
 
     def border_get_bottom(self, width_middle):
@@ -260,13 +260,13 @@ class BorderWidget(ConsoleWidget):
         right_bottom_corner = self.border_get_point(4)
         bottom_border = self.border_get_point(8)
         return (
-            self.app.brush.FgBgColor(left_bottom_corner.color)
+            self.app.brush.color(left_bottom_corner.color)
             + left_bottom_corner.c
-            + self.app.brush.FgBgColor(bottom_border.color)
+            + self.app.brush.color(bottom_border.color)
             + (bottom_border.c * width_middle)
-            + self.app.brush.FgBgColor(right_bottom_corner.color)
+            + self.app.brush.color(right_bottom_corner.color)
             + right_bottom_corner.c
-            + self.app.brush.ResetColor()
+            + self.app.brush.reset_color()
         )
 
     def draw(self):
@@ -307,14 +307,14 @@ class BorderWidget(ConsoleWidget):
             line = offset_str
 
             if self.borderless is False:
-                line += self.app.brush.FgBgColor(left_border.color) + left_border.c
+                line += self.app.brush.color(left_border.color) + left_border.c
 
-            line += self.app.brush.FgBgColor(inside_border.color) + text[:width_inner] + (inside_border.c * leftover)
+            line += self.app.brush.color(inside_border.color) + text[:width_inner] + (inside_border.c * leftover)
 
             if self.borderless is False:
-                line += self.app.brush.FgBgColor(right_border.color) + right_border.c
+                line += self.app.brush.color(right_border.color) + right_border.c
 
-            line += self.app.brush.ResetColor()
+            line += self.app.brush.reset_color()
             self.app.brush.print(line, end="")
 
         # Bottom border
