@@ -181,8 +181,8 @@ class MouseEvent(ConsoleEvent):
 
     def __str__(self):
         return (
-            f"x: {self.coordinates[0]} y: {self.coordinates[1]} button: {self.button} pressed: {self.pressed} "
-            f"control_key: {self.control_key_state} hover: {self.hover}"
+            f"MouseEvent x: {self.coordinates[0]} y: {self.coordinates[1]} button: {self.button} "
+            f"pressed: {self.pressed} control_key: {self.control_key_state} hover: {self.hover}"
         )
 
     @classmethod
@@ -939,6 +939,8 @@ class App:
                         f"x: {event.coordinates[0]} y: {event.coordinates[1]} "
                         f"button:{event.button} press:{event.pressed} widget:{widget}"
                     )
+                self.brush.move_cursor(row=(self.console.rows + off) - 3)
+                self.debug_print(event)
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
                 self.brush.move_cursor(row=(self.console.rows + off) - 0)
