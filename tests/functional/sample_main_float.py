@@ -72,7 +72,11 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
     # 1111222222
     # 333 222222
     # 333
-
+    # FIXME this test is broken - floating windows are not implemented
+    # FIXME search for here be dragons
+    # FIXME all floating windows stack on top of each other, should be replaced
+    # FIXME with nice algorithm that tries to fit them
+    # TEXT IS NOT OVERFLOWING, splitting text is fine
     app.add_widget(pane)
 
     app.handle_sigint = handle_sigint
