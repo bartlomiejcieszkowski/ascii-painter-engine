@@ -710,12 +710,14 @@ class Console:
 
     def update_size(self):
         self.columns, self.rows = self.get_size()
-        self.rows -= 2
         return self.columns, self.rows
 
     @staticmethod
     def get_size():
         columns, rows = shutil.get_terminal_size(fallback=(0, 0))
+        # You can't use all lines, as it would move terminal 1 line down
+        rows -= 1
+        # OPEN: argparse does -2 for width
         # self.debug_print(f'{columns}x{rows}')
         return columns, rows
 
