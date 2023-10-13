@@ -41,6 +41,7 @@ def get_widget_class(name: str):
 
 
 def import_widget_class(name: str, ctx_globals):
+    # TODO: use official_widget()
     # New widgets are registered in _APP_WIDGET_DICT
     # using full name
     # Modules imported are also cached
