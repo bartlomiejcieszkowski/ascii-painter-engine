@@ -624,7 +624,7 @@ class ConsoleWidget(ABC):
         width = self.width_calculated()
         height = self.height_calculated()
         if Alignment.Float in self.alignment:
-            # here be dragons
+            # FIXME here be dragons
             pass
         else:
             if Alignment.Left in self.alignment:
@@ -722,6 +722,7 @@ class Console:
         return columns, rows
 
     def set_color_mode(self, enable: bool) -> bool:
+        # TODO: careful with overriding
         self.vt_supported = enable
         return enable
 
@@ -776,6 +777,7 @@ class LinuxConsole(Console):
         print("xRestore console done")
         if self.is_interactive_mode:
             print("\x1B[?1006l\x1B[?1015l\x1B[?1003l")
+        # where show cursor?
 
     window_change_event_ctx = None
 
@@ -1391,6 +1393,7 @@ class Brush:
         self.file = sys.stdout
         self.console_color = ConsoleColor()
         self.use_color = use_color
+        # TODO: this comes from vt_supported, we override it with color_mode
 
     RESET = "\x1B[0m"
 

@@ -230,7 +230,7 @@ class BorderWidget(ConsoleWidget):
 
     def border_set_color(self, color):
         for i in range(1, 9):
-            self.border[i].color = color
+            self.border[i].color = color  # TODO track color usage
 
     def border_inside_set_color(self, color):
         self.border[0].color = color
