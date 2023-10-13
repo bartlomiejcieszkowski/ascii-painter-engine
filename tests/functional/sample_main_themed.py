@@ -10,7 +10,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
     app.title = title
     app.color_mode()
 
-    working_directory = "tests"
+    # TODO: from script path and relpath
+    working_directory = "tests/functional"
     files = [
         "css_parser/main.css",
     ]

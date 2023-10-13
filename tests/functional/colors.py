@@ -25,8 +25,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None) -> int:
 
     test_color = retui.ConsoleColor(retui.Color(14, retui.ColorBits.Bit8), retui.Color(4, retui.ColorBits.Bit8))
 
-    brush.set_foreground(test_color.bgcolor)
-    brush.set_background(test_color.fgcolor)
+    brush.set_foreground(test_color.background)
+    brush.set_background(test_color.foreground)
     print("TEST", end="")
     brush.reset_color()
     print()
