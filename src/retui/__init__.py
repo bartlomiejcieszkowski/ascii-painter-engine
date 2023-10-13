@@ -735,7 +735,8 @@ class Console:
         pass
 
     def set_title(self, title):
-        print(f"\033]2;{title}\007")
+        if self.vt_supported:
+            print(f"\033]2;{title}\007")
 
 
 class LinuxConsole(Console):
@@ -975,6 +976,14 @@ class App:
     def demo_mode(self, time_s):
         self.demo_time_s = time_s
 
+    def draw(self):
+        for widget in self.widgets:
+            widget.draw()
+
+    def update_dimensions(self):
+        for widget in self.widgets:
+            widget.update_dimensions()
+
     def run(self) -> int:
         if self.debug:
             log_widgets(self.log)
@@ -1009,10 +1018,8 @@ class App:
         while self.running:
             if self.requires_draw:
                 self.column_row_widget_cache.clear()
-                for widget in self.widgets:
-                    widget.update_dimensions()
-                for widget in self.widgets:
-                    widget.draw()
+                self.update_dimensions()
+                self.draw()
                 self.brush.move_cursor(row=self.console.rows - 1)
                 self.requires_draw = False
             # this is blocking
@@ -1032,8 +1039,9 @@ class App:
     def color_mode(self, enable=True) -> bool:
         if enable:
             success = self.console.set_color_mode(enable)
+            self.brush.color_mode(success)
             if success:
-                self.brush.color_mode(enable)
+                # self.brush.color_mode(enable)
                 self.debug_colors = ConsoleColor(Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8))
         else:
             self.debug_colors = ConsoleColor(None, None)
@@ -1421,15 +1429,18 @@ class Brush:
         return ret_val
 
     def print(self, *args, sep=" ", end="", color: Union[ConsoleColor, None] = None):
+        # print(f"sep: {sep} end: {end}, color: {color} args: {args}")
         if color is None or color.no_color():
-            print(*args, sep=sep, end=end, file=self.file)
+            print(*args, sep=sep, end=end, file=self.file, flush=True)
         else:
             color = self.color(color)
+            print(color)
             print(
                 color + " ".join(map(str, args)) + self.RESET,
                 sep=sep,
                 end=end,
                 file=self.file,
+                flush=True,
             )
 
     def set_foreground(self, color):
