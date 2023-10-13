@@ -1,6 +1,6 @@
 import retui
 from retui.logger import log
-from retui.widget import Pane
+from retui.widgets import Pane
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):

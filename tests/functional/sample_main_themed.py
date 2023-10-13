@@ -2,7 +2,7 @@
 import retui
 from retui.logger import log
 from retui.theme import CssParser
-from retui.widget import Pane, TextBox
+from retui.widgets import Pane, TextBox
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
