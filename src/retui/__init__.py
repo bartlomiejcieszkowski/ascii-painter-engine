@@ -871,10 +871,14 @@ class App:
     def inner_height(self):
         return self.height
 
-    def debug_print(self, text, end="\n"):
+    def debug_print(self, text, end="\n", row_off=-1):
         if self.debug and self.log:
             self.log(text)
-            # self.brush.print(text, color=self.debug_colors, end=end)
+        elif True:  # self.debug:
+            row = (0 if row_off >= 0 else self.console.rows) + row_off
+            self.brush.move_cursor(row=row)
+            print(self.debug_colors)
+            self.brush.print(text, end=end, color=self.debug_colors)
 
     def clear(self, reuse=True):
         self.width, self.height = self.console.update_size()
@@ -941,20 +945,18 @@ class App:
                         f"x: {event.coordinates[0]} y: {event.coordinates[1]} "
                         f"button:{event.button} press:{event.pressed} widget:{widget}"
                     )
-                self.brush.move_cursor(row=(self.console.rows + off) - 3)
-                self.debug_print(event)
+
+                self.debug_print(event, row_off=-4)
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
-                self.brush.move_cursor(row=(self.console.rows + off) - 0)
-                self.debug_print(f"size: {self.console.columns:3}x{self.console.rows:3}")
+                self.debug_print(f"size: {self.console.columns:3}x{self.console.rows:3}", row_off=-2)
             elif isinstance(event, KeyEvent):
-                self.brush.move_cursor(row=(self.console.rows + off) - 2)
-                self.debug_print(event)
+                self.debug_print(event, row_off=-3)
             else:
                 self.brush.move_cursor(row=(self.console.rows + off) - 0, column=col)
                 debug_string = f'type={type(event)} event="{event}", '
                 # col = len(debug_string)
-                self.debug_print(debug_string)
+                self.debug_print(debug_string, row_off=-1)
                 pass
 
     signal_sigint_ctx = None
