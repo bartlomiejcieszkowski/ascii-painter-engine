@@ -582,6 +582,8 @@ class ConsoleWidget(ABC):
             alignment=json_convert("alignment", kwargs.pop("alignment", default_value("alignment"))),
             dimensions=json_convert("dimensions", kwargs.pop("dimensions", default_value("dimensions"))),
             tab_index=kwargs.pop("tab_index", default_value("tab_index")),
+            scroll_horizontal=kwargs.pop("scroll_horizontal", default_value("scroll_horizontal")),
+            scroll_vertical=kwargs.pop("scroll_vertical", default_value("scroll_vertical")),
         )
 
     def __init__(
@@ -595,6 +597,8 @@ class ConsoleWidget(ABC):
         alignment: Alignment = default_value("alignment"),
         dimensions: DimensionsFlag = default_value("dimensions"),
         tab_index: int = default_value("tab_index"),
+        scroll_horizontal: bool = default_value("scroll_horizontal"),
+        scroll_vertical: bool = default_value("scroll_vertical"),
     ):
         if identifier is None:
             identifier = f"{type(self).__qualname__}_{hash(self):x}"
@@ -610,6 +614,8 @@ class ConsoleWidget(ABC):
         self.parent = None
         self.handlers = {}
         self.tab_index = tab_index
+        self.scroll_horizontal = scroll_horizontal
+        self.scroll_vertical = scroll_vertical
         # register handlers here
         # when handling click - cache what was there to speed up lookup - invalidate on re-draw
         # iterate in reverse order on widgets - the order on widget list determines Z order
@@ -862,6 +868,10 @@ class App:
         self.demo_event = None
         self.emulate_screen_dimensions = None
         self.debug = debug
+
+        # Scrollable attributes
+        self.scroll_horizontal = False
+        self.scroll_vertical = False
 
     def inner_x(self):
         return 0
