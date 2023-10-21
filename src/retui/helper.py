@@ -1,6 +1,15 @@
 import json
 
-from . import App, Color, ColorBits, ConsoleColor, ConsoleWidget, mapping, no_print
+from . import (  # noqa: F401
+    App,
+    Color,
+    ColorBits,
+    ConsoleColor,
+    ConsoleWidget,
+    mapping,
+    no_print,
+    widgets,
+)
 from .mapping import get_mapping, is_mapping, register_mapping_dict
 
 FUNCTION_THIS_ARG = "##this"
