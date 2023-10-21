@@ -7,6 +7,8 @@ _defaults = {
     "soft_border": False,
     "text_align": TextAlign.TopLeft,
     "text_wrap": WordWrap.Wrap,
+    "scroll_horizontal": False,
+    "scroll_vertical": False,
 }
 
 
