@@ -860,6 +860,7 @@ class App:
         self.demo_thread = None
         self.demo_time_s = None
         self.demo_event = None
+        self.emulate_screen_dimensions = None
         self.debug = debug
 
     def inner_x(self):
@@ -976,6 +977,9 @@ class App:
     def demo_mode(self, time_s):
         self.demo_time_s = time_s
 
+    def emulate_screen(self, height: int, width: int):
+        self.emulate_screen_dimensions = (height, width)
+
     def draw(self):
         for widget in self.widgets:
             widget.draw()
@@ -987,6 +991,10 @@ class App:
     def run(self) -> int:
         if self.debug:
             log_widgets(self.log)
+
+        if self.emulate_screen_dimensions:
+            self.console.rows = self.emulate_screen_dimensions[0]
+            self.console.columns = self.emulate_screen_dimensions[1]
 
         if self.running is True:
             return -1
