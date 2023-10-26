@@ -706,6 +706,10 @@ class ConsoleWidget(ABC):
 
 
 class Console:
+    @abstractmethod
+    def get_brush(self):
+        pass
+
     def __init__(self, app, debug=True):
         # TODO: this would print without vt enabled yet update state if vt enabled in brush?
         self.app = app
@@ -746,6 +750,9 @@ class Console:
 
 
 class LinuxConsole(Console):
+    def get_brush(self):
+        return Brush(self.vt_supported)
+
     def __init__(self, app):
         super().__init__(app)
         self.is_interactive_mode = False
@@ -851,7 +858,7 @@ class App:
         else:
             self.console = LinuxConsole(self)
         self.widgets = []
-        self.brush = Brush(self.console.vt_supported)
+        self.brush = self.console.get_brush()
         self.debug_colors = ConsoleColor(None, None)
         self.running = False
         self.requires_draw = False
@@ -1093,6 +1100,9 @@ class App:
 
 
 class WindowsConsole(Console):
+    def get_brush(self):
+        return Brush(self.vt_supported)
+
     def __init__(self, app):
         super().__init__(app)
         self.kernel32 = ctypes.WinDLL("kernel32.dll", use_last_error=True)
