@@ -73,25 +73,25 @@ class ConsoleBuffer:
 
 def json_convert(key, value):
     if key == "alignment":
-        if type(value) is Alignment:
+        if isinstance(value, Alignment):
             return value
         if value is None:
             value = "TopLeft"
         value = Alignment[value]
     elif key == "dimensions":
-        if type(value) is DimensionsFlag:
+        if isinstance(value, DimensionsFlag):
             return value
         if value is None:
             value = "Absolute"
         value = DimensionsFlag[value]
     elif key == "text_align":
-        if type(value) is TextAlign:
+        if isinstance(value, TextAlign):
             return value
         if value is None:
             value = "TopLeft"
         value = TextAlign[value]
     elif key == "text_wrap":
-        if type(value) is WordWrap:
+        if isinstance(value, WordWrap):
             return value
         if value is None:
             value = "Wrap"
@@ -928,7 +928,7 @@ class App:
         # pro - we can create heat map
         # cons - it would be better with rectangle
         widget = self.column_row_widget_cache.get(event.coordinates, 1)
-        if type(widget) is int:
+        if isinstance(widget, int):
             widget = self.get_widget(event.coordinates[0], event.coordinates[1])
             self.column_row_widget_cache[event.coordinates] = widget
         if widget:
@@ -1027,7 +1027,7 @@ class App:
             self.demo_event = threading.Event()
             self.demo_thread = threading.Thread(target=demo_fun, args=(self,))
             self.demo_thread.start()
-            if type(self.console) is WindowsConsole:
+            if isinstance(self.console, WindowsConsole):
                 self.console.blocking_input(False)
 
         self.running = True
@@ -1288,7 +1288,7 @@ class Theme:
         self.border = []
         if len(border) >= 9:
             for i in range(0, 9):
-                if type(border[i]) is not Point:
+                if not isinstance(border[i], Point):
                     break
                 self.border.append(border[i])
 

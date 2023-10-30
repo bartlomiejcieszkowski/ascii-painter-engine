@@ -40,18 +40,18 @@ def __post_callback(this_json, this):
                 args = None
                 callback_args = callback.get("args", None)
                 if callback_args:
-                    if type(callback_args) is list:
+                    if isinstance(callback_args, list):
                         args = []
                         # replace __this__
                         for arg in callback_args:
                             if is_mapping(arg):
                                 arg = get_mapping(arg)
-                            if type(arg) is str:
+                            if isinstance(arg, str):
                                 if arg == FUNCTION_THIS_ARG:
                                     args.append(this)
                                     continue
                             args.append(arg)
-                    elif type(callback_args) is dict:
+                    elif isinstance(callback_args, dict):
                         raise Exception("Dict is not implemented.")
                     else:
                         raise Exception("Unsupported args type.")
@@ -89,7 +89,7 @@ def app_from_json(
                     widget_json[key] = get_mapping(value)
 
             widget_type = widget_json.get("type", None)
-            if type(widget_type) is str:
+            if isinstance(widget_type, str):
                 widget_class = mapping.get_widget_class(widget_type)
                 if widget_class is None:
                     widget_class = mapping.import_widget_class(widget_type, ctx_globals)
