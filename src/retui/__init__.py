@@ -45,30 +45,39 @@ else:
 
 
 class ConsoleBuffer:
-    def __init__(self):
-        pass
+    _buffer_cached = None
 
-    @staticmethod
-    def fill_buffer(x, y, symbol=" ", border=True, debug=True):
-        buffer = [""]
-        if debug:
+    def __init__(self, width, height, symbol, debug):
+        self.width = width
+        self.height = height
+        self.symbol = symbol
+        self.debug = debug
+        self.buffer = []
+        if self.debug:
             # print numbered border
             line = ""
-            for col in range(0, x):
+            for col in range(width):
                 line += str(col % 10)
-            buffer.append(line)
-            for row in range(1, y + 1):
-                buffer.append(str(row % 10) + (symbol * (x - 2)) + str(row % 10))
-            return buffer
-        if border:
-            line = symbol * x
-            for i in range(y):
-                buffer.append(line)
-            return buffer
-        line = symbol * x
-        for i in range(y):
-            buffer.append(line)
-        return buffer
+            self.buffer.append(line)
+            middle = symbol * (width - 2)
+            for row in range(1, height - 1):
+                self.buffer.append(str(row % 10) + middle + str(row % 10))
+            self.buffer.append(line)
+        else:
+            line = symbol * width
+            for i in range(height):
+                self.buffer.append(line)
+
+    def same(self, width, height, symbol, debug):
+        return self.width == width and self.height == height and self.symbol == symbol and self.debug == debug
+
+    @staticmethod
+    def get_buffer(width, height, symbol=" ", debug=True):
+        if ConsoleBuffer._buffer_cached and ConsoleBuffer._buffer_cached.same(width, height, symbol, debug):
+            return ConsoleBuffer._buffer_cached.buffer
+
+        ConsoleBuffer._buffer_cached = ConsoleBuffer(width, height, symbol, debug)
+        return ConsoleBuffer._buffer_cached.buffer
 
 
 def json_convert(key, value):
@@ -905,7 +914,7 @@ class App:
         self.width, self.height = self.console.update_size()
         if reuse:
             self.brush.move_cursor(0, 0)
-        for line in ConsoleBuffer.fill_buffer(self.console.columns, self.console.rows, " ", border=False, debug=False):
+        for line in ConsoleBuffer.get_buffer(self.console.columns, self.console.rows, " ", debug=False):
             print(line, end="\n", flush=True)
         self.requires_draw = True
 
