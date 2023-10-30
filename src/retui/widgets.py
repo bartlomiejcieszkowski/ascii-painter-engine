@@ -196,7 +196,7 @@ class BorderWidget(ConsoleWidget):
         if border_str:
             self.border_from_str(border_str)
         if border_color:
-            if type(border_color) is not ConsoleColor:
+            if not isinstance(border_color, ConsoleColor):
                 raise Exception(f"border_color needs to be of type {ConsoleColor}, got {type(border_color)}")
             self.border_set_color(border_color)
         # None implies use theme
