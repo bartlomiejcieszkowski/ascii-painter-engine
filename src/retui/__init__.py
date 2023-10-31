@@ -4,7 +4,7 @@ __version__ = "0.0.1"
 # Notes:
 # You can have extra line of console, which wont be fully visible - as w/a just don't use last line
 # If new size is greater, then fill with new lines so we wont be drawing in the middle of screen
-
+import asyncio
 import ctypes
 import ctypes.wintypes
 import os
@@ -631,7 +631,12 @@ class ConsoleWidget(ABC):
         # - higher idx covers lower one
         self.last_dimensions = Rectangle(0, 0, 0, 0)
 
+        # internals
+        self._redraw = True
+        self._update_size = True
+
     def update_dimensions(self):
+        self._update_size = False
         # update dimensions is separate, so we separate drawing logic, so if one implement own widget
         # doesn't have to remember to call update_dimensions every time or do it incorrectly
         x = self.x
@@ -668,7 +673,7 @@ class ConsoleWidget(ABC):
                 pass
 
         self.last_dimensions.update(x, y, width, height)
-        pass
+        self._redraw = True
 
     def get_widget(self, column: int, row: int) -> Union["ConsoleWidget", None]:
         return self if self.contains_point(column, row) else None
@@ -681,9 +686,8 @@ class ConsoleWidget(ABC):
         # raise Exception('handle')
         pass
 
-    @abstractmethod
-    def draw(self):
-        pass
+    def draw(self, force: bool = False):
+        self._redraw = False
 
     def width_calculated(self):
         if DimensionsFlag.RelativeWidth in self.dimensions:
@@ -870,7 +874,7 @@ class App:
         self.brush = self.console.get_brush()
         self.debug_colors = ConsoleColor(None, None)
         self.running = False
-        self.requires_draw = False
+
         self.width = 0
         self.height = 0
         self.handle_sigint = True
@@ -884,6 +888,9 @@ class App:
         self.demo_event = None
         self.emulate_screen_dimensions = None
         self.debug = debug
+
+        self._redraw = True
+        self._update_size = True
 
         # Scrollable attributes
         self.scroll_horizontal = False
@@ -916,7 +923,7 @@ class App:
             self.brush.move_cursor(0, 0)
         for line in ConsoleBuffer.get_buffer(self.console.columns, self.console.rows, " ", debug=False):
             print(line, end="\n", flush=True)
-        self.requires_draw = True
+        self._update_size = True
 
     def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
         for idx in range(len(self.widgets) - 1, -1, -1):
@@ -1006,24 +1013,29 @@ class App:
     def emulate_screen(self, height: int, width: int):
         self.emulate_screen_dimensions = (height, width)
 
-    def draw(self):
-        for widget in self.widgets:
-            widget.draw()
+    def draw(self, force: bool = False):
+        if force or self._redraw:
+            for widget in self.widgets:
+                widget.draw(force=force)
+            self._redraw = False
+        self.brush.move_cursor(row=self.console.rows - 1)
 
     def update_dimensions(self):
+        self._update_size = False
         for widget in self.widgets:
             widget.update_dimensions()
+        self._redraw = True
 
     def run(self) -> int:
+        if self.running is True:
+            return -1
+
         if self.debug:
             log_widgets(self.log)
 
         if self.emulate_screen_dimensions:
             self.console.rows = self.emulate_screen_dimensions[0]
             self.console.columns = self.emulate_screen_dimensions[1]
-
-        if self.running is True:
-            return -1
 
         if self.title:
             self.console.set_title(self.title)
@@ -1048,18 +1060,10 @@ class App:
 
         self.brush.cursor_hide()
         self.handle_events([SizeChangeEvent()])
-        i = 0
-        while self.running:
-            if self.requires_draw:
-                self.column_row_widget_cache.clear()
-                self.update_dimensions()
-                self.draw()
-                self.brush.move_cursor(row=self.console.rows - 1)
-                self.requires_draw = False
-            # this is blocking
-            if not self.console.read_events(self.handle_events_callback, self):
-                break
-            i += 1
+
+        self.register_tasks()
+
+        asyncio.run(self.main_loop())
 
         if self.demo_thread and self.demo_thread.is_alive():
             self.demo_event.set()
@@ -1069,6 +1073,17 @@ class App:
         self.brush.move_cursor(self.console.rows - 1)
         self.brush.cursor_show()
         return 0
+
+    async def main_loop(self):
+        while self.running:
+            if self._update_size:
+                self.column_row_widget_cache.clear()
+                self.update_dimensions()
+            self.draw()
+
+            # this is blocking
+            if not self.console.read_events(self.handle_events_callback, self):
+                break
 
     def color_mode(self, enable=True) -> bool:
         if enable:

@@ -193,6 +193,8 @@ class BorderWidget(ConsoleWidget):
         self.borderless = borderless
         self.title = title
         self.border = None
+        self._text = None
+
         if border_str:
             self.border_from_str(border_str)
         if border_color:
@@ -269,10 +271,12 @@ class BorderWidget(ConsoleWidget):
             + self.app.brush.reset_color()
         )
 
-    def draw(self):
-        self.draw_bordered(title=self.title)
+    def draw(self, force: bool = False):
+        if force or self._redraw:
+            self._draw_bordered(inside_text=self._text, title=self.title)
+            super().draw(force=force)
 
-    def draw_bordered(self, inside_text: Text = None, title: str = ""):
+    def _draw_bordered(self, inside_text: Text = None, title: str = ""):
         offset_rows = self.last_dimensions.row
         offset_cols = self.last_dimensions.column
         width = self.last_dimensions.width
@@ -413,8 +417,9 @@ class TextBox(BorderWidget):
     def text(self, new_text):
         self._text = Text(text=new_text, text_align=self.text_align, text_wrap=self.text_wrap)
 
-    def draw(self):
-        return self.draw_bordered(inside_text=self._text, title=self.title)
+    def draw(self, force: bool = False):
+        if force or self._redraw:
+            super().draw(force=force)
 
 
 @official_widget
@@ -470,10 +475,11 @@ class Pane(BorderWidget):
         )
         self.widgets = []
 
-    def draw(self):
-        self.draw_bordered(title=self.title)
-        for widget in self.widgets:
-            widget.draw()
+    def draw(self, force: bool = False):
+        if force or self._redraw:
+            super().draw(force=force)
+            for widget in self.widgets:
+                widget.draw()
 
     def add_widget(self, widget):
         # TODO widget should take offset from parent
@@ -656,5 +662,10 @@ class WriteBox(TextBox):
             text_align=default_value("text_align"),
         )
 
-    def write(self, text):
-        self.text = text
+    def write(self, text, append: bool = True):
+        if isinstance(text, bytes):
+            text = text.decode("utf-8")
+        if append:
+            self.text += text
+        else:
+            self.text = text
