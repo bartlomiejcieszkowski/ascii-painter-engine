@@ -65,7 +65,7 @@ def main():
     parser.add_argument("--auto", action="store_true", help="runs test and ends it")
     parser.add_argument("--auto-time", type=int, help="demo time", default=5)
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--test", "-t", choices=tests_list)
+    group.add_argument("--test", "-t", choices=tests_list, nargs="+")
     group.add_argument("--all", action="store_true", help="runs ALL available tests")
     args = parser.parse_args()
 
@@ -74,27 +74,19 @@ def main():
         demo_time_s = args.auto_time
 
     test_status = []
-    if args.all:
-        status = []
-        for idx in range(0, len(tests_list)):
-            title = f"Test {idx+1}/{len(tests_list)} - {tests_list[idx]}"
-            diagnostics_start()
-            try:
-                test_run(tests_list[idx], demo_time_s, title)
-                test_status.append((0, tests_list[idx], None))
-            except Exception as e:
-                tb = traceback.format_tb(e.__traceback__)
-                test_status.append((-1, tests_list[idx], (e, tb)))
-            diagnostics_end()
-    else:
-        title = f"Test {args.test}"
+    if not args.all:
+        tests_list = args.test
+
+    # TODO status from each tests, right now its no exception -> ok
+    for idx in range(0, len(tests_list)):
+        title = f"Test {idx+1}/{len(tests_list)} - {tests_list[idx]}"
         diagnostics_start()
         try:
-            test_run(args.test, demo_time_s, title)
-            test_status.append((0, args.test, None))
+            test_run(tests_list[idx], demo_time_s, title)
+            test_status.append((0, tests_list[idx], None))
         except Exception as e:
             tb = traceback.format_tb(e.__traceback__)
-            test_status.append((-1, args.test, (e, tb)))
+            test_status.append((-1, tests_list[idx], (e, tb)))
         diagnostics_end()
 
     ret = 0
