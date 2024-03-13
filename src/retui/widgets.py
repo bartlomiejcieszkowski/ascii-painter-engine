@@ -658,7 +658,7 @@ class WriteBox(TextBox):
             text=text,
             border_str=border_str,
             border_color=border_color,
-            title="",
+            title=title,
             text_align=default_value("text_align"),
         )
 

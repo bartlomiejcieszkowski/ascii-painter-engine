@@ -218,11 +218,11 @@ class VirtualKeyCodes(IntEnum):
                 # a-z - change to upper case
                 value -= 0x20
 
-        if value >= 0x41 and value <= 0x5A:
+        if 0x41 <= value <= 0x5A:
             # A-Z - those map 1:1
             return cls(value)
 
-        if value >= 0x30 and value <= 0x39:
+        if 0x30 <= value <= 0x39:
             # 0-9 - map 1:1
             return cls(value)
 

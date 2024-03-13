@@ -3,9 +3,9 @@ import importlib
 APP_DICT = {}
 
 
-def register_mapping_dict(name, dict):
+def register_mapping_dict(name, app_dict):
     global APP_DICT
-    APP_DICT[name] = dict
+    APP_DICT[name] = app_dict
 
 
 _OFFICIAL_WIDGET_DICT = {}
@@ -26,8 +26,7 @@ def app_widget(cls):
     return cls
 
 
-def log_widgets(log_fn):
-    log_fn = print
+def log_widgets(log_fn=print):
     log_fn("OFFICIAL WIDGETS:")
     for name, cls in _OFFICIAL_WIDGET_DICT.items():
         log_fn(f'"{name}": {cls}')

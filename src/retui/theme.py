@@ -1,5 +1,6 @@
 from abc import ABC
 from enum import Enum, IntEnum, auto
+from typing import Union
 
 from . import Color, ColorBits, ConsoleColor
 
@@ -11,7 +12,7 @@ class Selector:
         self.element_classes = element_classes
 
 
-def CssColorToColor(text: str):
+def css_color_to_color(text: str):
     value = None
     try:
         if text.startswith("#"):
@@ -58,11 +59,11 @@ class Attributes:
     def from_prop(cls, prop: str, value: str):
         color = None
         if prop == "background-color":
-            single_color = CssColorToColor(value)
+            single_color = css_color_to_color(value)
             if single_color:
                 color = ConsoleColor(foreground=None, background=single_color)
         elif prop == "color":
-            single_color = CssColorToColor(value)
+            single_color = css_color_to_color(value)
             if single_color:
                 color = ConsoleColor(foreground=single_color, background=None)
         return cls(color=color)
@@ -101,7 +102,7 @@ class Selectors(ABC):
         self.class_selectors = {}
         self.universal_selector = None
 
-    def add_property(self, selectors: str, prop: str, value: str):
+    def add_property(self, selectors: Union[str, list[str]], prop: str, value: str):
         if selectors is str:
             # single selector
             selectors = [selectors]
@@ -206,7 +207,7 @@ class StringHelper:
         result = []
         for token in text.split(separator):
             token = token.strip()
-            if token != "":
+            if token:
                 result.append(token)
         return result
 
@@ -224,7 +225,6 @@ class CssParser:
             state = State.selector
             selector = None
             prop = None
-            value = None
             failed = None
             line_num = 0
             word = ""
