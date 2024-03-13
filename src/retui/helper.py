@@ -16,8 +16,8 @@ FUNCTION_THIS_ARG = "##this"
 KEY_POST_CALLBACKS = "post_callbacks"
 
 
-def register_app_dict(name, dict):
-    register_mapping_dict(name, dict)
+def register_app_dict(name, app_dict):
+    register_mapping_dict(name, app_dict)
 
 
 def __callback_wrapper(function, *args):
@@ -36,8 +36,8 @@ def __post_callback(this_json, this):
                     callback[key] = get_mapping(value)
 
             fun = callback.get("function", None)
+            args = None
             if callable(fun):
-                args = None
                 callback_args = callback.get("args", None)
                 if callback_args:
                     if isinstance(callback_args, list):

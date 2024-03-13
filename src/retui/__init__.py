@@ -225,7 +225,7 @@ class MouseEvent(ConsoleEvent):
 
         # on windows we get mask of pressed buttons
         # we can either pass mask around and worry about translating it outside
-        # we will have two different handlings on windows and linux
+        # we will have two different handlers on windows and linux
         # so we just translate it into serialized clicks
         changed_mask = mouse_event_record.dwButtonState ^ MouseEvent.last_mask
         if hover:
