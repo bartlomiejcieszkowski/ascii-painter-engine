@@ -2,8 +2,8 @@
 __version__ = "0.0.1"
 
 # Notes:
-# You can have extra line of console, which wont be fully visible - as w/a just don't use last line
-# If new size is greater, then fill with new lines so we wont be drawing in the middle of screen
+# You can have extra line of console, which won't be fully visible - as w/a just don't use last line
+# If new size is greater, then fill with new lines, so we won't be drawing in the middle of screen
 import asyncio
 import ctypes
 import ctypes.wintypes
@@ -223,9 +223,9 @@ class MouseEvent(ConsoleEvent):
 
         ret_list = []
 
-        # on windows we get mask of pressed buttons
+        # on Windows we get mask of pressed buttons
         # we can either pass mask around and worry about translating it outside
-        # we will have two different handlers on windows and linux
+        # we will have two different handlers on windows and linux,
         # so we just translate it into serialized clicks
         changed_mask = mouse_event_record.dwButtonState ^ MouseEvent.last_mask
         if hover:
@@ -261,7 +261,7 @@ class MouseEvent(ConsoleEvent):
         # print(f"0x{button_hex:X}", file=sys.stderr)
         move_event = button_hex & 0x20
         if move_event:
-            # OPT1: dont support move
+            # OPT1: don't support move
             # return None
             # OPT2: support move like normal click
             button_hex = button_hex & (0xFFFFFFFF - 0x20)
@@ -361,7 +361,7 @@ class InputInterpreter:
     # and parse it accordingly
     # if it is ESC then start parsing it as ansi escape code
     # and emit event once we parse whole sequence
-    # otherwise pass it to.. input handler?
+    # otherwise pass it to... input handler?
 
     # better yet:
     # this class should provide read method, and wrap the input provided
@@ -562,11 +562,11 @@ class InputInterpreter:
                     continue
 
                 # pass input to handler
-                # here goes key, but what about ctrl, shift etc? these are regular AsciiChar equivalents
+                # here goes key, but what about ctrl, shift etc.? these are regular AsciiChar equivalents
                 # no key up, only key down, is there \x sequence to enable extended? should be imho
                 self.parse_keyboard()
                 pass
-            # DEBUG - dont do "".join, as the sequences are not printable
+            # DEBUG - don't do "".join, as the sequences are not printable
             # self.payload.append(str(self.input_raw))
             self.input_raw.clear()
 
@@ -967,7 +967,7 @@ class App:
                 self.handle_events(event)
             elif isinstance(event, MouseEvent):
                 # we could use mask here, but then we will handle holding right button and
-                # pressing/releasing left button and other combinations and frankly i don't want to
+                # pressing/releasing left button and other combinations and frankly I don't want to
                 # if (event.button_state & 0x1) == 0x1 and event.event_flags == 0:
                 # widget = None
                 # if event.button == event.button.LMB:
@@ -1069,7 +1069,7 @@ class App:
             self.demo_event.set()
             self.demo_thread.join()
 
-        # Move to the end, so we wont end up writing in middle of screen
+        # Move to the end, so we won't end up writing in middle of screen
         self.brush.move_cursor(self.console.rows - 1)
         self.brush.cursor_show()
         return 0
@@ -1555,7 +1555,7 @@ class Brush:
 
 class Test:
     @staticmethod
-    def ColorLine(start, end, text="  ", use_color=False, width=2):
+    def color_line(start, end, text="  ", use_color=False, width=2):
         for color in range(start, end):
             print(
                 f'\x1B[48;5;{color}m{("{:" + str(width) + "}").format(color) if use_color else text}',
@@ -1564,7 +1564,7 @@ class Test:
         print("\x1B[0m")
 
     @staticmethod
-    def ColorLine24bit(start, end, step=0):
+    def color_line_24bit(start, end, step=0):
         for color in range(start, end, step):
             print(f"\x1B[48;2;{color};{color};{color}mXD", end="")
         print("\x1B[0m")

@@ -14,18 +14,17 @@ class Selector:
 
 def css_color_to_color(text: str):
     value = None
-    try:
-        if text.startswith("#"):
-            value = int(text[1:], 16)
-        elif text.endswith(")"):
-            if text.startswith("rgb("):
-                r, g, b = text[4:-1].split(",")
-                r = int(r)
-                g = int(g)
-                b = int(b)
-                value = b & 0xFF + ((g & 0xFF) << 8) + ((r & 0xFF) << 16)
-    except Exception:
-        value = None
+
+    if text.startswith("#"):
+        value = int(text[1:], 16)
+    elif text.startswith("rgb(") and text.endswith(")"):
+        split_rgb = text[4:-1].split(",")
+        if len(split_rgb) == 3:
+            r = int(split_rgb[0])
+            g = int(split_rgb[1])
+            b = int(split_rgb[2])
+            value = b & 0xFF + ((g & 0xFF) << 8) + ((r & 0xFF) << 16)
+
     if value:
         return Color(value, ColorBits.Bit24)
     return None

@@ -19,7 +19,7 @@ repos:
   hooks:
     - id: black
       name: black
-# for flake8 using pyproject-flake8 wrapper so it uses pyproject.toml config
+# for flake8 using pyproject-flake8 wrapper, so it uses pyproject.toml config
 - repo: https://github.com/csachs/pyproject-flake8
   rev: v6.0.0.post1
   hooks:
