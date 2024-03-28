@@ -15,6 +15,8 @@ import retui.logger as logger  # noqa: E402
 import tests.functional  # noqa: E402
 
 DIAGNOSTICS = False
+DIAGNOSTICS_MEMORY_INFO = None
+
 try:
     import gc
 

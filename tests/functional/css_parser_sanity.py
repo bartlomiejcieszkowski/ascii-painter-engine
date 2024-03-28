@@ -11,4 +11,5 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
 
     for file in files:
         selectors = CssParser.parse(working_directory + "/" + file, None)
+        print("----------------------------------------------------")
         print(selectors)
