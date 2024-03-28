@@ -159,7 +159,7 @@ class Selectors(ABC):
         attributes += self.selectors.get(selector.element_name, none_attributes)
         for name in selector.element_classes:
             attributes += self.class_selectors.get(name, none_attributes)
-        attributes += self.id_selectors.get(name, none_attributes)
+        attributes += self.id_selectors.get(selector.element_id, none_attributes)
         return attributes
 
     def __str__(self):
