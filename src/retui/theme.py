@@ -12,7 +12,9 @@ class Selector:
         self.element_classes = element_classes
 
 
-def css_color_to_color(text: str):
+def css_color_to_color(string: str):
+    # case of #aabbcc !important
+    text = string.split(" ")[0]
     value = None
 
     if text.startswith("#"):
@@ -162,11 +164,11 @@ class Selectors(ABC):
         return attributes
 
     def __str__(self):
-        return (
-            f"selectors: {self.selectors}\n"
-            f"id_selectors: {self.id_selectors}\n"
-            f"class_selectors: {self.class_selectors}\n"
-            f"universal_selector: {self.universal_selector}\n"
+        return "selectors: \n\t{}\nid_selectors: \n\t{}\nclass_selectors: \n\t{}\nuniversal_selector: \n\t{}\n".format(
+            "\n\t".join(self.selectors),
+            "\n\t".join(self.id_selectors),
+            "\n\t".join(self.class_selectors),
+            self.universal_selector,
         )
 
 
