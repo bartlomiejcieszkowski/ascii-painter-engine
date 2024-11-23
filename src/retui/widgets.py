@@ -669,3 +669,79 @@ class WriteBox(TextBox):
             self.text += text
         else:
             self.text = text
+
+
+@official_widget
+class HorizontalLine(BorderWidget):
+    @classmethod
+    def from_dict(cls, **kwargs):
+        return cls(
+            app=kwargs.pop("app"),
+            identifier=kwargs.pop("id", None),
+            x=kwargs.pop("x"),
+            y=kwargs.pop("y"),
+            width=kwargs.pop("width"),
+            height=kwargs.pop("height"),
+            alignment=json_convert("alignment", kwargs.pop("alignment", default_value("alignment"))),
+            dimensions=DimensionsFlag.FillWidth,
+            tab_index=kwargs.pop("tab_index", default_value("tab_index")),
+            borderless=kwargs.pop("borderless", False),
+            border_str=kwargs.pop("border_str", None),
+            border_color=kwargs.pop("border_color", None),
+            soft_border=kwargs.pop("soft_border", default_value("soft_border")),
+            title=kwargs.pop("title", ""),
+            text_align=json_convert("text_align", kwargs.pop("text_align", None)),
+            text_wrap=json_convert("text_wrap", kwargs.pop("text_wrap", None)),
+        )
+
+    def __init__(
+        self,
+        app,
+        identifier: Union[str, None] = None,
+        x: int = 0,
+        y: int = 0,
+        width: int = 0,
+        height: int = 0,
+        alignment: Alignment = default_value("alignment"),
+        dimensions: DimensionsFlag = DimensionsFlag.FillWidth,
+        tab_index: int = default_value("tab_index"),
+        borderless: bool = False,
+        text: str = "",
+        border_str=None,
+        border_color=None,
+        soft_border=default_value("soft_border"),
+        title="",
+        text_align: TextAlign = default_value("text_align"),
+        text_wrap: WordWrap = default_value("text_wrap"),
+    ):
+        super().__init__(
+            app=app,
+            identifier=identifier,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            alignment=alignment,
+            dimensions=dimensions,
+            tab_index=tab_index,
+            borderless=borderless,
+            border_str=border_str,
+            border_color=border_color,
+            soft_border=soft_border,
+            title=title,
+        )
+        self._text = Text(text=text, text_align=text_align, text_wrap=text_wrap)
+        self.text_align = text_align
+        self.text_wrap = text_wrap
+
+    @property
+    def text(self):
+        return self._text.text
+
+    @text.setter
+    def text(self, new_text):
+        self._text = Text(text=new_text, text_align=self.text_align, text_wrap=self.text_wrap)
+
+    def draw(self, force: bool = False):
+        if force or self._redraw:
+            super().draw(force=force)
