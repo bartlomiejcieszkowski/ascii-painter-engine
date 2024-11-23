@@ -5,6 +5,7 @@ __version__ = "0.0.1"
 # You can have extra line of console, which won't be fully visible - as w/a just don't use last line
 # If new size is greater, then fill with new lines, so we won't be drawing in the middle of screen
 import asyncio
+import concurrent.futures
 import ctypes
 import ctypes.wintypes
 import os
@@ -896,6 +897,15 @@ class App:
         self.scroll_horizontal = False
         self.scroll_vertical = False
 
+        # asyncio
+        self.thread_pool_executor = None
+
+    def init_asyncio(self):
+        self.thread_pool_executor = concurrent.futures.ThreadPoolExecutor()
+
+    def register_tasks(self):
+        pass
+
     def inner_x(self):
         return 0
 
@@ -1030,6 +1040,8 @@ class App:
         if self.running is True:
             return -1
 
+        self.init_asyncio()
+
         if self.debug:
             log_widgets(self.log)
 
@@ -1084,6 +1096,7 @@ class App:
             # this is blocking
             if not self.console.read_events(self.handle_events_callback, self):
                 break
+        # await asyncio.sleep(0.1)
 
     def color_mode(self, enable=True) -> bool:
         if enable:
