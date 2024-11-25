@@ -13,7 +13,7 @@ class LogLevel(enum.IntEnum):
 
 
 __level = LogLevel.INFO
-__log_file = sys.stdout
+__log_file = None
 __log_file_base = None
 __log_file_path = None
 __log_idx = 0
@@ -38,8 +38,9 @@ def log_verbose() -> bool:
 
 
 def log_file_next():
-    global __log_file
-    global __log_file_path
+    if __log_file is None:
+        return
+
     global __log_idx
     if __log_file is not sys.stdout:
         __log_idx = (__log_idx + 1) % __log_idx_max
@@ -59,10 +60,14 @@ def log_file(file_base_prefix):
 
 
 def log_flush():
-    __log_file.flush()
+    if __log_file:
+        __log_file.flush()
 
 
 def log(fmt, *args):
+    if __log_file is None:
+        return
+
     global __log_file_size_check_n
     __log_file_size_check_n += 1
     if __log_file_size_check_n % __log_file_size_check_every_nth == 0:

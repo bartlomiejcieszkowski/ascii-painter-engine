@@ -920,9 +920,10 @@ class App:
         return self.height
 
     def debug_print(self, text, end="\n", row_off=-1):
-        if self.debug and self.log:
-            self.log(text)
-        elif True:  # self.debug:
+        if self.debug:
+            if self.log:
+                self.log(text)
+                return
             row = (0 if row_off >= 0 else self.console.rows) + row_off
             self.brush.move_cursor(row=row)
             print(self.debug_colors)
