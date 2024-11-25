@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 # Notes:
 # You can have extra line of console, which won't be fully visible - as w/a just don't use last line
@@ -27,6 +27,7 @@ from enum import Enum, Flag, IntEnum, auto
 from typing import List, Tuple, Union
 
 from .base import Color, ColorBits, ConsoleColor, Point
+from .default_themes import DefaultThemes
 from .defaults import default_value
 from .enums import Alignment, DimensionsFlag, TextAlign, WordWrap
 from .input_handling import VirtualKeyCodes
@@ -873,7 +874,7 @@ class App:
             self.console = LinuxConsole(self)
         self.widgets = []
         self.brush = self.console.get_brush()
-        self.debug_colors = ConsoleColor(None, None)
+        self.debug_colors = ConsoleColor()
         self.running = False
 
         self.width = 0
@@ -1106,7 +1107,7 @@ class App:
                 # self.brush.color_mode(enable)
                 self.debug_colors = ConsoleColor(Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8))
         else:
-            self.debug_colors = ConsoleColor(None, None)
+            self.debug_colors = ConsoleColor()
             self.brush.color_mode(enable)
             success = self.console.set_color_mode(enable)
         return success
@@ -1335,8 +1336,8 @@ class Theme:
 
         self.selectors = Selectors()
 
-    def border_set_color(self, color):
-        for i in range(1, 9):
+    def set_color(self, color):
+        for i in range(0, 9):
             self.border[i].color = color
 
     def border_inside_set_color(self, color):
@@ -1353,110 +1354,10 @@ class Theme:
 
     @classmethod
     def default_theme(cls):
-        border = [
-            Point(" "),
-            Point("+"),
-            Point("+"),
-            Point("+"),
-            Point("+"),
-            Point("-"),
-            Point("|"),
-            Point("|"),
-            Point("-"),
-        ]
-        return cls(border=border)
+        return cls(border=_default_theme)
 
-    @classmethod
-    def other_theme(cls):
-        border = [
-            Point(" "),
-            Point(" "),
-            Point(" "),
-            Point("|"),
-            Point("|"),
-            Point("_"),
-            Point("|"),
-            Point("|"),
-            Point("_"),
-        ]
-        return cls(border=border)
 
-    @classmethod
-    def double_line_theme(cls):
-        border = [
-            Point(" "),
-            Point("╔"),
-            Point("╗"),
-            Point("╚"),
-            Point("╝"),
-            Point("═"),
-            Point("║"),
-            Point("║"),
-            Point("═"),
-        ]
-        return cls(border=border)
-
-    @classmethod
-    def single_line_light_theme(cls):
-        border = [
-            Point(" "),
-            Point("┌"),
-            Point("┐"),
-            Point("└"),
-            Point("┘"),
-            Point("─"),
-            Point("│"),
-            Point("│"),
-            Point("─"),
-        ]
-        return cls(border=border)
-
-    @classmethod
-    def single_line_heavy_theme(cls):
-        border = [
-            Point(" "),
-            Point("┏"),
-            Point("┓"),
-            Point("┗"),
-            Point("┛"),
-            Point("━"),
-            Point("┃"),
-            Point("┃"),
-            Point("━"),
-        ]
-        return cls(border=border)
-
-    @classmethod
-    def single_line_heavy_top_light_rest_theme(cls):
-        border = [
-            Point(" "),
-            Point("┍"),
-            Point("┑"),
-            Point("└"),
-            Point("┘"),
-            Point("━"),
-            Point("│"),
-            Point("│"),
-            Point("─"),
-        ]
-        return cls(border=border)
-
-    @classmethod
-    def single_line_light_rounded_corners_theme(cls):
-        # unciode chars box drawing https://www.w3.org/TR/xml-entity-names/025.html
-        border = [
-            Point(" "),
-            Point("╭"),
-            Point("╮"),
-            Point("╰"),
-            Point("╯"),
-            Point("─"),
-            Point("│"),
-            Point("│"),
-            Point("─"),
-        ]
-        return cls(border=border)
-
+_default_theme = Theme.border_from_str(DefaultThemes.get_default_theme_border_str())
 
 APP_THEME = Theme.default_theme()
 

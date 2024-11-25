@@ -6,10 +6,11 @@ from . import (
     ConsoleWidget,
     KeyEvent,
     MouseEvent,
-    Point,
+    Theme,
     VirtualKeyCodes,
     json_convert,
 )
+from .default_themes import ThemePoint
 from .defaults import default_value
 from .enums import Alignment, DimensionsFlag, TextAlign, WordWrap
 from .mapping import official_widget
@@ -200,7 +201,7 @@ class BorderWidget(ConsoleWidget):
         if border_color:
             if not isinstance(border_color, ConsoleColor):
                 raise Exception(f"border_color needs to be of type {ConsoleColor}, got {type(border_color)}")
-            self.border_set_color(border_color)
+            self.set_color(border_color)
         # None implies use theme
 
     def inner_x(self):
@@ -224,18 +225,14 @@ class BorderWidget(ConsoleWidget):
         return self.last_dimensions.height - 2
 
     def border_from_str(self, border_str: str):
-        if len(border_str) < 9:
-            raise Exception(f"border_str must have at least len of 9 - got {len(border_str)}")
-        self.border = []
-        for i in range(0, 9):
-            self.border.append(Point(border_str[i]))
+        self.border = Theme.border_from_str(border_str)
 
-    def border_set_color(self, color):
-        for i in range(1, 9):
-            self.border[i].color = color  # TODO track color usage
+    def set_color(self, color):
+        for i in range(0, 9):
+            self.border[i].color = color
 
     def border_inside_set_color(self, color):
-        self.border[0].color = color
+        self.border[ThemePoint.MIDDLE].color = color
 
     def border_get_point(self, idx: int):
         return self.border[idx] if self.border else APP_THEME.border[idx]
@@ -243,31 +240,31 @@ class BorderWidget(ConsoleWidget):
     def border_get_top(self, width_middle, title):
         if title is None:
             title = ""
-        left_top_corner = self.border_get_point(1)
-        right_top_corner = self.border_get_point(2)
-        top_border = self.border_get_point(5)
+        top_left = self.border_get_point(ThemePoint.TOP_LEFT)
+        top_right = self.border_get_point(ThemePoint.TOP_RIGHT)
+        top = self.border_get_point(ThemePoint.TOP)
         return (
-            self.app.brush.color(left_top_corner.color)
-            + left_top_corner.c
-            + self.app.brush.color(top_border.color)
+            self.app.brush.color(top_left.color)
+            + top_left.c
+            + self.app.brush.color(top.color)
             + ((title[: width_middle - 2] + "..") if len(title) > width_middle else title)
-            + (top_border.c * (width_middle - len(self.title)))
-            + self.app.brush.color(right_top_corner.color)
-            + right_top_corner.c
+            + (top.c * (width_middle - len(self.title)))
+            + self.app.brush.color(top_right.color)
+            + top_right.c
             + self.app.brush.reset_color()
         )
 
     def border_get_bottom(self, width_middle):
-        left_bottom_corner = self.border_get_point(3)
-        right_bottom_corner = self.border_get_point(4)
-        bottom_border = self.border_get_point(8)
+        bottom_left = self.border_get_point(ThemePoint.BOTTOM_LEFT)
+        bottom_right = self.border_get_point(ThemePoint.BOTTOM_RIGHT)
+        bottom = self.border_get_point(ThemePoint.BOTTOM)
         return (
-            self.app.brush.color(left_bottom_corner.color)
-            + left_bottom_corner.c
-            + self.app.brush.color(bottom_border.color)
-            + (bottom_border.c * width_middle)
-            + self.app.brush.color(right_bottom_corner.color)
-            + right_bottom_corner.c
+            self.app.brush.color(bottom_left.color)
+            + bottom_left.c
+            + self.app.brush.color(bottom.color)
+            + (bottom.c * width_middle)
+            + self.app.brush.color(bottom_right.color)
+            + bottom_right.c
             + self.app.brush.reset_color()
         )
 
@@ -298,9 +295,9 @@ class BorderWidget(ConsoleWidget):
         if inside_text:
             inside_text.prepare_lines(width=width_inner, height=height_inner)
 
-        inside_border = self.border_get_point(0)
-        left_border = None if self.borderless else self.border_get_point(6)
-        right_border = None if self.borderless else self.border_get_point(7)
+        inside_border = self.border_get_point(ThemePoint.MIDDLE)
+        left_border = None if self.borderless else self.border_get_point(ThemePoint.LEFT)
+        right_border = None if self.borderless else self.border_get_point(ThemePoint.RIGHT)
         empty_line = inside_border.c * width_inner
 
         # Middle part

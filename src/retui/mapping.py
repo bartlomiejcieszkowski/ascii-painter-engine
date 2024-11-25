@@ -1,17 +1,15 @@
 import importlib
 
 APP_DICT = {}
+_OFFICIAL_WIDGET_DICT = {}
+_APP_WIDGET_DICT = {}
+
+MODULES_DICT = {}
 
 
 def register_mapping_dict(name, app_dict):
     global APP_DICT
     APP_DICT[name] = app_dict
-
-
-_OFFICIAL_WIDGET_DICT = {}
-_APP_WIDGET_DICT = {}
-
-MODULES_DICT = {}
 
 
 def official_widget(cls):

@@ -3,6 +3,8 @@ import retui
 from retui.logger import log
 from retui.theme import CssParser
 from retui.widgets import Pane, TextBox
+from src.retui import DefaultThemes
+from src.retui.default_themes import DefaultThemesType
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
@@ -39,8 +41,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
 
     widget = TextBox(app=app, x=0, y=0, height=3, width=10, alignment=retui.Alignment.TopLeft)
     widget.text = "Sample text in pane"
-    widget.border_from_str(" /\\\\/-||-")
-    widget.border_set_color(test_color)
+    widget.border_from_str(DefaultThemes.get_theme_border_str(DefaultThemesType.DOUBLE_LINE))
+    widget.set_color(test_color)
     pane.add_widget(widget)
 
     widget = TextBox(app=app, x=10, y=0, height=3, width=25, alignment=retui.Alignment.TopLeft)
