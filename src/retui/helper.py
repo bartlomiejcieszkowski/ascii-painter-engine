@@ -59,12 +59,18 @@ def __post_callback(this_json, this):
 
 
 def app_from_json(
-    filename, ctx_globals=None, log_fun=no_print, app_dict_name="main", app_dict=None, debug: bool = False
+    filename,
+    ctx_globals=None,
+    log_fun=no_print,
+    app_dict_name="main",
+    app_dict=None,
+    debug: bool = False,
+    encoding: str = "UTF-8",
 ):
     if app_dict_name and app_dict:
         register_app_dict(app_dict_name, app_dict)
 
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding=encoding) as f:
         app_json = json.load(f)
 
         # TODO: validate

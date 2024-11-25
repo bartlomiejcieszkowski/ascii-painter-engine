@@ -1,28 +1,34 @@
+from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Union
 
 
 class ColorBits(IntEnum):
     Bit8 = 5
     Bit24 = 2
+    BitNone = 0
 
 
+@dataclass
 class Color:
-    def __init__(self, color: int, bits: ColorBits):
-        self.color = color
-        self.bits = bits
+    color: int
+    bits: ColorBits
 
-    def __str__(self):
-        return f"Color(0x{self.color:X}, {self.bits.name})"
+    @classmethod
+    def default(cls):
+        return cls(-1, ColorBits.BitNone)
 
-    def __eq__(self, other):
-        return isinstance(other, Color) and self.bits == other.bits and self.color == other.color
+    def none(self):
+        return self.bits == ColorBits.BitNone
 
 
+@dataclass()
 class ConsoleColor:
-    def __init__(self, foreground: Union[Color, None] = None, background: Union[Color, None] = None):
-        self.foreground = foreground
-        self.background = background
+    foreground: Color = field(default_factory=Color.default)
+    background: Color = field(default_factory=Color.default)
+
+    @classmethod
+    def default(cls):
+        return cls()
 
     def update_foreground(self, color: Color) -> bool:
         if self.foreground == color:
@@ -40,21 +46,16 @@ class ConsoleColor:
         return self.foreground is None and self.background is None
 
     def reset(self):
-        self.foreground = None
-        self.background = None
+        self.foreground = Color.default()
+        self.background = Color.default()
 
-    def __str__(self):
-        return f"ConsoleColor({self.foreground}, {self.background})"
-
-    def __eq__(self, other):
-        return (
-            isinstance(other, ConsoleColor)
-            and self.foreground == other.foreground
-            and self.background == other.background
-        )
+    def __iadd__(self, other):
+        self.foreground = other.foreground if other.foreground else self.foreground
+        self.background = other.background if other.background else self.background
+        return self
 
 
+@dataclass
 class Point:
-    def __init__(self, c: str = " ", color: ConsoleColor = ConsoleColor()):
-        self.c = c
-        self.color = color
+    c: str = " "
+    color: ConsoleColor = field(default_factory=ConsoleColor.default)

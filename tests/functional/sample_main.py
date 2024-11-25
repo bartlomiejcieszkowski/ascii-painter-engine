@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import retui
+from retui.default_themes import DefaultThemes, DefaultThemesType
 from retui.logger import log
 from retui.widgets import Pane, TextBox
 
@@ -27,8 +28,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         app=app, x=0, y=0, height=3, width=10, alignment=retui.Alignment.TopLeft, text_align=retui.TextAlign.BottomRight
     )
     widget.text = "Sample text in pane"
-    widget.border_from_str(" /\\\\/-||-")
-    widget.border_set_color(test_color)
+    widget.border_from_str(DefaultThemes.get_theme_border_str(DefaultThemesType.DOUBLE_TOP))
+    widget.set_color(test_color)
     pane.add_widget(widget)
 
     widget = TextBox(

@@ -48,7 +48,7 @@
       "width": 10,
       "alignment": "TopLeft",
       "text": "Sample text in pane",
-      "border_str": " /\\\\/-||-",
+      "border_str": "╒═╕│ │└─┘",
       "border_color": {
         "fg": {
           "val": 13,

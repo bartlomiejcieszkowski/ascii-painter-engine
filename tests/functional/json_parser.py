@@ -14,7 +14,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
 
     for file in files:
         filename = working_directory + "/" + file
-        with open(working_directory + "/" + file, "r") as f:
+        with open(working_directory + "/" + file, "r", encoding="UTF-8") as f:
             data = json.load(f)
             for widget in data["widgets"]:
                 print(widget)
