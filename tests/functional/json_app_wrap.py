@@ -3,7 +3,6 @@ import json
 import subprocess  # nosec B404
 
 from retui import App, helper
-from retui.logger import log
 
 PROCESS_WRAP = None
 
@@ -95,7 +94,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             data = json.load(f)
             for widget in data["widgets"]:
                 print(widget)
-        app = helper.app_from_json(filename, globals(), log_fun=log, app_dict={"post": sample_app_wrap})
+        app = helper.app_from_json(filename, globals(), app_dict={"post": sample_app_wrap})
         app.handle_sigint = handle_sigint
         app.demo_mode(demo_time_s)
         app.run()

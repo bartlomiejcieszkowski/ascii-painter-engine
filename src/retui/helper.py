@@ -61,7 +61,6 @@ def __post_callback(this_json, this):
 def app_from_json(
     filename,
     ctx_globals=None,
-    log_fun=no_print,
     app_dict_name="main",
     app_dict=None,
     debug: bool = False,
@@ -74,7 +73,7 @@ def app_from_json(
         app_json = json.load(f)
 
         # TODO: validate
-        app = App(log=log_fun, debug=debug)
+        app = App(debug=debug)
         title = app_json["name"]
         if "title" in app_json:
             if len(app_json["title"]) > 0:

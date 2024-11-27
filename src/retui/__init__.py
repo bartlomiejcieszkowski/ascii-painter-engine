@@ -1,21 +1,13 @@
-#!/usr/bin/env python3
-__version__ = "0.1.0"
+"""
+Python TUI library
+"""
 
-# Notes:
-# You can have extra line of console, which won't be fully visible - as w/a just don't use last line
-# If new size is greater, then fill with new lines, so we won't be drawing in the middle of screen
 import asyncio
 import concurrent.futures
 import ctypes
 import ctypes.wintypes
+import logging
 import os
-
-# TASK LIST:
-# TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
-# TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
-# TODO: trim line to screen width on debug prints
-# TODO: Widget Alignment other than TopLeft is broken, eg for BottomLeft, x,y should mean what? start at max y, x=0
-# TODO: Relative dimensions, 1 Top 80 percent, 2nd bottom 20 percent - got 1 free line..
 import selectors
 import shutil
 import signal
@@ -33,6 +25,31 @@ from .enums import Alignment, DimensionsFlag, TextAlign, WordWrap
 from .input_handling import VirtualKeyCodes
 from .mapping import log_widgets
 from .theme import Selectors
+
+__version__ = "0.1.0"
+__author__ = "Bartlomiej Cieszkowski <bartlomiej.cieszkowski@gmail.com>"
+__license__ = "MIT"
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+
+logger = logging.getLogger(__name__)
+
+
+def add_window_logger(level: int = logging.DEBUG) -> logging.StreamHandler:
+    # TODO move functionality from debug_print here
+    pass
+
+
+# TASK LIST:
+# TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
+# TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
+# TODO: trim line to screen width on debug prints
+# TODO: Widget Alignment other than TopLeft is broken, eg for BottomLeft, x,y should mean what? start at max y, x=0
+# TODO: Relative dimensions, 1 Top 80 percent, 2nd bottom 20 percent - got 1 free line..
+
+# Notes:
+# You can have extra line of console, which won't be fully visible - as w/a just don't use last line
+# If new size is greater, then fill with new lines, so we won't be drawing in the middle of screen
 
 
 def is_windows() -> bool:
@@ -647,7 +664,7 @@ class ConsoleWidget(ABC):
         height = self.height_calculated()
         if Alignment.Float in self.alignment:
             # FIXME here be dragons
-            pass
+            raise NotImplementedError("Alignment.Float is not implemented")
         else:
             if Alignment.Left in self.alignment:
                 #  x
@@ -775,7 +792,7 @@ class LinuxConsole(Console):
         self.prev_fl = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
         new_fl = self.prev_fl | os.O_NONBLOCK
         fcntl.fcntl(sys.stdin, fcntl.F_SETFL, new_fl)
-        self.app.log(f"stdin fl: 0x{self.prev_fl:X} -> 0x{new_fl:X}")
+        logger.debug(f"stdin fl: 0x{self.prev_fl:X} -> 0x{new_fl:X}")
         self.prev_tc = termios.tcgetattr(sys.stdin)
         new_tc = termios.tcgetattr(sys.stdin)
         # manipulating lflag
@@ -790,9 +807,9 @@ class LinuxConsole(Console):
         new_tc[6][termios.VMIN] = 0
         new_tc[6][termios.VTIME] = 0
         termios.tcsetattr(sys.stdin, termios.TCSANOW, new_tc)  # TCSADRAIN?
-        self.app.log(f"stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}")
-        self.app.log(f"stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}")
-        self.app.log(f"stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}")
+        logger.debug(f"stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}")
+        logger.debug(f"stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}")
+        logger.debug(f"stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}")
 
         self.input_interpreter = InputInterpreter(sys.stdin)
 
@@ -861,12 +878,8 @@ def demo_fun(app):
 
 
 class App:
-    log = no_print
-
-    def __init__(self, log=no_print, title=None, debug: bool = False):
-        App.log = log
+    def __init__(self, title=None, debug: bool = False):
         self.title = title
-        self.log = log
 
         if is_windows():
             self.console = WindowsConsole(self)
@@ -900,6 +913,7 @@ class App:
 
         # asyncio
         self.thread_pool_executor = None
+        logger.info("App init done")
 
     def init_asyncio(self):
         self.thread_pool_executor = concurrent.futures.ThreadPoolExecutor()
@@ -921,9 +935,8 @@ class App:
 
     def debug_print(self, text, end="\n", row_off=-1):
         if self.debug:
-            if self.log:
-                self.log(text)
-                return
+            logger.debug(text)
+            # TODO
             row = (0 if row_off >= 0 else self.console.rows) + row_off
             self.brush.move_cursor(row=row)
             print(self.debug_colors)
@@ -934,7 +947,7 @@ class App:
         if reuse:
             self.brush.move_cursor(0, 0)
         for line in ConsoleBuffer.get_buffer(self.console.columns, self.console.rows, " ", debug=False):
-            print(line, end="\n", flush=True)
+            print(line, end="\n", flush=True)  # TODO: Would it be ok to just flush after for?
         self._update_size = True
 
     def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
@@ -990,7 +1003,7 @@ class App:
 
                 self.brush.move_cursor(row=(self.console.rows + off) - 1)
                 if widget:
-                    self.log(
+                    logger.debug(
                         f"x: {event.coordinates[0]} y: {event.coordinates[1]} "
                         f"button:{event.button} press:{event.pressed} widget:{widget}"
                     )
@@ -1045,7 +1058,7 @@ class App:
         self.init_asyncio()
 
         if self.debug:
-            log_widgets(self.log)
+            log_widgets(logger.debug)
 
         if self.emulate_screen_dimensions:
             self.console.rows = self.emulate_screen_dimensions[0]
@@ -1067,7 +1080,6 @@ class App:
 
         self.running = True
 
-        # create blank canvas
         self.clear(reuse=False)
 
         self.console.interactive_mode()

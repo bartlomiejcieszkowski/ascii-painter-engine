@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import retui
-from retui.logger import log
 from retui.theme import CssParser
 from retui.widgets import Pane, TextBox
 from src.retui import DefaultThemes
@@ -8,7 +7,7 @@ from src.retui.default_themes import DefaultThemesType
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
-    app = retui.App(log=log)
+    app = retui.App()
     app.title = title
     app.color_mode()
 
