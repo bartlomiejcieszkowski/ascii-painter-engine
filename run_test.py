@@ -2,16 +2,19 @@
 
 import argparse
 import importlib
+import logging
 import os
 import os.path
 import pkgutil
 import sys
 import traceback
 
+logging.basicConfig(filename="run_test.log")
+
+logger = logging.getLogger()
+
 sys.path.append(os.path.abspath("./src/"))
 
-
-import retui.logger as logger  # noqa: E402
 import tests.functional  # noqa: E402
 
 DIAGNOSTICS = False
@@ -55,7 +58,6 @@ def test_run(module_name, demo_time_s, title):
     print(module_name)
     sys.path.append(os.path.abspath(os.path.join(os.path.abspath(__file__), os.pardir, "..")))
     x = importlib.import_module(f"tests.functional.{module_name}")
-    logger.log_file(f"{module_name}")
     x.test(demo_time_s=demo_time_s, title=title)
 
 
@@ -96,14 +98,15 @@ def main():
     for status, test_name, e in test_status:
         i += 1
         name_state = "PASS" if status == 0 else "FAIL"
-        print(f'[{name_state}] {i:3d}: "{test_name}" - exception? {e is not None} status: {status}')
+        logger.info(f'[{name_state}] {i:3d}: "{test_name}" - exception? {e is not None} status: {status}')
         if e:
-            print(f"{e[0]} {type(e[1])}")
+            logger.info(f"{e[0]} {type(e[1])}")
             for i in reversed(range(0, len(e[1]))):
-                print(f"{e[1][i]}")
+                logger.info(f"{e[1][i]}")
         if status != 0:
             ret = -1
 
+    logger.info(f"ExitCode:{ret}")
     sys.exit(ret)
 
 

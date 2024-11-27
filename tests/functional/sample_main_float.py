@@ -1,10 +1,9 @@
 import retui
-from retui.logger import log
 from retui.widgets import Pane, TextBox
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
-    app = retui.App(log=log)
+    app = retui.App()
     app.title = title
     app.color_mode()
 
