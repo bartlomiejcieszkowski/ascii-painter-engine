@@ -6,6 +6,7 @@ import asyncio
 import concurrent.futures
 import ctypes
 import ctypes.wintypes
+import dataclasses
 import logging
 import os
 import selectors
@@ -16,12 +17,12 @@ import threading
 from abc import ABC, abstractmethod
 from collections import deque
 from enum import Enum, Flag, IntEnum, auto
-from typing import List, Tuple, Union
+from typing import Union
 
-from .base import Color, ColorBits, ConsoleColor, Point
+from .base import Color, ColorBits, ConsoleColor, Point, Rectangle
 from .default_themes import DefaultThemes
 from .defaults import default_value
-from .enums import Alignment, DimensionsFlag, TextAlign, WordWrap
+from .enums import DimensionsFlag, Dock, TextAlign, WordWrap
 from .input_handling import VirtualKeyCodes
 from .mapping import log_widgets
 from .theme import Selectors
@@ -44,7 +45,6 @@ def add_window_logger(level: int = logging.DEBUG) -> logging.StreamHandler:
 # TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
 # TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
 # TODO: trim line to screen width on debug prints
-# TODO: Widget Alignment other than TopLeft is broken, eg for BottomLeft, x,y should mean what? start at max y, x=0
 # TODO: Relative dimensions, 1 Top 80 percent, 2nd bottom 20 percent - got 1 free line..
 
 # Notes:
@@ -100,12 +100,13 @@ class ConsoleBuffer:
 
 
 def json_convert(key, value):
-    if key == "alignment":
-        if isinstance(value, Alignment):
+    # TODO capitalize?
+    if key == "dock":
+        if isinstance(value, Dock):
             return value
         if value is None:
-            value = "TopLeft"
-        value = Alignment[value]
+            value = "None"
+        value = Dock[value]
     elif key == "dimensions":
         if isinstance(value, DimensionsFlag):
             return value
@@ -336,34 +337,6 @@ class KeyEvent(ConsoleEvent):
 
 class Event(Enum):
     MouseClick = auto()
-
-
-class Rectangle:
-    def __init__(self, column: int, row: int, width: int, height: int):
-        self.column = column
-        self.row = row
-        self.width = width
-        self.height = height
-
-    def update(self, column: int, row: int, width: int, height: int):
-        self.column = column
-        self.row = row
-        self.width = width
-        self.height = height
-
-    def update_tuple(self, dimensions: Union[Tuple[int, int, int, int], List]):
-        self.column = dimensions[0]
-        self.row = dimensions[1]
-        self.width = dimensions[2]
-        self.height = dimensions[3]
-
-    def contains_point(self, column: int, row: int):
-        return not (
-            (self.row > row)
-            or (self.row + self.height - 1 < row)
-            or (self.column > column)
-            or (self.column + self.width - 1 < column)
-        )
 
 
 class InputInterpreter:
@@ -607,7 +580,7 @@ class ConsoleWidget(ABC):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=json_convert("alignment", kwargs.pop("alignment", default_value("alignment"))),
+            dock=json_convert("dock", kwargs.pop("dock", default_value("dock"))),
             dimensions=json_convert("dimensions", kwargs.pop("dimensions", default_value("dimensions"))),
             tab_index=kwargs.pop("tab_index", default_value("tab_index")),
             scroll_horizontal=kwargs.pop("scroll_horizontal", default_value("scroll_horizontal")),
@@ -622,7 +595,7 @@ class ConsoleWidget(ABC):
         y: int = 0,
         width: int = 0,
         height: int = 0,
-        alignment: Alignment = default_value("alignment"),
+        dock: Dock = default_value("dock"),
         dimensions: DimensionsFlag = default_value("dimensions"),
         tab_index: int = default_value("tab_index"),
         scroll_horizontal: bool = default_value("scroll_horizontal"),
@@ -632,13 +605,10 @@ class ConsoleWidget(ABC):
             identifier = f"{type(self).__qualname__}_{hash(self):x}"
         # TODO: check if it is unique
         self.identifier = identifier
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.alignment = alignment
+        self.dimensions = Rectangle(x=x, y=y, width=width, height=height)
+        self.dock = dock
         self.app = app
-        self.dimensions = dimensions
+        self.dimensionsFlag = dimensions
         self.parent = None
         self.handlers = {}
         self.tab_index = tab_index
@@ -654,45 +624,97 @@ class ConsoleWidget(ABC):
         self._redraw = True
         self._update_size = True
 
+    def dimensions_copy(self, last: bool):
+        """
+        Creates shallow copy of dimensions
+        """
+        return dataclasses.replace(self.last_dimensions if last else self.dimensions)
+
+    def calculate_dimensions_docked(self):
+        dimensions = self.dimensions_copy(last=False)
+        parent_docked = self.parent.inner_dimensions(docked=True)
+        parent_inner = self.parent.inner_dimensions(docked=False)
+
+        size = 0
+
+        if DimensionsFlag.RelativeHeight in self.dimensionsFlag and self.dock in [Dock.BOTTOM, Dock.TOP]:
+            size = dimensions.height = (dimensions.height * parent_inner.height) // 100
+        elif DimensionsFlag.RelativeWidth in self.dimensionsFlag and self.dock in [Dock.LEFT, Dock.RIGHT]:
+            size = dimensions.width = (dimensions.width * parent_inner.width) // 100
+
+        if self.dock is Dock.FILL:
+            dimensions = dataclasses.replace(parent_docked)
+        elif self.dock is Dock.TOP:
+            dimensions.x = parent_docked.x
+            dimensions.y = parent_docked.y
+            dimensions.width = parent_docked.width
+            # TODO: Docked, with relative height/width, eg. Dock.TOP with 80%
+            # TODO: check height? or overflow?
+        elif self.dock is Dock.BOTTOM:
+            dimensions.x = parent_docked.x
+            dimensions.y = parent_docked.y + parent_docked.height - dimensions.height
+            dimensions.width = parent_docked.width
+        elif self.dock is Dock.LEFT:
+            dimensions.x = parent_docked.x
+            dimensions.y = parent_docked.y
+            dimensions.height = parent_docked.height
+        elif self.dock is Dock.RIGHT:
+            dimensions.x = parent_docked.x + parent_docked.width - dimensions.width
+            dimensions.y = parent_docked.y
+            dimensions.height = parent_docked.height
+        else:
+            raise Exception(f"Invalid dock {self.dock}")
+
+        # Should this throw failure up? Eg no space? display whole screen - resize screen?
+        if not self.parent.dock_add(self.dock, size):
+            logger.critical(
+                f"Dock size exceeded - fix the widget defintions - "
+                f"parent: {self.parent.identifier} - {parent_docked},"
+                f"child: {self.identifier} - {dimensions}"
+            )
+        return dimensions
+
+    def calculate_dimensions(self):
+        dimensions = self.dimensions_copy(last=False)
+        parent_dimensions = self.parent.inner_dimensions(docked=False)
+        if DimensionsFlag.RelativeWidth in self.dimensionsFlag:
+            dimensions.width = (dimensions.width * parent_dimensions.width) // 100
+        elif DimensionsFlag.FillWidth in self.dimensionsFlag:
+            dimensions.width = parent_dimensions.width
+
+        if DimensionsFlag.RelativeHeight in self.dimensionsFlag:
+            # concern about rows - 1
+            dimensions.height = (dimensions.height * parent_dimensions.height) // 100
+        elif DimensionsFlag.FillHeight in self.dimensionsFlag:
+            dimensions.height = parent_dimensions.height
+
+        dimensions.translate_coordinates(parent_dimensions)
+        return dimensions
+
     def update_dimensions(self):
         self._update_size = False
         # update dimensions is separate, so we separate drawing logic, so if one implement own widget
         # doesn't have to remember to call update_dimensions every time or do it incorrectly
-        x = self.x
-        y = self.y
-        width = self.width_calculated()
-        height = self.height_calculated()
-        if Alignment.Float in self.alignment:
-            # FIXME here be dragons
-            raise NotImplementedError("Alignment.Float is not implemented")
-        else:
-            if Alignment.Left in self.alignment:
-                #  x
-                #   []
-                #  0 1 2
-                x += self.parent.inner_x()
-                pass
-            elif Alignment.Right in self.alignment:
-                #      x
-                #   []
-                #  2 1 0
-                x = self.parent.inner_x() + self.parent.inner_width() - width - x
-                pass
-            if Alignment.Top in self.alignment:
-                #  y   0
-                #   [] 1
-                #      2
-                y += self.parent.inner_y()
-                pass
-            elif Alignment.Bottom in self.alignment:
-                #      2
-                #   [] 0
-                #  y   1
-                y = self.parent.inner_y() + self.parent.inner_height() - height - y
-                pass
 
-        self.last_dimensions.update(x, y, width, height)
+        if self.dock is not Dock.NONE:
+            dimensions = self.calculate_dimensions_docked()
+        else:
+            dimensions = self.calculate_dimensions()
+            # TODO: Not enough FLAGS
+            # if Alignment.Left in self.dock:
+            #     x += self.parent.inner_x()
+            # elif Alignment.Right in self.dock:
+            #     x = self.parent.inner_x() + self.parent.inner_width() - width - x
+            # if Alignment.Top in self.dock:
+            #     y += self.parent.inner_y()
+            # elif Alignment.Bottom in self.dock:
+            #     y = self.parent.inner_y() + self.parent.inner_height() - height - y
+
+        self.last_dimensions = dimensions
         self._redraw = True
+
+    def dock_add(self, dock: Dock, size: int) -> bool:
+        raise NotImplementedError("You can't dock inside this class")
 
     def get_widget(self, column: int, row: int) -> Union["ConsoleWidget", None]:
         return self if self.contains_point(column, row) else None
@@ -708,32 +730,13 @@ class ConsoleWidget(ABC):
     def draw(self, force: bool = False):
         self._redraw = False
 
-    def width_calculated(self):
-        if DimensionsFlag.RelativeWidth in self.dimensions:
-            return (self.width * self.parent.inner_width()) // 100
-        elif DimensionsFlag.FillWidth in self.dimensions:
-            # TODO: this should be width left
-            return self.parent.inner_width()
-        else:
-            return self.width
-
-    def height_calculated(self):
-        if DimensionsFlag.RelativeHeight in self.dimensions:
-            # concern about rows - 1
-            return (self.height * self.parent.inner_height()) // 100
-        elif DimensionsFlag.FillHeight in self.dimensions:
-            # TODO: this should be height left
-            return self.parent.inner_height()
-        else:
-            return self.height
-
     def contains_point(self, column: int, row: int):
         return self.last_dimensions.contains_point(column, row)
 
     def __str__(self):
         return (
-            f"[x:{self.x} y:{self.x} width:{self.width} height:{self.height}"
-            f"alignment:{self.alignment} dimensions:{self.dimensions} type:{type(self)} 0x{hash(self):X}]"
+            f"[{self.dimensions}"
+            f"dock:{self.dock} dimensions:{self.dimensionsFlag} type:{type(self)} 0x{hash(self):X}]"
         )
 
 
@@ -751,6 +754,7 @@ class Console:
         pass
 
     def update_size(self):
+        # TODO CLEANUP HERE
         self.columns, self.rows = self.get_size()
         return self.columns, self.rows
 
@@ -880,6 +884,7 @@ def demo_fun(app):
 class App:
     def __init__(self, title=None, debug: bool = False):
         self.title = title
+        self.identifier = "App"
 
         if is_windows():
             self.console = WindowsConsole(self)
@@ -890,8 +895,9 @@ class App:
         self.debug_colors = ConsoleColor()
         self.running = False
 
-        self.width = 0
-        self.height = 0
+        self.docked_dimensions = Rectangle()
+        self.dimensions = Rectangle()
+        self.last_dimensions = Rectangle()
         self.handle_sigint = True
 
         self.mouse_lmb_state = 0
@@ -921,17 +927,30 @@ class App:
     def register_tasks(self):
         pass
 
-    def inner_x(self):
-        return 0
+    def dimensions_copy(self, last: bool):
+        return dataclasses.replace(self.last_dimensions if last else self.dimensions)
 
-    def inner_y(self):
-        return 0
+    def inner_dimensions(self, docked: bool) -> Rectangle:
+        if docked:
+            return self.docked_dimensions
+        return self.dimensions
 
-    def inner_width(self):
-        return self.width
+    def dock_add(self, dock: Dock, size: int) -> bool:
+        if dock is Dock.TOP:
+            self.docked_dimensions.y += size
+            self.docked_dimensions.height -= size
+        elif dock is Dock.BOTTOM:
+            self.docked_dimensions.height -= size
+        elif dock is Dock.LEFT:
+            self.docked_dimensions.x += size
+            self.docked_dimensions.width -= size
+        elif dock is Dock.RIGHT:
+            self.docked_dimensions.width -= size
+        elif dock is Dock.FILL:
+            # all available docked space is consumed
+            self.docked_dimensions.update(0, 0, 0, 0)
 
-    def inner_height(self):
-        return self.height
+        return not self.docked_dimensions.negative()
 
     def debug_print(self, text, end="\n", row_off=-1):
         if self.debug:
@@ -943,7 +962,7 @@ class App:
             self.brush.print(text, end=end, color=self.debug_colors)
 
     def clear(self, reuse=True):
-        self.width, self.height = self.console.update_size()
+        self.dimensions.width, self.dimensions.height = self.console.update_size()
         if reuse:
             self.brush.move_cursor(0, 0)
         for line in ConsoleBuffer.get_buffer(self.console.columns, self.console.rows, " ", debug=False):
@@ -1047,6 +1066,9 @@ class App:
 
     def update_dimensions(self):
         self._update_size = False
+        # TODO For APP always use current - is this correct assumption?
+        self.docked_dimensions = self.dimensions_copy(last=False)
+        self.last_dimensions = self.dimensions_copy(last=False)
         for widget in self.widgets:
             widget.update_dimensions()
         self._redraw = True

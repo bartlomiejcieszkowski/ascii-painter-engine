@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import subprocess  # nosec B404
+from pathlib import Path
 
 from retui import App, helper
 
@@ -40,6 +41,9 @@ class ProcessWrap:
         self.stdout_wrapper = FileWrapper()
         self.stderr_wrapper = FileWrapper()
 
+        self.stdout_widget.clear()
+        self.stderr_widget.clear()
+
     def run(self):
         print("HERE")
         # kwargs = {"args": self.args, "shell": True, "encoding": "utf-8", "text": True, "capture_output": True}
@@ -63,9 +67,6 @@ class ProcessWrap:
         out, err = self.proc.communicate()
         # stdout = self.stdout_wrapper.read()
 
-        # print(f"stdout: {stdout}")
-        # print(f"out: {out}\nerr: {err}")
-        # raise Exception("DUPA")
         self.stdout_widget.write(self.stdout_wrapper.read())
         self.stderr_widget.write(self.stderr_wrapper.read())
         self.proc.terminate()
@@ -85,12 +86,12 @@ def sample_app_wrap(app: App):
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
     print(title)
-    working_directory = "tests/functional"
+    working_directory = Path(__file__).parent
     apps = [("json/sample_app_wrap.json", sample_app_wrap)]
 
     for file, fun in apps:
-        filename = working_directory + "/" + file
-        with open(working_directory + "/" + file, "r") as f:
+        filename = working_directory / file
+        with open(filename, "r") as f:
             data = json.load(f)
             for widget in data["widgets"]:
                 print(widget)

@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 import json
+from pathlib import Path
 
 from retui import helper
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
     print(title)
-    working_directory = "tests/functional"
+    print(Path(__file__).parent)
+
+    working_directory = Path(__file__).parent
     files = [
         "json/sample_app.json",
     ]
 
     for file in files:
-        filename = working_directory + "/" + file
-        with open(working_directory + "/" + file, "r", encoding="UTF-8") as f:
+        filename = working_directory / file
+        with open(filename, "r", encoding="UTF-8") as f:
             data = json.load(f)
             for widget in data["widgets"]:
                 print(widget)

@@ -1,4 +1,4 @@
-from enum import Flag, IntEnum
+from enum import Enum, Flag, IntEnum, auto
 
 
 class TabIndex:
@@ -9,25 +9,26 @@ class TabIndex:
     TAB_INDEX_AUTO = -2
 
 
-class Alignment(Flag):
-    Center = 0
-    Left = 1
-    Right = 2
-    Top = 4
-    Bottom = 8
-    TopLeft = Left | Top
-    TopRight = Right | Top
-    BottomLeft = Left | Bottom
-    BottomRight = Right | Bottom
-    Float = 16
-    FloatTopLeft = Float | TopLeft
-    FloatTopRight = Float | TopRight
-    FloatBottomLeft = Float | BottomLeft
-    FloatBottomRight = Float | BottomRight
-    FloatLeft = Float | Left
-    FloatRight = Float | Right
-    FloatTop = Float | Top
-    FloatBottom = Float | Bottom
+# Winforms have:
+# Behavior:
+# TabIndex - int
+# TabStop - True -> can select with tab
+# Enabled - bool
+# Visible - bool
+# Layout:
+# Dock -> None, Top, Bottom, Left, Right, Fill
+# AutoSize - boolean
+# AutoSizeMode - GrowOnly, GrowAndShrink
+# Anchor -> Top / Bottom / Left / Right - can be all.. why
+
+
+class Dock(Enum):
+    NONE = auto()
+    TOP = auto()
+    BOTTOM = auto()
+    LEFT = auto()
+    RIGHT = auto()
+    FILL = auto()
 
 
 class DimensionsFlag(Flag):

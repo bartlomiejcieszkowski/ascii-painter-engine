@@ -14,11 +14,11 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=80,
         width=80,
-        alignment=retui.Alignment.TopLeft,
+        dock=retui.Dock.NONE,
         dimensions=retui.DimensionsFlag.Relative,
     )
 
-    # TODO: alignment, only TopLeft does something
+    # TODO: something something anchor?
     pane.title = "Test"
 
     app.add_widget(pane)

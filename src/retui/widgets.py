@@ -1,3 +1,5 @@
+import dataclasses
+import logging
 from typing import Tuple, Union
 
 from . import (
@@ -6,14 +8,17 @@ from . import (
     ConsoleWidget,
     KeyEvent,
     MouseEvent,
+    Rectangle,
     Theme,
     VirtualKeyCodes,
     json_convert,
 )
 from .default_themes import ThemePoint
 from .defaults import default_value
-from .enums import Alignment, DimensionsFlag, TextAlign, WordWrap
+from .enums import DimensionsFlag, Dock, TextAlign, WordWrap
 from .mapping import official_widget
+
+logger = logging.getLogger(__name__)
 
 
 class Text:
@@ -152,7 +157,7 @@ class BorderWidget(ConsoleWidget):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=json_convert("alignment", kwargs.pop("alignment", None)),
+            dock=json_convert("dock", kwargs.pop("dock", None)),
             dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
             tab_index=kwargs.pop("tab_index", default_value("tab_index")),
             borderless=kwargs.pop("borderless", False),
@@ -170,7 +175,7 @@ class BorderWidget(ConsoleWidget):
         y: int = 0,
         width: int = 0,
         height: int = 0,
-        alignment: Alignment = default_value("alignment"),
+        dock: Dock = default_value("dock"),
         dimensions: DimensionsFlag = default_value("dimensions"),
         tab_index: int = default_value("tab_index"),
         borderless: bool = False,
@@ -186,7 +191,7 @@ class BorderWidget(ConsoleWidget):
             y=y,
             width=width,
             height=height,
-            alignment=alignment,
+            dock=dock,
             dimensions=dimensions,
             tab_index=tab_index,
         )
@@ -196,6 +201,9 @@ class BorderWidget(ConsoleWidget):
         self.border = None
         self._text = None
 
+        self._inner_dimensions = Rectangle()
+        self.docked_dimensions = Rectangle()
+
         if border_str:
             self.border_from_str(border_str)
         if border_color:
@@ -204,25 +212,25 @@ class BorderWidget(ConsoleWidget):
             self.set_color(border_color)
         # None implies use theme
 
-    def inner_x(self):
-        if self.soft_border or self.borderless:
-            return self.last_dimensions.column
-        return self.last_dimensions.column + 1
+    def update_dimensions(self):
+        super().update_dimensions()
 
-    def inner_y(self):
-        if self.soft_border or self.borderless:
-            return self.last_dimensions.row
-        return self.last_dimensions.row + 1
+        self._inner_dimensions = self.calculate_inner_dimensions()
+        self.docked_dimensions = dataclasses.replace(self._inner_dimensions)
 
-    def inner_width(self):
+    def calculate_inner_dimensions(self):
         if self.soft_border or self.borderless:
-            return self.last_dimensions.width
-        return self.last_dimensions.width - 2
+            return self.last_dimensions
 
-    def inner_height(self):
-        if self.soft_border or self.borderless:
-            return self.last_dimensions.height
-        return self.last_dimensions.height - 2
+        inner = dataclasses.replace(self.last_dimensions)
+        inner.x += 1
+        inner.y += 1
+        inner.width -= 2
+        inner.height -= 2
+        return inner
+
+    def inner_dimensions(self, docked=True):
+        return self.docked_dimensions if docked else self._inner_dimensions
 
     def border_from_str(self, border_str: str):
         self.border = Theme.border_from_str(border_str)
@@ -274,15 +282,15 @@ class BorderWidget(ConsoleWidget):
             super().draw(force=force)
 
     def _draw_bordered(self, inside_text: Text = None, title: str = ""):
-        offset_rows = self.last_dimensions.row
-        offset_cols = self.last_dimensions.column
+        y = self.last_dimensions.y
+        x = self.last_dimensions.x
         width = self.last_dimensions.width
         height = self.last_dimensions.height
         width_inner = width
         if self.borderless is False:
             width_inner -= 2
-        self.app.brush.move_cursor(row=offset_rows)
-        offset_str = self.app.brush.move_right(offset_cols)
+        self.app.brush.move_cursor(row=y)
+        offset_str = self.app.brush.move_right(x)
 
         # Top border
         if self.borderless is False:
@@ -302,7 +310,7 @@ class BorderWidget(ConsoleWidget):
 
         # Middle part
         for h in range(0, height_inner):
-            self.app.brush.move_cursor(row=(offset_rows + start + h))
+            self.app.brush.move_cursor(row=(y + start + h))
             text = inside_text.get_line(h) if inside_text else empty_line
             leftover = width_inner - len(text)
             line = offset_str
@@ -320,26 +328,26 @@ class BorderWidget(ConsoleWidget):
 
         # Bottom border
         if self.borderless is False:
-            self.app.brush.move_cursor(row=offset_rows + height - 1)
+            self.app.brush.move_cursor(row=y + height - 1)
             self.app.brush.print(offset_str + self.border_get_bottom(width_inner), end="\n")
         pass
 
     def local_point(self, point: Tuple[int, int]) -> Union[Tuple[int, int], Tuple[None, None]]:
         # NOTE: this won't return point if we touch border
         border = 0 if self.borderless else 1
-        offset_rows = self.last_dimensions.row + border
-        offset_cols = self.last_dimensions.column + border
+        y = self.last_dimensions.y + border
+        x = self.last_dimensions.x + border
         width = self.last_dimensions.width - (border * 2)
         height = self.last_dimensions.height - (border * 2)
 
-        local_column = point[0] - offset_cols
-        local_row = point[1] - offset_rows
+        local_x = point[0] - x
+        local_y = point[1] - y
 
-        if local_column < 0 or local_column >= width or local_row < 0 or local_row >= height:
+        if local_x < 0 or local_x >= width or local_y < 0 or local_y >= height:
             return None, None
 
         # x, y
-        return local_column, local_row
+        return local_x, local_y
 
 
 @official_widget
@@ -353,7 +361,7 @@ class TextBox(BorderWidget):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=json_convert("alignment", kwargs.pop("alignment", default_value("alignment"))),
+            dock=json_convert("dock", kwargs.pop("dock", default_value("dock"))),
             dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
             tab_index=kwargs.pop("tab_index", default_value("tab_index")),
             borderless=kwargs.pop("borderless", False),
@@ -374,7 +382,7 @@ class TextBox(BorderWidget):
         y: int = 0,
         width: int = 0,
         height: int = 0,
-        alignment: Alignment = default_value("alignment"),
+        dock: Dock = default_value("dock"),
         dimensions: DimensionsFlag = default_value("dimensions"),
         tab_index: int = default_value("tab_index"),
         borderless: bool = False,
@@ -393,7 +401,7 @@ class TextBox(BorderWidget):
             y=y,
             width=width,
             height=height,
-            alignment=alignment,
+            dock=dock,
             dimensions=dimensions,
             tab_index=tab_index,
             borderless=borderless,
@@ -430,7 +438,7 @@ class Pane(BorderWidget):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=json_convert("alignment", kwargs.pop("alignment", None)),
+            dock=json_convert("dock", kwargs.pop("dock", None)),
             dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
             borderless=kwargs.pop("borderless", False),
             border_str=kwargs.pop("border_str", None),
@@ -447,7 +455,7 @@ class Pane(BorderWidget):
         y: int = 0,
         width: int = 0,
         height: int = 0,
-        alignment: Alignment = default_value("alignment"),
+        dock: Dock = default_value("dock"),
         dimensions: DimensionsFlag = default_value("dimensions"),
         borderless: bool = False,
         border_str=None,
@@ -462,7 +470,7 @@ class Pane(BorderWidget):
             y=y,
             width=width,
             height=height,
-            alignment=alignment,
+            dock=dock,
             dimensions=dimensions,
             borderless=borderless,
             border_str=border_str,
@@ -478,6 +486,20 @@ class Pane(BorderWidget):
             for widget in self.widgets:
                 widget.draw()
 
+    def dock_add(self, dock: Dock, size: int) -> bool:
+        if dock is Dock.TOP:
+            self.docked_dimensions.y += size
+            self.docked_dimensions.height -= size
+        elif dock is Dock.BOTTOM:
+            self.docked_dimensions.height -= size
+        elif dock is Dock.LEFT:
+            self.docked_dimensions.x += size
+            self.docked_dimensions.width -= size
+        elif dock is Dock.RIGHT:
+            self.docked_dimensions.width -= size
+
+        return not self.docked_dimensions.negative()
+
     def add_widget(self, widget):
         # TODO widget should take offset from parent
         # right now we will adjust it when adding
@@ -488,6 +510,7 @@ class Pane(BorderWidget):
 
     def update_dimensions(self):
         super().update_dimensions()
+
         for widget in self.widgets:
             widget.update_dimensions()
 
@@ -521,7 +544,7 @@ class Button(TextBox):
         y: int,
         width: int,
         height: int,
-        alignment: Alignment,
+        dock: Dock,
         dimensions: DimensionsFlag = default_value("dimensions"),
         tab_index: int = default_value("tab_index"),
         borderless: bool = False,
@@ -538,7 +561,7 @@ class Button(TextBox):
         :param y:
         :param width:
         :param height:
-        :param alignment:
+        :param dock:
         :param dimensions:
         :param tab_index:
         :param borderless:
@@ -554,7 +577,7 @@ class Button(TextBox):
             y=y,
             width=width,
             height=height,
-            alignment=alignment,
+            dock=dock,
             dimensions=dimensions,
             tab_index=tab_index,
             borderless=borderless,
@@ -597,7 +620,7 @@ class WriteBox(TextBox):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=json_convert("alignment", kwargs.pop("alignment", None)),
+            dock=json_convert("dock", kwargs.pop("dock", None)),
             dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
             tab_index=kwargs.pop("tab_index", default_value("tab_index")),
             borderless=kwargs.pop("borderless", False),
@@ -615,7 +638,7 @@ class WriteBox(TextBox):
         y: int = 0,
         width: int = 0,
         height: int = 0,
-        alignment: Alignment = default_value("alignment"),
+        dock: Dock = default_value("dock"),
         dimensions: DimensionsFlag = default_value("dimensions"),
         tab_index: int = default_value("tab_index"),
         borderless: bool = False,
@@ -631,7 +654,7 @@ class WriteBox(TextBox):
         :param y:
         :param width:
         :param height:
-        :param alignment:
+        :param dock:
         :param dimensions:
         :param tab_index:
         :param borderless:
@@ -648,7 +671,7 @@ class WriteBox(TextBox):
             y=y,
             width=width,
             height=height,
-            alignment=alignment,
+            dock=dock,
             dimensions=dimensions,
             tab_index=tab_index,
             borderless=borderless,
@@ -667,6 +690,9 @@ class WriteBox(TextBox):
         else:
             self.text = text
 
+    def clear(self):
+        self.text = ""
+
 
 @official_widget
 class HorizontalLine(BorderWidget):
@@ -679,7 +705,7 @@ class HorizontalLine(BorderWidget):
             y=kwargs.pop("y"),
             width=kwargs.pop("width"),
             height=kwargs.pop("height"),
-            alignment=json_convert("alignment", kwargs.pop("alignment", default_value("alignment"))),
+            dock=json_convert("dock", kwargs.pop("dock", default_value("dock"))),
             dimensions=DimensionsFlag.FillWidth,
             tab_index=kwargs.pop("tab_index", default_value("tab_index")),
             borderless=kwargs.pop("borderless", False),
@@ -699,7 +725,7 @@ class HorizontalLine(BorderWidget):
         y: int = 0,
         width: int = 0,
         height: int = 0,
-        alignment: Alignment = default_value("alignment"),
+        dock: Dock = default_value("dock"),
         dimensions: DimensionsFlag = DimensionsFlag.FillWidth,
         tab_index: int = default_value("tab_index"),
         borderless: bool = False,
@@ -718,7 +744,7 @@ class HorizontalLine(BorderWidget):
             y=y,
             width=width,
             height=height,
-            alignment=alignment,
+            dock=dock,
             dimensions=dimensions,
             tab_index=tab_index,
             borderless=borderless,

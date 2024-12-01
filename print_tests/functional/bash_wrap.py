@@ -3,6 +3,7 @@ import asyncio
 import json
 import subprocess  # nosec B404
 import time
+from pathlib import Path
 
 from retui import App, helper
 
@@ -146,12 +147,13 @@ def sample_app_wrap(app: App):
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
     print(title)
-    working_directory = "tests/functional"
+    working_directory = Path(__file__).parent
+
     apps = [("json/sample_app_wrap.json", sample_app_wrap)]
 
     for file, fun in apps:
-        filename = working_directory + "/" + file
-        with open(working_directory + "/" + file, "r") as f:
+        filename = working_directory / file
+        with open(filename, "r") as f:
             data = json.load(f)
             for widget in data["widgets"]:
                 print(widget)

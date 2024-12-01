@@ -6,3 +6,4 @@ pyproject-flake8==6.0.0.post1
 pre-commit==3.2.2
 build
 twine
+pytest
