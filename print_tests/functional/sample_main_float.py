@@ -13,7 +13,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=1,
         height=80,
         width=100,
-        alignment=retui.Alignment.TopLeft,
+        dock=retui.Dock.FILL,
         dimensions=retui.DimensionsFlag.Fill,
     )
     pane.title = "Test"
@@ -24,7 +24,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=20,
         width=40,
-        alignment=retui.Alignment.FloatTopLeft,
+        dock=retui.Dock.LEFT,
         dimensions=retui.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"1st float {widget}"
@@ -42,7 +42,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=30,
         width=60,
-        alignment=retui.Alignment.FloatTopLeft,
+        dock=retui.Dock.LEFT,
         dimensions=retui.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"2nd float {widget}"
@@ -60,7 +60,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=20,
         width=30,
-        alignment=retui.Alignment.FloatTopLeft,
+        dock=retui.Dock.LEFT,
         dimensions=retui.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"3rd float {widget}"

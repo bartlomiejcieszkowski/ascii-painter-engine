@@ -3,19 +3,29 @@
 import argparse
 import importlib
 import logging
+import logging.handlers
 import os
 import os.path
 import pkgutil
 import sys
 import traceback
+from pathlib import Path
 
-logging.basicConfig(filename="run_test.log")
+logging.basicConfig(
+    handlers=[
+        logging.handlers.RotatingFileHandler(
+            Path(__file__).stem + ".log", maxBytes=1024 * 1024 * 1024 * 10, backupCount=5
+        )
+    ],
+    force=True,
+    level=logging.DEBUG,
+)
 
 logger = logging.getLogger()
 
 sys.path.append(os.path.abspath("./src/"))
 
-import tests.functional  # noqa: E402
+import print_tests.functional as ptf  # noqa: E402
 
 DIAGNOSTICS = False
 DIAGNOSTICS_MEMORY_INFO = None
@@ -57,12 +67,12 @@ def diagnostics_end():
 def test_run(module_name, demo_time_s, title):
     print(module_name)
     sys.path.append(os.path.abspath(os.path.join(os.path.abspath(__file__), os.pardir, "..")))
-    x = importlib.import_module(f"tests.functional.{module_name}")
+    x = importlib.import_module(f"print_tests.functional.{module_name}")
     x.test(demo_time_s=demo_time_s, title=title)
 
 
 def main():
-    tests_path = os.path.dirname(tests.functional.__file__)
+    tests_path = os.path.dirname(ptf.__file__)
     tests_list = [name for _, name, _ in pkgutil.iter_modules([tests_path])]
     # print(tests_list)
     parser = argparse.ArgumentParser(description="Run tests.")
@@ -100,9 +110,9 @@ def main():
         name_state = "PASS" if status == 0 else "FAIL"
         logger.info(f'[{name_state}] {i:3d}: "{test_name}" - exception? {e is not None} status: {status}')
         if e:
-            logger.info(f"{e[0]} {type(e[1])}")
+            logger.critical(f"{e[0]} {type(e[1])}")
             for i in reversed(range(0, len(e[1]))):
-                logger.info(f"{e[1][i]}")
+                logger.critical(f"{e[1][i]}")
         if status != 0:
             ret = -1
 

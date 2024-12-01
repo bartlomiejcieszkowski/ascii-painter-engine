@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from enum import IntEnum
+from typing import List, Tuple, Union
 
 
 class ColorBits(IntEnum):
@@ -59,3 +60,44 @@ class ConsoleColor:
 class Point:
     c: str = " "
     color: ConsoleColor = field(default_factory=ConsoleColor.default)
+
+
+@dataclass
+class Rectangle:
+    x: int = 0
+    y: int = 0
+    width: int = 0
+    height: int = 0
+
+    def x_end(self):
+        return self.x + self.width
+
+    def y_end(self):
+        return self.y + self.height
+
+    def update(self, x: int, y: int, width: int, height: int):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        # TODO: possibility to return has it changed?
+
+    def update_tuple(self, dimensions: Union[Tuple[int, int, int, int], List]):
+        self.x = dimensions[0]
+        self.y = dimensions[1]
+        self.width = dimensions[2]
+        self.height = dimensions[3]
+
+    def contains_point(self, x: int, y: int):
+        return not ((self.y > y) or (self.y + self.height - 1 < y) or (self.x > x) or (self.x + self.width - 1 < x))
+
+    def translate_coordinates(self, parent):
+        # TODO what if initial position is overflowing?
+        self.x += parent.x
+        self.y += parent.y
+        # on parent overflow, trim to it size
+        self.width = self.width if self.x_end() <= parent.x_end() else self.width + (parent.x_end() + self.x_end())
+        self.height = self.height if self.y_end() <= parent.y_end() else self.height + (parent.y_end() + self.y_end())
+
+    def negative(self):
+        return self.x < 0 or self.y < 0 or self.width < 0 or self.height < 0

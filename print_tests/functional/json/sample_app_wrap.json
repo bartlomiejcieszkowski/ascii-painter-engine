@@ -14,7 +14,7 @@
       "y": 0,
       "height": 40,
       "width": 80,
-      "alignment": "TopLeft",
+      "dock": "FILL",
       "dimensions": "Fill",
       "borderless": "True"
     },
@@ -27,11 +27,11 @@
       "type": "WriteBox",
       "x": 0,
       "y": 0,
-      "height": 82,
+      "height": 80,
       "width": 100,
-      "alignment": "TopLeft",
+      "dock": "TOP",
       "dimensions": "Relative",
-      "text": "Test\n2.sadjiosajdiosajdioas\nsadsaqwewq"
+      "text": "1st WriteBox\nDo you see it?\nIf so then its ok.\nThere should be visible 2nd WriteBox.\n"
     },
     {
       "parent_id": "main_pane",
@@ -44,9 +44,9 @@
       "y": 0,
       "height": 20,
       "width": 100,
-      "alignment": "BottomLeft",
+      "dock": "BOTTOM",
       "dimensions": "Relative",
-      "text": "Test\n2.sadjiosajdiosajdioas\nsadsaqwewq"
+      "text": "This is text in 2nd WriteBox\nIt should have\n3 lines.."
     }
   ],
   "post_callbacks": [{

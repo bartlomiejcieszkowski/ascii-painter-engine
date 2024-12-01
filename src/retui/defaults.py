@@ -1,7 +1,7 @@
-from .enums import Alignment, DimensionsFlag, TabIndex, TextAlign, WordWrap
+from .enums import DimensionsFlag, Dock, TabIndex, TextAlign, WordWrap
 
 _defaults = {
-    "alignment": Alignment.TopLeft,
+    "dock": Dock.NONE,
     "dimensions": DimensionsFlag.Absolute,
     "tab_index": TabIndex.TAB_INDEX_NOT_SELECTABLE,
     "soft_border": False,
