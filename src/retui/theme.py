@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum, IntEnum, auto
 from typing import Union
 
-from . import Color, ColorBits, ConsoleColor
+from . import Color, ColorBits, TerminalColor
 from .utils.strings import StringHelper
 
 
@@ -36,7 +36,7 @@ def css_color_to_color(string: str):
 
 @dataclass
 class Attributes:
-    color: ConsoleColor = field(default_factory=ConsoleColor.default)
+    color: TerminalColor = field(default_factory=TerminalColor.default)
 
     def __iadd__(self, other):
         self.color += other.color
@@ -52,15 +52,15 @@ class Attributes:
 
     @classmethod
     def from_prop(cls, prop: str, value: str):
-        color = ConsoleColor.default()
+        color = TerminalColor.default()
         if prop == "background-color":
             single_color = css_color_to_color(value)
             if single_color:
-                color = ConsoleColor(background=single_color)
+                color = TerminalColor(background=single_color)
         elif prop == "color":
             single_color = css_color_to_color(value)
             if single_color:
-                color = ConsoleColor(foreground=single_color)
+                color = TerminalColor(foreground=single_color)
         return cls(color=color)
 
 

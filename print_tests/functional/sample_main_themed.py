@@ -38,7 +38,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
     pane.title = "Bigger Pane"
     app.add_widget(pane)
 
-    test_color = retui.ConsoleColor(retui.Color(13, retui.ColorBits.Bit8), retui.Color(7, retui.ColorBits.Bit8))
+    test_color = retui.TerminalColor(retui.Color(13, retui.ColorBits.Bit8), retui.Color(7, retui.ColorBits.Bit8))
 
     widget = TextBox(app=app, x=0, y=0, height=3, width=10)
     widget.text = "Sample text in pane"

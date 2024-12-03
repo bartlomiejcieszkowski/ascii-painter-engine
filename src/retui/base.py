@@ -23,7 +23,7 @@ class Color:
 
 
 @dataclass()
-class ConsoleColor:
+class TerminalColor:
     foreground: Color = field(default_factory=Color.default)
     background: Color = field(default_factory=Color.default)
 
@@ -59,7 +59,7 @@ class ConsoleColor:
 @dataclass
 class Point:
     c: str = " "
-    color: ConsoleColor = field(default_factory=ConsoleColor.default)
+    color: TerminalColor = field(default_factory=TerminalColor.default)
 
 
 @dataclass

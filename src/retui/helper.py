@@ -4,8 +4,8 @@ from . import (  # noqa: F401
     App,
     Color,
     ColorBits,
-    ConsoleColor,
-    ConsoleWidget,
+    TerminalColor,
+    TerminalWidget,
     mapping,
     widgets,
 )
@@ -99,7 +99,7 @@ def app_from_json(
                     widget_class = mapping.import_widget_class(widget_type, ctx_globals)
                     if widget_class is None:
                         raise Exception(f"Unknown widget type: '{widget_type}'")
-            elif issubclass(type(widget_type), ConsoleWidget):
+            elif issubclass(type(widget_type), TerminalWidget):
                 widget_class = widget_type
             else:
                 raise Exception(f"widget[{widget_json['id']}] is of type: {type(widget_type)}")
@@ -113,7 +113,7 @@ def app_from_json(
                 bg_color = Color(
                     widget_json["border_color"]["bg"]["val"], ColorBits[widget_json["border_color"]["bg"]["color_bits"]]
                 )
-                widget_json["border_color"] = ConsoleColor(fg_color, bg_color)
+                widget_json["border_color"] = TerminalColor(fg_color, bg_color)
 
             widget = widget_class.from_dict(**widget_json)
 
