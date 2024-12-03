@@ -1,4 +1,5 @@
 import retui
+from retui.enums import DimensionsFlag, Dock, TextAlign
 from retui.widgets import Pane, TextBox
 
 
@@ -12,8 +13,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             app=app,
             height=10,
             width=10,
-            dock=retui.Dock.TOP,
-            dimensions=retui.DimensionsFlag.Relative,
+            dock=Dock.TOP,
+            dimensions=DimensionsFlag.Relative,
         )
     )
 
@@ -22,8 +23,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             app=app,
             height=10,
             width=10,
-            dock=retui.Dock.BOTTOM,
-            dimensions=retui.DimensionsFlag.Relative,
+            dock=Dock.BOTTOM,
+            dimensions=DimensionsFlag.Relative,
         )
     )
 
@@ -32,8 +33,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             app=app,
             height=10,
             width=10,
-            dock=retui.Dock.LEFT,
-            dimensions=retui.DimensionsFlag.Relative,
+            dock=Dock.LEFT,
+            dimensions=DimensionsFlag.Relative,
         )
     )
 
@@ -42,8 +43,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             app=app,
             height=10,
             width=10,
-            dock=retui.Dock.RIGHT,
-            dimensions=retui.DimensionsFlag.Relative,
+            dock=Dock.RIGHT,
+            dimensions=DimensionsFlag.Relative,
         )
     )
 
@@ -53,8 +54,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=12,
         width=31,
-        dock=retui.Dock.FILL,
-        dimensions=retui.DimensionsFlag.Fill,
+        dock=Dock.FILL,
+        dimensions=DimensionsFlag.Fill,
     )
     # dimensions should be ignored for Fill
     pane.title = "Test"
@@ -66,12 +67,12 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             y=0,
             height=4,
             width=20,
-            dock=retui.Dock.FILL,
-            dimensions=retui.DimensionsFlag.Fill,
+            dock=Dock.FILL,
+            dimensions=DimensionsFlag.Fill,
             text="The pane is surrounded by 10% panes and has 'FILL'.\n"
             "So it should be nicely centered\n"
             "Text alignment is Middle Right\n",
-            text_align=retui.TextAlign.MiddleRight,
+            text_align=TextAlign.MiddleRight,
         )
     )
 

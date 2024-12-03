@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from retui import helper
+from retui import json_loader
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
@@ -20,7 +20,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             data = json.load(f)
             for widget in data["widgets"]:
                 print(widget)
-        app = helper.app_from_json(filename, ctx_globals=globals())
+        app = json_loader.app_from_json(filename, ctx_globals=globals())
         app.handle_sigint = handle_sigint
         app.demo_mode(demo_time_s)
         app.run()

@@ -8,29 +8,24 @@ __license__ = "MIT"
 
 import asyncio
 import concurrent.futures
-import ctypes
-import ctypes.wintypes
 import dataclasses
 import logging
-import os
-import selectors
-import shutil
 import signal
 import sys
 import threading
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import deque
-from enum import Enum, Flag, IntEnum, auto
 from typing import Union
 
-from .base import Color, ColorBits, Point, Rectangle, TerminalColor
-from .default_themes import DefaultThemes
-from .defaults import default_value
-from .enums import DimensionsFlag, Dock, TextAlign, WordWrap
-from .input_handling import VirtualKeyCodes
-from .mapping import log_widgets
-from .theme import Selectors
-from .utils import is_windows
+import retui.input_handling
+import retui.terminal
+import retui.terminal.base
+from retui.base import Color, ColorBits, Point, Rectangle, TerminalColor, json_convert
+from retui.default_themes import DefaultThemes
+from retui.defaults import default_value
+from retui.enums import DimensionsFlag, Dock
+from retui.mapping import log_widgets
+from retui.theme import Selectors
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -46,523 +41,10 @@ _log = logging.getLogger(__name__)
 # You can have extra line of console, which won't be fully visible - as w/a just don't use last line
 # If new size is greater, then fill with new lines, so we won't be drawing in the middle of screen
 
-if is_windows():
-    import msvcrt
-else:
-    import fcntl
-    import termios
-
 
 def add_window_logger(level: int = logging.DEBUG) -> logging.StreamHandler:
     # TODO move functionality from debug_print here
     pass
-
-
-class ConsoleBuffer:
-    _cached = None
-
-    def __init__(self, width, height, symbol, debug):
-        self.width = width
-        self.height = height
-        self.symbol = symbol
-        self.debug = debug
-        self.buffer = []
-        if self.debug:
-            # print numbered border
-            line = ""
-            for col in range(width):
-                line += str(col % 10)
-            self.buffer.append(line)
-            middle = symbol * (width - 2)
-            for row in range(1, height - 1):
-                self.buffer.append(str(row % 10) + middle + str(row % 10))
-            self.buffer.append(line)
-        else:
-            line = symbol * width
-            for i in range(height):
-                self.buffer.append(line)
-
-    def same(self, width, height, symbol, debug):
-        return self.width == width and self.height == height and self.symbol == symbol and self.debug == debug
-
-    @staticmethod
-    def get_buffer(width, height, symbol=" ", debug=True):
-        if ConsoleBuffer._cached and ConsoleBuffer._cached.same(width, height, symbol, debug):
-            return ConsoleBuffer._cached.buffer
-
-        ConsoleBuffer._cached = ConsoleBuffer(width, height, symbol, debug)
-        return ConsoleBuffer._cached.buffer
-
-
-def json_convert(key, value):
-    # TODO capitalize?
-    if key == "dock":
-        if isinstance(value, Dock):
-            return value
-        if value is None:
-            value = "None"
-        value = Dock[value]
-    elif key == "dimensions":
-        if isinstance(value, DimensionsFlag):
-            return value
-        if value is None:
-            value = "Absolute"
-        value = DimensionsFlag[value]
-    elif key == "text_align":
-        if isinstance(value, TextAlign):
-            return value
-        if value is None:
-            value = "TopLeft"
-        value = TextAlign[value]
-    elif key == "text_wrap":
-        if isinstance(value, WordWrap):
-            return value
-        if value is None:
-            value = "Wrap"
-        value = WordWrap[value]
-    return value
-
-
-class COORD(ctypes.Structure):
-    _fields_ = [("X", ctypes.wintypes.SHORT), ("Y", ctypes.wintypes.SHORT)]
-
-
-class KEY_EVENT_RECORD_Char(ctypes.Union):
-    _fields_ = [
-        ("UnicodeChar", ctypes.wintypes.WCHAR),
-        ("AsciiChar", ctypes.wintypes.CHAR),
-    ]
-
-
-class KEY_EVENT_RECORD(ctypes.Structure):
-    _fields_ = [
-        ("bKeyDown", ctypes.wintypes.BOOL),
-        ("wRepeatCount", ctypes.wintypes.WORD),
-        ("wVirtualKeyCode", ctypes.wintypes.WORD),
-        ("wVirtualScanCode", ctypes.wintypes.WORD),
-        ("uChar", KEY_EVENT_RECORD_Char),
-        ("dwControlKeyState", ctypes.wintypes.DWORD),
-    ]
-
-
-class MOUSE_EVENT_RECORD(ctypes.Structure):
-    _fields_ = [
-        ("dwMousePosition", COORD),
-        ("dwButtonState", ctypes.wintypes.DWORD),
-        ("dwControlKeyState", ctypes.wintypes.DWORD),
-        ("dwEventFlags", ctypes.wintypes.DWORD),
-    ]
-
-
-class INPUT_RECORD_Event(ctypes.Union):
-    _fields_ = [
-        ("KeyEvent", KEY_EVENT_RECORD),
-        ("MouseEvent", MOUSE_EVENT_RECORD),
-        ("WindowBufferSizeEvent", COORD),
-        ("MenuEvent", ctypes.c_uint),
-        ("FocusEvent", ctypes.c_uint),
-    ]
-
-
-class INPUT_RECORD(ctypes.Structure):
-    _fields_ = [("EventType", ctypes.wintypes.WORD), ("Event", INPUT_RECORD_Event)]
-
-
-class ConsoleEvent(ABC):
-    def __init__(self):
-        pass
-
-
-class SizeChangeEvent(ConsoleEvent):
-    def __init__(self):
-        super().__init__()
-
-
-class MouseEvent(ConsoleEvent):
-    last_mask = 0xFFFFFFFF
-
-    dwButtonState_to_Buttons = [[0, 0], [1, 2], [2, 1]]
-
-    class Buttons(IntEnum):
-        LMB = 0
-        RMB = 2
-        MIDDLE = 1
-        WHEEL_UP = 64
-        WHEEL_DOWN = 65
-
-    class ControlKeys(Flag):
-        LEFT_CTRL = 0x8
-
-    def __init__(self, x, y, button: Buttons, pressed: bool, control_key_state, hover: bool):
-        super().__init__()
-        self.coordinates = (x, y)
-        self.button = button
-        self.pressed = pressed
-        self.hover = hover
-        # based on https://docs.microsoft.com/en-us/windows/console/mouse-event-record-str
-        # but simplified - right ctrl => left ctrl
-        self.control_key_state = control_key_state
-
-    def __str__(self):
-        return (
-            f"MouseEvent x: {self.coordinates[0]} y: {self.coordinates[1]} button: {self.button} "
-            f"pressed: {self.pressed} control_key: {self.control_key_state} hover: {self.hover}"
-        )
-
-    @classmethod
-    def from_windows_event(cls, mouse_event_record: MOUSE_EVENT_RECORD):
-        # on windows position is 0-based, top-left corner
-
-        hover = False
-        # zero indicates mouse button is pressed or released
-        if mouse_event_record.dwEventFlags != 0:
-            if mouse_event_record.dwEventFlags == 0x1:
-                hover = True
-            elif mouse_event_record.dwEventFlags == 0x4:
-                # mouse wheel move, high word of dwButtonState is dir, positive up
-                return cls(
-                    mouse_event_record.dwMousePosition.X,
-                    mouse_event_record.dwMousePosition.Y,
-                    MouseEvent.Buttons(MouseEvent.Buttons.WHEEL_UP + ((mouse_event_record.dwButtonState >> 31) & 0x1)),
-                    True,
-                    None,
-                    False,
-                )
-                # TODO: high word
-            elif mouse_event_record.dwEventFlags == 0x8:
-                # horizontal mouse wheel - NOT SUPPORTED
-                return None
-            elif mouse_event_record.dwEventFlags == 0x2:
-                # double click - TODO: do we need this?
-                return None
-
-        ret_list = []
-
-        # on Windows we get mask of pressed buttons
-        # we can either pass mask around and worry about translating it outside
-        # we will have two different handlers on windows and linux,
-        # so we just translate it into serialized clicks
-        changed_mask = mouse_event_record.dwButtonState ^ MouseEvent.last_mask
-        if hover:
-            changed_mask = mouse_event_record.dwButtonState
-
-        if changed_mask == 0:
-            return None
-
-        MouseEvent.last_mask = mouse_event_record.dwButtonState
-
-        for dwButtonState, button in MouseEvent.dwButtonState_to_Buttons:
-            changed = changed_mask & (0x1 << dwButtonState)
-            if changed:
-                press = mouse_event_record.dwButtonState & (0x1 << dwButtonState) != 0
-
-                event = cls(
-                    mouse_event_record.dwMousePosition.X,
-                    mouse_event_record.dwMousePosition.Y,
-                    MouseEvent.Buttons(button),
-                    press,
-                    None,
-                    hover,
-                )
-                ret_list.append(event)
-
-        if len(ret_list) == 0:
-            return None
-
-        return ret_list
-
-    @classmethod
-    def from_sgr_csi(cls, button_hex: int, x: int, y: int, press: bool):
-        # print(f"0x{button_hex:X}", file=sys.stderr)
-        move_event = button_hex & 0x20
-        if move_event:
-            # OPT1: don't support move
-            # return None
-            # OPT2: support move like normal click
-            button_hex = button_hex & (0xFFFFFFFF - 0x20)
-            # FINAL: TODO: pass it as Move mouse event and let
-            # button = None
-            # 0x23 on simple move.. with M..
-            # 0x20 on move with lmb
-            # 0x22 on move with rmb
-            # 0x21 on move with wheel
-            if button_hex & 0xF == 0x3:
-                return None
-
-        # TODO: wheel_event = button_hex & 0x40
-        ctrl_button = 0x8 if button_hex & 0x10 else 0x0
-
-        # remove ctrl button
-        button_hex = button_hex & (0xFFFFFFFF - 0x10)
-        button = MouseEvent.Buttons(button_hex)
-        # sgr - 1-based
-        if y < 2:
-            return None
-
-        # 1-based - translate to 0-based
-        return cls(x - 1, y - 1, button, press, ctrl_button, False)
-
-
-class KeyEvent(ConsoleEvent):
-    def __init__(
-        self,
-        key_down: bool,
-        repeat_count: int,
-        vk_code: int,
-        vs_code: int,
-        char,
-        wchar,
-        control_key_state,
-    ):
-        super().__init__()
-        self.key_down = key_down
-        self.repeat_count = repeat_count
-        self.vk_code = vk_code
-        self.vs_code = vs_code
-        self.char = char
-        self.wchar = wchar
-        self.control_key_state = control_key_state
-
-    def __str__(self):
-        return (
-            f"KeyEvent: vk_code={self.vk_code} vs_code={self.vs_code} char='{self.char}' wchar='{self.wchar}' "
-            f"repeat={self.repeat_count} ctrl=0x{self.control_key_state:X} key_down={self.key_down} "
-        )
-
-
-class Event(Enum):
-    MouseClick = auto()
-
-
-class InputInterpreter:
-    # linux
-    # lmb 0, rmb 2, middle 1, wheel up 64 + 0, wheel down 64 + 1
-
-    class State(Enum):
-        Default = 0
-        Escape = 1
-        CSI_Bytes = 2
-
-    # this class should
-    # receive data
-    # and parse it accordingly
-    # if it is ESC then start parsing it as ansi escape code
-    # and emit event once we parse whole sequence
-    # otherwise pass it to... input handler?
-
-    # better yet:
-    # this class should provide read method, and wrap the input provided
-
-    def __init__(self, readable_input):
-        self.input = readable_input
-        self.state = self.State.Default
-        self.input_raw = []
-        self.ansi_escape_sequence = []
-        self.payload = deque()
-        self.last_button_state = [0, 0, 0]
-        self.selector = selectors.DefaultSelector()
-        self.selector.register(self.input, selectors.EVENT_READ)
-        self.selector_timeout_s = 1.0
-        self.read_count = 64
-
-    # 9 Normal \x1B[ CbCxCy M , value + 32 -> ! is 1 - max 223 (255 - 32)
-    # 1006 SGR  \x1B[<Pb;Px;Py[Mm] M - press m - release
-    # 1015 URXVT \x1B[Pb;Px;Py M - not recommended, can be mistaken for DL
-    # 1016 SGR-Pixel x,y are pixels instead of cells
-    # https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-
-    def parse(self):
-        # ConsoleView.log(f'parse: {self.ansi_escape_sequence}')
-        # should append to self.event_list
-        length = len(self.ansi_escape_sequence)
-
-        if length < 3:
-            # minimal sequence is ESC [ (byte in range 0x40-0x7e)
-            self.payload.append(str(self.ansi_escape_sequence))
-            return
-
-        # we can safely skip first 2 bytes
-        if self.ansi_escape_sequence[2] == "<":
-            # for mouse last byte will be m or M character
-            if self.ansi_escape_sequence[-1] not in ("m", "M"):
-                self.payload.append(str(self.ansi_escape_sequence))
-                return
-            # SGR
-            idx = 0
-            values = [0, 0, 0]
-            temp_word = ""
-            press = False
-            for i in range(3, length + 1):
-                ch = self.ansi_escape_sequence[i]
-                if idx < 2:
-                    if ch == ";":
-                        values[idx] = int(temp_word, 10)
-                        idx += 1
-                        temp_word = ""
-                        continue
-                elif ch in ("m", "M"):
-                    values[idx] = int(temp_word, 10)
-                    if ch == "M":
-                        press = True
-                    break
-                temp_word += ch
-            # msft
-            # lmb 0x1 rmb 0x2, lmb2 0x4 lmb3 0x8 lmb4 0x10
-            # linux
-            # lmb 0, rmb 2, middle 1, wheel up 64 + 0, wheel down 64 + 1
-            # move 32 + key
-            # shift   4
-            # meta    8
-            # control 16
-            # print(f"0X{values[0]:X} 0X{values[1]:X} 0x{values[2]:X}, press={press}", file=sys.stderr)
-            mouse_event = MouseEvent.from_sgr_csi(values[0], values[1], values[2], press)
-            if mouse_event:
-                self.payload.append(mouse_event)
-            return
-
-        # normal - TODO
-        # self.payload.extend(str(self.ansi_escape_sequence))
-        len_aes = len(self.ansi_escape_sequence)
-        if len_aes == 3:
-            third_char = ord(self.ansi_escape_sequence[2])
-            vk_code = 0
-            char = b"\x00"
-            wchar = ""
-            if third_char == 65:
-                # A - Cursor Up
-                vk_code = VirtualKeyCodes.VK_UP
-            elif third_char == 66:
-                # B - Cursor Down
-                vk_code = VirtualKeyCodes.VK_DOWN
-            elif third_char == 67:
-                # C - Cursor Right
-                vk_code = VirtualKeyCodes.VK_RIGHT
-            elif third_char == 68:
-                # D - Cursor Left
-                vk_code = VirtualKeyCodes.VK_LEFT
-            else:
-                self.payload.append(str(self.input_raw))
-                return
-            self.payload.append(
-                KeyEvent(
-                    key_down=True,
-                    repeat_count=1,
-                    vk_code=vk_code,
-                    vs_code=vk_code,
-                    char=char,
-                    wchar=wchar,
-                    control_key_state=0,
-                )
-            )
-        elif len_aes == 4:
-            # 1 ~ Home
-            # 2 ~ Insert
-            # 3 ~ Delete
-            # 4 ~ End
-            # 5 ~ PageUp
-            # 6 ~ PageDown
-            pass
-        elif len_aes == 5:
-            # 1 1 ~ F1
-            # ....
-            # 1 5 ~ F5
-            # 1 7 ~ F6
-            # 1 8 ~ F7
-            # 1 9 ~ F8
-            # 2 0 ~ F9
-            # 2 1 ~ F10
-            # 2 3 ~ F11
-            # 2 3 ~ F12
-            pass
-
-        self.payload.append(str(self.input_raw))
-        return
-
-    def parse_keyboard(self):
-        if len(self.input_raw) > 1:
-            # skip for now
-            self.payload.append(str(self.input_raw))
-            return
-        wchar = self.input_raw[0]
-        if wchar.isprintable() is False:
-            # skip for now
-            self.payload.append(str(self.input_raw))
-            return
-        # https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-        # key a is for both upper and lower case
-        # vk_code = wchar.lower()
-        self.payload.append(
-            KeyEvent(
-                key_down=True,
-                repeat_count=1,
-                vk_code=VirtualKeyCodes.from_ascii(ord(wchar)),
-                vs_code=ord(wchar),
-                char=wchar.encode(),
-                wchar=wchar,
-                control_key_state=0,
-            )
-        )
-        return
-
-    def read(self, count: int = 1):
-        # ESC [ followed by any number in range 0x30-0x3f, then any between 0x20-0x2f, and final byte 0x40-0x7e
-        # TODO: this should be limited so if one pastes long, long text this wont create arbitrary size buffer
-        ready = self.selector.select(self.selector_timeout_s)
-        if not ready:
-            return None
-
-        ch = self.input.read(self.read_count)
-        while ch is not None and len(ch) > 0:
-            self.input_raw.extend(ch)
-            ch = self.input.read(self.read_count)
-
-        if len(self.input_raw) > 0:
-            for i in range(0, len(self.input_raw)):
-                ch = self.input_raw[i]
-                if self.state != self.State.Default:
-                    ord_ch = ord(ch)
-                    if 0x20 <= ord_ch <= 0x7F:
-                        if self.state == self.State.Escape:
-                            if ch == "[":
-                                self.ansi_escape_sequence.append(ch)
-                                self.state = self.State.CSI_Bytes
-                                continue
-                        elif self.state == self.State.CSI_Bytes:
-                            if 0x30 <= ord_ch <= 0x3F:
-                                self.ansi_escape_sequence.append(ch)
-                                continue
-                            elif 0x40 <= ord_ch <= 0x7E:
-                                # implicit IntermediateBytes
-                                self.ansi_escape_sequence.append(ch)
-                                self.parse()
-                                self.state = self.State.Default
-                                continue
-                    # parse what we had collected so far, since we failed check above
-                    self.parse()
-                    self.state = self.State.Default
-                    # intentionally fall through to regular parse
-                # check if escape code
-                if ch == "\x1B":
-                    self.ansi_escape_sequence.clear()
-                    self.ansi_escape_sequence.append(ch)
-                    self.state = self.State.Escape
-                    continue
-
-                # pass input to handler
-                # here goes key, but what about ctrl, shift etc.? these are regular AsciiChar equivalents
-                # no key up, only key down, is there \x sequence to enable extended? should be imho
-                self.parse_keyboard()
-                pass
-            # DEBUG - don't do "".join, as the sequences are not printable
-            # self.payload.append(str(self.input_raw))
-            self.input_raw.clear()
-
-            if len(self.payload) > 0:
-                payload = self.payload
-                self.payload = deque()
-                return payload
-
-        return None
 
 
 class TerminalWidget(ABC):
@@ -735,146 +217,14 @@ class TerminalWidget(ABC):
         )
 
 
-class Terminal:
-    @abstractmethod
-    def get_brush(self):
-        pass
-
-    def __init__(self, app, debug=True):
-        # TODO: this would print without vt enabled yet update state if vt enabled in brush?
-        self.app = app
-        self.columns, self.rows = self.get_size()
-        self.vt_supported = False
-        self.debug = debug
-        pass
-
-    def update_size(self):
-        # TODO CLEANUP HERE
-        self.columns, self.rows = self.get_size()
-        return self.columns, self.rows
-
-    @staticmethod
-    def get_size():
-        columns, rows = shutil.get_terminal_size(fallback=(0, 0))
-        # You can't use all lines, as it would move terminal 1 line down
-        rows -= 1
-        # OPEN: argparse does -2 for width
-        # self.debug_print(f'{columns}x{rows}')
-        return columns, rows
-
-    def set_color_mode(self, enable: bool) -> bool:
-        # TODO: careful with overriding
-        self.vt_supported = enable
-        return enable
-
-    @abstractmethod
-    def interactive_mode(self):
-        pass
-
-    @abstractmethod
-    def read_events(self, callback, callback_ctx) -> bool:
-        pass
-
-    def set_title(self, title):
-        if self.vt_supported:
-            print(f"\033]2;{title}\007")
-
-
-class LinuxTerminal(Terminal):
-    def get_brush(self):
-        return Brush(self.vt_supported)
-
-    def __init__(self, app):
-        super().__init__(app)
-        self.is_interactive_mode = False
-        self.window_changed = False
-        self.prev_fl = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
-        new_fl = self.prev_fl | os.O_NONBLOCK
-        fcntl.fcntl(sys.stdin, fcntl.F_SETFL, new_fl)
-        _log.debug(f"stdin fl: 0x{self.prev_fl:X} -> 0x{new_fl:X}")
-        self.prev_tc = termios.tcgetattr(sys.stdin)
-        new_tc = termios.tcgetattr(sys.stdin)
-        # manipulating lflag
-        new_tc[3] = new_tc[3] & ~termios.ECHO  # disable input echo
-        new_tc[3] = new_tc[3] & ~termios.ICANON  # disable canonical mode - input available immediately
-        # cc
-        # VMIN | VTIME | Result
-        # =0   | =0    | non-blocking read
-        # =0   | >0    | timed read
-        # >0   | >0    | timer started on 1st char read
-        # >0   | =0    | counted read
-        new_tc[6][termios.VMIN] = 0
-        new_tc[6][termios.VTIME] = 0
-        termios.tcsetattr(sys.stdin, termios.TCSANOW, new_tc)  # TCSADRAIN?
-        _log.debug(f"stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}")
-        _log.debug(f"stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}")
-        _log.debug(f"stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}")
-
-        self.input_interpreter = InputInterpreter(sys.stdin)
-
-    def __del__(self):
-        # restore stdin
-        if self.is_interactive_mode:
-            print("\x1B[?10001")
-
-        termios.tcsetattr(sys.stdin, termios.TCSANOW, self.prev_tc)
-        fcntl.fcntl(sys.stdin, fcntl.F_SETFL, self.prev_fl)
-        print("xRestore console done")
-        if self.is_interactive_mode:
-            print("\x1B[?1006l\x1B[?1015l\x1B[?1003l")
-        # where show cursor?
-
-    window_change_event_ctx = None
-
-    @staticmethod
-    def window_change_handler(signum, frame):
-        LinuxTerminal.window_change_event_ctx.window_change_event()
-
-    def window_change_event(self):
-        # inject special input on stdin?
-        self.window_changed = True
-
-    def interactive_mode(self):
-        self.is_interactive_mode = True
-        LinuxTerminal.window_change_event_ctx = self
-        signal.signal(signal.SIGWINCH, LinuxTerminal.window_change_handler)
-        # ctrl-z not allowed
-        signal.signal(signal.SIGTSTP, signal.SIG_IGN)
-        # enable mouse - xterm, sgr1006
-        print("\x1B[?1003h\x1B[?1006h")
-        # focus event
-        # CSI I on focus
-        # CSI O on loss
-        print("\x1B[?1004h")
-
-    def read_events(self, callback, callback_ctx) -> bool:
-        events_list = []
-
-        if self.window_changed:
-            self.window_changed = False
-            events_list.append(SizeChangeEvent())
-        else:
-            ret = self.input_interpreter.read()
-            if ret:
-                # passing around deque..
-                events_list.append(ret)
-
-        if len(events_list):
-            callback(callback_ctx, events_list)
-        return True
-
-
 class App:
     def __init__(self, title=None, debug: bool = False):
         self.title = title
         self.identifier = "App"
 
-        if is_windows():
-            self.terminal = WindowsTerminal(self)
-        else:
-            self.terminal = LinuxTerminal(self)
+        self.terminal = retui.terminal.get_terminal(self)
         self.widgets = []
-        self.brush = self.terminal.get_brush()
+        self.brush = Brush(self.terminal.vt_supported)
         self.debug_colors = TerminalColor()
         self.running = False
 
@@ -956,7 +306,9 @@ class App:
         self.dimensions.width, self.dimensions.height = self.terminal.update_size()
         if reuse:
             self.brush.move_cursor(0, 0)
-        for line in ConsoleBuffer.get_buffer(self.terminal.columns, self.terminal.rows, " ", debug=False):
+        for line in retui.terminal.TerminalBuffer.get_buffer(
+            self.terminal.columns, self.terminal.rows, " ", debug=False
+        ):
             print(line, end="\n", flush=True)  # TODO: Would it be ok to just flush after for?
         self._update_size = True
 
@@ -974,7 +326,7 @@ class App:
                 return widget
         return None
 
-    def handle_click(self, event: MouseEvent):
+    def handle_click(self, event: retui.input_handling.MouseEvent):
         # naive cache - based on clicked point
         # pro - we can create heat map
         # cons - it would be better with rectangle
@@ -1000,7 +352,7 @@ class App:
                 self.handle_events(event)
             elif isinstance(event, list):
                 self.handle_events(event)
-            elif isinstance(event, MouseEvent):
+            elif isinstance(event, retui.input_handling.MouseEvent):
                 # we could use mask here, but then we will handle holding right button and
                 # pressing/releasing left button and other combinations, and frankly I don't want to
                 # if (event.button_state & 0x1) == 0x1 and event.event_flags == 0:
@@ -1019,10 +371,10 @@ class App:
                     )
 
                 self.debug_print(event, row_off=-4)
-            elif isinstance(event, SizeChangeEvent):
+            elif isinstance(event, retui.terminal.base.SizeChangeEvent):
                 self.clear()
                 self.debug_print(f"size: {self.terminal.columns:3}x{self.terminal.rows:3}", row_off=-2)
-            elif isinstance(event, KeyEvent):
+            elif isinstance(event, retui.input_handling.KeyEvent):
                 self.debug_print(event, row_off=-3)
             else:
                 self.brush.move_cursor(row=(self.terminal.rows + off), column=col)
@@ -1088,8 +440,7 @@ class App:
             self.demo_event = threading.Event()
             self.demo_thread = threading.Thread(target=App.demo_run, args=(self,))
             self.demo_thread.start()
-            if isinstance(self.terminal, WindowsTerminal):
-                self.terminal.blocking_input(False)
+            self.terminal.demo_mode()
 
         self.running = True
 
@@ -1098,7 +449,7 @@ class App:
         self.terminal.interactive_mode()
 
         self.brush.cursor_hide()
-        self.handle_events([SizeChangeEvent()])
+        self.handle_events([retui.terminal.base.SizeChangeEvent()])
 
         self.register_tasks()
 
@@ -1111,6 +462,7 @@ class App:
         # Move to the end, so we won't end up writing in middle of screen
         self.brush.move_cursor(self.terminal.rows - 1)
         self.brush.cursor_show()
+        self.brush.print(end="\n")
         return 0
 
     async def main_loop(self):
@@ -1161,165 +513,6 @@ class App:
         widget.parent = self
         self.widgets.insert(idx, widget)
         return True
-
-
-class WindowsTerminal(Terminal):
-    def get_brush(self):
-        return Brush(self.vt_supported)
-
-    def __init__(self, app):
-        super().__init__(app)
-        self.kernel32 = ctypes.WinDLL("kernel32.dll", use_last_error=True)
-        set_console_mode_proto = ctypes.WINFUNCTYPE(ctypes.wintypes.BOOL, ctypes.wintypes.HANDLE, ctypes.wintypes.DWORD)
-        set_console_mode_params = (1, "hConsoleHandle", 0), (1, "dwMode", 0)
-        self.setConsoleMode = set_console_mode_proto(("SetConsoleMode", self.kernel32), set_console_mode_params)
-
-        get_console_mode_proto = ctypes.WINFUNCTYPE(
-            ctypes.wintypes.BOOL, ctypes.wintypes.HANDLE, ctypes.wintypes.LPDWORD
-        )
-        get_console_mode_params = (1, "hConsoleHandle", 0), (1, "lpMode", 0)
-        self.getConsoleMode = get_console_mode_proto(("GetConsoleMode", self.kernel32), get_console_mode_params)
-        self.consoleHandleOut = msvcrt.get_osfhandle(sys.stdout.fileno())
-        self.consoleHandleIn = msvcrt.get_osfhandle(sys.stdin.fileno())
-
-        read_console_input_proto = ctypes.WINFUNCTYPE(
-            ctypes.wintypes.BOOL,
-            ctypes.wintypes.HANDLE,
-            ctypes.wintypes.LPVOID,  # PINPUT_RECORD
-            ctypes.wintypes.DWORD,
-            ctypes.wintypes.LPDWORD,
-        )
-        read_console_input_params = (
-            (1, "hConsoleInput", 0),
-            (1, "lpBuffer", 0),
-            (1, "nLength", 0),
-            (1, "lpNumberOfEventsRead", 0),
-        )
-        self.readConsoleInput = read_console_input_proto(
-            ("ReadConsoleInputW", self.kernel32), read_console_input_params
-        )
-
-        get_number_of_console_input_events_proto = ctypes.WINFUNCTYPE(
-            ctypes.wintypes.BOOL, ctypes.wintypes.HANDLE, ctypes.wintypes.LPDWORD
-        )
-        get_number_of_console_input_events_params = (1, "hConsoleInput", 0), (
-            1,
-            "lpcNumberOfEvents",
-            0,
-        )
-        self.getNumberOfConsoleInputEvents = get_number_of_console_input_events_proto(
-            ("GetNumberOfConsoleInputEvents", self.kernel32),
-            get_number_of_console_input_events_params,
-        )
-        self.blocking = True
-
-    KEY_EVENT = 0x1
-    MOUSE_EVENT = 0x2
-    WINDOW_BUFFER_SIZE_EVENT = 0x4
-
-    def interactive_mode(self):
-        self.SetWindowChangeSizeEvents(True)
-        self.SetMouseInput(True)
-
-    def blocking_input(self, blocking: bool):
-        self.blocking = blocking
-
-    def read_console_input(self):
-        record = INPUT_RECORD()
-        number_of_events = ctypes.wintypes.DWORD(0)
-        if self.blocking is False:
-            ret_val = self.getNumberOfConsoleInputEvents(self.consoleHandleIn, ctypes.byref(number_of_events))
-            if number_of_events.value == 0:
-                return None
-
-        ret_val = self.readConsoleInput(
-            self.consoleHandleIn,
-            ctypes.byref(record),
-            1,
-            ctypes.byref(number_of_events),
-        )
-        if ret_val == 0:
-            return None
-        return record
-
-    def read_events(self, callback, callback_ctx) -> bool:
-        events_list = []
-        # TODO: N events
-        record = self.read_console_input()
-        if record is None:
-            pass
-        elif record.EventType == self.WINDOW_BUFFER_SIZE_EVENT:
-            events_list.append(SizeChangeEvent())
-        elif record.EventType == self.MOUSE_EVENT:
-            event = MouseEvent.from_windows_event(record.Event.MouseEvent)
-            if event:
-                events_list.append(event)
-        elif record.EventType == self.KEY_EVENT:
-            events_list.append(
-                KeyEvent(
-                    key_down=bool(record.Event.KeyEvent.bKeyDown),
-                    repeat_count=record.Event.KeyEvent.wRepeatCount,
-                    vk_code=record.Event.KeyEvent.wVirtualKeyCode,
-                    vs_code=record.Event.KeyEvent.wVirtualScanCode,
-                    char=record.Event.KeyEvent.uChar.AsciiChar,
-                    wchar=record.Event.KeyEvent.uChar.UnicodeChar,
-                    control_key_state=record.Event.KeyEvent.dwControlKeyState,
-                )
-            )
-        else:
-            pass
-
-        if len(events_list):
-            callback(callback_ctx, events_list)
-        return True
-
-    def GetConsoleMode(self, handle) -> int:
-        dwMode = ctypes.wintypes.DWORD(0)
-        # lpMode = ctypes.wintypes.LPDWORD(dwMode)
-        # don't create pointer if not going to use it in python, use byref
-        self.getConsoleMode(handle, ctypes.byref(dwMode))
-
-        # print(f' dwMode: {hex(dwMode.value)}')
-        return dwMode.value
-
-    def SetConsoleMode(self, handle, mode: int):
-        dwMode = ctypes.wintypes.DWORD(mode)
-        self.setConsoleMode(handle, dwMode)
-        return
-
-    def SetMode(self, handle, mask: int, enable: bool) -> bool:
-        console_mode = self.GetConsoleMode(handle)
-        other_bits = mask ^ 0xFFFFFFFF
-        expected_value = mask if enable else 0
-        if (console_mode & mask) == expected_value:
-            return True
-
-        console_mode = (console_mode & other_bits) | expected_value
-        self.SetConsoleMode(handle, console_mode)
-        console_mode = self.GetConsoleMode(handle)
-        return (console_mode & mask) == expected_value
-
-    def SetVirtualTerminalProcessing(self, enable: bool) -> bool:
-        ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4
-        return self.SetMode(self.consoleHandleOut, ENABLE_VIRTUAL_TERMINAL_PROCESSING, enable)
-
-    def set_color_mode(self, enable: bool) -> bool:
-        success = self.SetVirtualTerminalProcessing(enable)
-        return super().set_color_mode(enable & success)
-
-    def SetWindowChangeSizeEvents(self, enable: bool) -> bool:
-        ENABLE_WINDOW_INPUT = 0x8
-        return self.SetMode(self.consoleHandleIn, ENABLE_WINDOW_INPUT, enable)
-
-    def SetQuickEditMode(self, enable: bool) -> bool:
-        ENABLE_QUICK_EDIT_MODE = 0x40
-        return self.SetMode(self.consoleHandleIn, ENABLE_QUICK_EDIT_MODE, enable)
-
-    def SetMouseInput(self, enable: bool) -> bool:
-        # Quick Edit Mode blocks mouse events
-        self.SetQuickEditMode(False)
-        ENABLE_MOUSE_INPUT = 0x10
-        return self.SetMode(self.consoleHandleIn, ENABLE_MOUSE_INPUT, enable)
 
 
 class Theme:
@@ -1380,12 +573,11 @@ class Theme:
 
     @classmethod
     def default_theme(cls):
-        return cls(border=_default_theme)
+        return cls(border=_DEFAULT_THEME_BORDER)
 
 
-_default_theme = Theme.border_from_str(DefaultThemes.get_default_theme_border_str())
-
-APP_THEME = Theme.default_theme()
+_DEFAULT_THEME_BORDER = Theme.border_from_str(DefaultThemes.get_default_theme_border_str())
+_APP_THEME = Theme.default_theme()
 
 
 class Brush:
@@ -1449,29 +641,36 @@ class Brush:
         self.console_color.reset()
         return self.RESET
 
-    def move_up(self, cells: int = 1):
+    @staticmethod
+    def str_up(cells: int = 1):
         return f"\x1B[{cells}A"
 
-    def move_down(self, cells: int = 1):
+    @staticmethod
+    def str_down(cells: int = 1):
         return f"\x1B[{cells}B"
 
-    def move_right(self, cells: int = 1) -> str:
-        if cells != 0:
+    @staticmethod
+    def str_right(cells: int = 1) -> str:
+        if cells > 0:
             return f"\x1B[{cells}C"
         return ""
 
-    def move_left(self, cells: int = 1) -> str:
-        if cells != 0:
+    @staticmethod
+    def str_left(cells: int = 1) -> str:
+        if cells > 0:
             return f"\x1B[{cells}D"
         return ""
 
-    def move_line_down(self, lines: int = 1):
+    @staticmethod
+    def str_line_down(lines: int = 1):
         return f"\x1B[{lines}E"  # not ANSI.SYS
 
-    def move_line_up(self, lines: int = 1):
+    @staticmethod
+    def str_line_up(lines: int = 1):
         return f"\x1B[{lines}F"  # not ANSI.SYS
 
-    def move_column_absolute(self, column: int = 1):
+    @staticmethod
+    def str_column_absolute(column: int = 1):
         return f"\x1B[{column}G"  # not ANSI.SYS
 
     def move_cursor(self, row: int = 0, column: int = 0):
@@ -1482,15 +681,13 @@ class Brush:
         # 0-based to 1-based
         print(f"\x1B[{row + 1};{column + 1}f", end="", file=self.file)
 
-    @staticmethod
-    def cursor_hide():
-        print("\x1b[?25l")
-        # alternative on windows without vt:
+    def cursor_hide(self):
+        print("\x1b[?25l", end="", file=self.file)
+        # alternative on windows without vt - call to SetConsoleCursorInfo:
         # https://docs.microsoft.com/en-us/windows/console/setconsolecursorinfo?redirectedfrom=MSDN
 
-    @staticmethod
-    def cursor_show():
-        print("\x1b[?25h")
+    def cursor_show(self):
+        print("\x1b[?25h", end="", file=self.file)
 
 
 class Test:

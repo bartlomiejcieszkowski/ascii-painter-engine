@@ -1,6 +1,9 @@
+from abc import ABC
 from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import List, Tuple, Union
+
+import retui.enums
 
 
 class ColorBits(IntEnum):
@@ -101,3 +104,37 @@ class Rectangle:
 
     def negative(self):
         return self.x < 0 or self.y < 0 or self.width < 0 or self.height < 0
+
+
+class TerminalEvent(ABC):
+    def __init__(self):
+        pass
+
+
+def json_convert(key, value):
+    # TODO capitalize?
+    if key == "dock":
+        if isinstance(value, retui.enums.Dock):
+            return value
+        if value is None:
+            value = "None"
+        value = retui.enums.Dock[value]
+    elif key == "dimensions":
+        if isinstance(value, retui.enums.DimensionsFlag):
+            return value
+        if value is None:
+            value = "Absolute"
+        value = retui.enums.DimensionsFlag[value]
+    elif key == "text_align":
+        if isinstance(value, retui.enums.TextAlign):
+            return value
+        if value is None:
+            value = "TopLeft"
+        value = retui.enums.TextAlign[value]
+    elif key == "text_wrap":
+        if isinstance(value, retui.enums.WordWrap):
+            return value
+        if value is None:
+            value = "Wrap"
+        value = retui.enums.WordWrap[value]
+    return value

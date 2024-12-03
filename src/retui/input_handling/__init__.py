@@ -1,229 +1,390 @@
-from enum import IntEnum
+import selectors
+from collections import deque
+from enum import Enum, Flag, IntEnum
+
+from retui.base import TerminalEvent
+from retui.input_handling.enums import VirtualKeyCodes
+from retui.input_handling.windows import MOUSE_EVENT_RECORD
 
 
-class VirtualKeyCodes(IntEnum):
-    # from https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-    VK_LBUTTON = 0x01  # Left mouse button
-    VK_RBUTTON = 0x02  # Right mouse button
-    VK_CANCEL = 0x03  # Control-break processing
-    VK_MBUTTON = 0x04  # Middle mouse button (three-button mouse)
-    VK_XBUTTON1 = 0x05  # X1 mouse button
-    VK_XBUTTON2 = 0x06  # X2 mouse button
-    # - = 0x07 # Undefined
-    VK_BACK = 0x08  # BACKSPACE key
-    VK_TAB = 0x09  # TAB key
-    # - # 0x0A-0B # Reserved
-    VK_CLEAR = 0x0C  # CLEAR key
-    VK_RETURN = 0x0D  # ENTER key
-    # - # 0x0E-0F # Undefined
-    VK_SHIFT = 0x10  # SHIFT key
-    VK_CONTROL = 0x11  # CTRL key
-    VK_MENU = 0x12  # ALT key
-    VK_PAUSE = 0x13  # PAUSE key
-    VK_CAPITAL = 0x14  # CAPS LOCK key
-    VK_KANA = 0x15  # IME Kana mode
-    VK_HANGUEL = 0x15  # IME Hanguel mode (maintained for compatibility; use VK_HANGUL)
-    VK_HANGUL = 0x15  # IME Hangul mode
-    VK_IME_ON = 0x16  # IME On
-    VK_JUNJA = 0x17  # IME Junja mode
-    VK_FINAL = 0x18  # IME final mode
-    VK_HANJA = 0x19  # IME Hanja mode
-    VK_KANJI = 0x19  # IME Kanji mode
-    VK_IME_OFF = 0x1A  # IME Off
-    VK_ESCAPE = 0x1B  # ESC key
-    VK_CONVERT = 0x1C  # IME convert
-    VK_NONCONVERT = 0x1D  # IME nonconvert
-    VK_ACCEPT = 0x1E  # IME accept
-    VK_MODECHANGE = 0x1F  # IME mode change request
-    VK_SPACE = 0x20  # SPACEBAR
-    VK_PRIOR = 0x21  # PAGE UP key
-    VK_NEXT = 0x22  # PAGE DOWN key
-    VK_END = 0x23  # END key
-    VK_HOME = 0x24  # HOME key
-    VK_LEFT = 0x25  # LEFT ARROW key
-    VK_UP = 0x26  # UP ARROW key
-    VK_RIGHT = 0x27  # RIGHT ARROW key
-    VK_DOWN = 0x28  # DOWN ARROW key
-    VK_SELECT = 0x29  # SELECT key
-    VK_PRINT = 0x2A  # PRINT key
-    VK_EXECUTE = 0x2B  # EXECUTE key
-    VK_SNAPSHOT = 0x2C  # PRINT SCREEN key
-    VK_INSERT = 0x2D  # INS key
-    VK_DELETE = 0x2E  # DEL key
-    VK_HELP = 0x2F  # HELP key
-    VK_KEY_0 = 0x30  # 0 key
-    VK_KEY_1 = 0x31  # 1 key
-    VK_KEY_2 = 0x32  # 2 key
-    VK_KEY_3 = 0x33  # 3 key
-    VK_KEY_4 = 0x34  # 4 key
-    VK_KEY_5 = 0x35  # 5 key
-    VK_KEY_6 = 0x36  # 6 key
-    VK_KEY_7 = 0x37  # 7 key
-    VK_KEY_8 = 0x38  # 8 key
-    VK_KEY_9 = 0x39  # 9 key
-    # - # 0x3A-40 # Undefined
-    VK_KEY_A = 0x41  # A key
-    VK_KEY_B = 0x42  # B key
-    VK_KEY_C = 0x43  # C key
-    VK_KEY_D = 0x44  # D key
-    VK_KEY_E = 0x45  # E key
-    VK_KEY_F = 0x46  # F key
-    VK_KEY_G = 0x47  # G key
-    VK_KEY_H = 0x48  # H key
-    VK_KEY_I = 0x49  # I key
-    VK_KEY_J = 0x4A  # J key
-    VK_KEY_K = 0x4B  # K key
-    VK_KEY_L = 0x4C  # L key
-    VK_KEY_M = 0x4D  # M key
-    VK_KEY_N = 0x4E  # N key
-    VK_KEY_O = 0x4F  # O key
-    VK_KEY_P = 0x50  # P key
-    VK_KEY_Q = 0x51  # Q key
-    VK_KEY_R = 0x52  # R key
-    VK_KEY_S = 0x53  # S key
-    VK_KEY_T = 0x54  # T key
-    VK_KEY_U = 0x55  # U key
-    VK_KEY_V = 0x56  # V key
-    VK_KEY_W = 0x57  # W key
-    VK_KEY_X = 0x58  # X key
-    VK_KEY_Y = 0x59  # Y key
-    VK_KEY_Z = 0x5A  # Z key
-    VK_LWIN = 0x5B  # Left Windows key (Natural keyboard)
-    VK_RWIN = 0x5C  # Right Windows key (Natural keyboard)
-    VK_APPS = 0x5D  # Applications key (Natural keyboard)
-    # - = 0x5E # Reserved
-    VK_SLEEP = 0x5F  # Computer Sleep key
-    VK_NUMPAD0 = 0x60  # Numeric keypad 0 key
-    VK_NUMPAD1 = 0x61  # Numeric keypad 1 key
-    VK_NUMPAD2 = 0x62  # Numeric keypad 2 key
-    VK_NUMPAD3 = 0x63  # Numeric keypad 3 key
-    VK_NUMPAD4 = 0x64  # Numeric keypad 4 key
-    VK_NUMPAD5 = 0x65  # Numeric keypad 5 key
-    VK_NUMPAD6 = 0x66  # Numeric keypad 6 key
-    VK_NUMPAD7 = 0x67  # Numeric keypad 7 key
-    VK_NUMPAD8 = 0x68  # Numeric keypad 8 key
-    VK_NUMPAD9 = 0x69  # Numeric keypad 9 key
-    VK_MULTIPLY = 0x6A  # Multiply key
-    VK_ADD = 0x6B  # Add key
-    VK_SEPARATOR = 0x6C  # Separator key
-    VK_SUBTRACT = 0x6D  # Subtract key
-    VK_DECIMAL = 0x6E  # Decimal key
-    VK_DIVIDE = 0x6F  # Divide key
-    VK_F1 = 0x70  # F1 key
-    VK_F2 = 0x71  # F2 key
-    VK_F3 = 0x72  # F3 key
-    VK_F4 = 0x73  # F4 key
-    VK_F5 = 0x74  # F5 key
-    VK_F6 = 0x75  # F6 key
-    VK_F7 = 0x76  # F7 key
-    VK_F8 = 0x77  # F8 key
-    VK_F9 = 0x78  # F9 key
-    VK_F10 = 0x79  # F10 key
-    VK_F11 = 0x7A  # F11 key
-    VK_F12 = 0x7B  # F12 key
-    VK_F13 = 0x7C  # F13 key
-    VK_F14 = 0x7D  # F14 key
-    VK_F15 = 0x7E  # F15 key
-    VK_F16 = 0x7F  # F16 key
-    VK_F17 = 0x80  # F17 key
-    VK_F18 = 0x81  # F18 key
-    VK_F19 = 0x82  # F19 key
-    VK_F20 = 0x83  # F20 key
-    VK_F21 = 0x84  # F21 key
-    VK_F22 = 0x85  # F22 key
-    VK_F23 = 0x86  # F23 key
-    VK_F24 = 0x87  # F24 key
-    # - # 0x88-8F # Unassigned
-    VK_NUMLOCK = 0x90  # NUM LOCK key
-    VK_SCROLL = 0x91  # SCROLL LOCK key
-    # 0x92-96 # OEM specific
-    # - # 0x97-9F # Unassigned
-    VK_LSHIFT = 0xA0  # Left SHIFT key
-    VK_RSHIFT = 0xA1  # Right SHIFT key
-    VK_LCONTROL = 0xA2  # Left CONTROL key
-    VK_RCONTROL = 0xA3  # Right CONTROL key
-    VK_LMENU = 0xA4  # Left ALT key
-    VK_RMENU = 0xA5  # Right ALT key
-    VK_BROWSER_BACK = 0xA6  # Browser Back key
-    VK_BROWSER_FORWARD = 0xA7  # Browser Forward key
-    VK_BROWSER_REFRESH = 0xA8  # Browser Refresh key
-    VK_BROWSER_STOP = 0xA9  # Browser Stop key
-    VK_BROWSER_SEARCH = 0xAA  # Browser Search key
-    VK_BROWSER_FAVORITES = 0xAB  # Browser Favorites key
-    VK_BROWSER_HOME = 0xAC  # Browser Start and Home key
-    VK_VOLUME_MUTE = 0xAD  # Volume Mute key
-    VK_VOLUME_DOWN = 0xAE  # Volume Down key
-    VK_VOLUME_UP = 0xAF  # Volume Up key
-    VK_MEDIA_NEXT_TRACK = 0xB0  # Next Track key
-    VK_MEDIA_PREV_TRACK = 0xB1  # Previous Track key
-    VK_MEDIA_STOP = 0xB2  # Stop Media key
-    VK_MEDIA_PLAY_PAUSE = 0xB3  # Play/Pause Media key
-    VK_LAUNCH_MAIL = 0xB4  # Start Mail key
-    VK_LAUNCH_MEDIA_SELECT = 0xB5  # Select Media key
-    VK_LAUNCH_APP1 = 0xB6  # Start Application 1 key
-    VK_LAUNCH_APP2 = 0xB7  # Start Application 2 key
-    # - # 0xB8-B9 # Reserved
-    VK_OEM_1 = (
-        0xBA  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ';:' key
-    )
-    VK_OEM_PLUS = 0xBB  # For any country/region, the '+' key
-    VK_OEM_COMMA = 0xBC  # For any country/region, the ',' key
-    VK_OEM_MINUS = 0xBD  # For any country/region, the '-' key
-    VK_OEM_PERIOD = 0xBE  # For any country/region, the '.' key
-    VK_OEM_2 = (
-        0xBF  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '/?' key
-    )
-    VK_OEM_3 = (
-        0xC0  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '`~' key
-    )
-    # - # 0xC1-D7 # Reserved
-    # - # 0xD8-DA # Unassigned
-    VK_OEM_4 = (
-        0xDB  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '[{' key
-    )
-    VK_OEM_5 = (
-        0xDC  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '\|' key
-    )
-    VK_OEM_6 = (
-        0xDD  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key
-    )
-    VK_OEM_7 = 0xDE  # Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard,
-    # the 'single-quote/double-quote' key
-    VK_OEM_8 = 0xDF  # Used for miscellaneous characters; it can vary by keyboard.
-    # - = 0xE0 # Reserved
-    # 0xE1 # OEM specific
-    VK_OEM_102 = 0xE2  # The <> keys on the US standard keyboard, or the \\| key on the non-US 102-key keyboard
-    # 0xE3-E4 # OEM specific
-    VK_PROCESSKEY = 0xE5  # IME PROCESS key
-    # 0xE6 # OEM specific
-    VK_PACKET = 0xE7  # Used to pass Unicode characters as if they were keystrokes.
-    # The VK_PACKET key is the low word of a 32-bit Virtual Key value used for non-keyboard input methods.
-    # For more information, see Remark in KEYBDINPUT, SendInput, WM_KEYDOWN, and WM_KEYUP
-    # - = 0xE8 # Unassigned
-    # 0xE9-F5 # OEM specific
-    VK_ATTN = 0xF6  # Attn key
-    VK_CRSEL = 0xF7  # CrSel key
-    VK_EXSEL = 0xF8  # ExSel key
-    VK_EREOF = 0xF9  # Erase EOF key
-    VK_PLAY = 0xFA  # Play key
-    VK_ZOOM = 0xFB  # Zoom key
-    VK_NONAME = 0xFC  # Reserved
-    VK_PA1 = 0xFD  # PA1 key
-    VK_OEM_CLEAR = 0xFE  # Clear key
+class MouseEvent(TerminalEvent):
+    last_mask = 0xFFFFFFFF
+
+    dwButtonState_to_Buttons = [[0, 0], [1, 2], [2, 1]]
+
+    class Buttons(IntEnum):
+        LMB = 0
+        RMB = 2
+        MIDDLE = 1
+        WHEEL_UP = 64
+        WHEEL_DOWN = 65
+
+    class ControlKeys(Flag):
+        LEFT_CTRL = 0x8
+
+    def __init__(self, x, y, button: Buttons, pressed: bool, control_key_state, hover: bool):
+        super().__init__()
+        self.coordinates = (x, y)
+        self.button = button
+        self.pressed = pressed
+        self.hover = hover
+        # based on https://docs.microsoft.com/en-us/windows/console/mouse-event-record-str
+        # but simplified - right ctrl => left ctrl
+        self.control_key_state = control_key_state
+
+    def __str__(self):
+        return (
+            f"MouseEvent x: {self.coordinates[0]} y: {self.coordinates[1]} button: {self.button} "
+            f"pressed: {self.pressed} control_key: {self.control_key_state} hover: {self.hover}"
+        )
 
     @classmethod
-    def from_ascii(cls, value: int):
-        if value >= 0x61:
-            if value <= 0x7A:
-                # a-z - change to upper case
-                value -= 0x20
+    def from_windows_event(cls, mouse_event_record: MOUSE_EVENT_RECORD):
+        # on windows position is 0-based, top-left corner
 
-        if 0x41 <= value <= 0x5A:
-            # A-Z - those map 1:1
-            return cls(value)
+        hover = False
+        # zero indicates mouse button is pressed or released
+        if mouse_event_record.dwEventFlags != 0:
+            if mouse_event_record.dwEventFlags == 0x1:
+                hover = True
+            elif mouse_event_record.dwEventFlags == 0x4:
+                # mouse wheel move, high word of dwButtonState is dir, positive up
+                return cls(
+                    mouse_event_record.dwMousePosition.X,
+                    mouse_event_record.dwMousePosition.Y,
+                    MouseEvent.Buttons(MouseEvent.Buttons.WHEEL_UP + ((mouse_event_record.dwButtonState >> 31) & 0x1)),
+                    True,
+                    None,
+                    False,
+                )
+                # TODO: high word
+            elif mouse_event_record.dwEventFlags == 0x8:
+                # horizontal mouse wheel - NOT SUPPORTED
+                return None
+            elif mouse_event_record.dwEventFlags == 0x2:
+                # double click - TODO: do we need this?
+                return None
 
-        if 0x30 <= value <= 0x39:
-            # 0-9 - map 1:1
-            return cls(value)
+        ret_list = []
 
-        return 0xFFFF
+        # on Windows we get mask of pressed buttons
+        # we can either pass mask around and worry about translating it outside
+        # we will have two different handlers on windows and linux,
+        # so we just translate it into serialized clicks
+        changed_mask = mouse_event_record.dwButtonState ^ MouseEvent.last_mask
+        if hover:
+            changed_mask = mouse_event_record.dwButtonState
+
+        if changed_mask == 0:
+            return None
+
+        MouseEvent.last_mask = mouse_event_record.dwButtonState
+
+        for dwButtonState, button in MouseEvent.dwButtonState_to_Buttons:
+            changed = changed_mask & (0x1 << dwButtonState)
+            if changed:
+                press = mouse_event_record.dwButtonState & (0x1 << dwButtonState) != 0
+
+                event = cls(
+                    mouse_event_record.dwMousePosition.X,
+                    mouse_event_record.dwMousePosition.Y,
+                    MouseEvent.Buttons(button),
+                    press,
+                    None,
+                    hover,
+                )
+                ret_list.append(event)
+
+        if len(ret_list) == 0:
+            return None
+
+        return ret_list
+
+    @classmethod
+    def from_sgr_csi(cls, button_hex: int, x: int, y: int, press: bool):
+        # print(f"0x{button_hex:X}", file=sys.stderr)
+        move_event = button_hex & 0x20
+        if move_event:
+            # OPT1: don't support move
+            # return None
+            # OPT2: support move like normal click
+            button_hex = button_hex & (0xFFFFFFFF - 0x20)
+            # FINAL: TODO: pass it as Move mouse event and let
+            # button = None
+            # 0x23 on simple move.. with M..
+            # 0x20 on move with lmb
+            # 0x22 on move with rmb
+            # 0x21 on move with wheel
+            if button_hex & 0xF == 0x3:
+                return None
+
+        # TODO: wheel_event = button_hex & 0x40
+        ctrl_button = 0x8 if button_hex & 0x10 else 0x0
+
+        # remove ctrl button
+        button_hex = button_hex & (0xFFFFFFFF - 0x10)
+        button = MouseEvent.Buttons(button_hex)
+        # sgr - 1-based
+        if y < 2:
+            return None
+
+        # 1-based - translate to 0-based
+        return cls(x - 1, y - 1, button, press, ctrl_button, False)
+
+
+class KeyEvent(TerminalEvent):
+    def __init__(
+        self,
+        key_down: bool,
+        repeat_count: int,
+        vk_code: int,
+        vs_code: int,
+        char,
+        wchar,
+        control_key_state,
+    ):
+        super().__init__()
+        self.key_down = key_down
+        self.repeat_count = repeat_count
+        self.vk_code = vk_code
+        self.vs_code = vs_code
+        self.char = char
+        self.wchar = wchar
+        self.control_key_state = control_key_state
+
+    def __str__(self):
+        return (
+            f"KeyEvent: vk_code={self.vk_code} vs_code={self.vs_code} char='{self.char}' wchar='{self.wchar}' "
+            f"repeat={self.repeat_count} ctrl=0x{self.control_key_state:X} key_down={self.key_down} "
+        )
+
+
+class InputInterpreter:
+    # linux
+    # lmb 0, rmb 2, middle 1, wheel up 64 + 0, wheel down 64 + 1
+
+    class State(Enum):
+        Default = 0
+        Escape = 1
+        CSI_Bytes = 2
+
+    # this class should
+    # receive data
+    # and parse it accordingly
+    # if it is ESC then start parsing it as ansi escape code
+    # and emit event once we parse whole sequence
+    # otherwise pass it to... input handler?
+
+    # better yet:
+    # this class should provide read method, and wrap the input provided
+
+    def __init__(self, readable_input):
+        self.input = readable_input
+        self.state = self.State.Default
+        self.input_raw = []
+        self.ansi_escape_sequence = []
+        self.payload = deque()
+        self.last_button_state = [0, 0, 0]
+        self.selector = selectors.DefaultSelector()
+        self.selector.register(self.input, selectors.EVENT_READ)
+        self.selector_timeout_s = 1.0
+        self.read_count = 64
+
+    # 9 Normal \x1B[ CbCxCy M , value + 32 -> ! is 1 - max 223 (255 - 32)
+    # 1006 SGR  \x1B[<Pb;Px;Py[Mm] M - press m - release
+    # 1015 URXVT \x1B[Pb;Px;Py M - not recommended, can be mistaken for DL
+    # 1016 SGR-Pixel x,y are pixels instead of cells
+    # https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+
+    def parse(self):
+        # ConsoleView.log(f'parse: {self.ansi_escape_sequence}')
+        # should append to self.event_list
+        length = len(self.ansi_escape_sequence)
+
+        if length < 3:
+            # minimal sequence is ESC [ (byte in range 0x40-0x7e)
+            self.payload.append(str(self.ansi_escape_sequence))
+            return
+
+        # we can safely skip first 2 bytes
+        if self.ansi_escape_sequence[2] == "<":
+            # for mouse last byte will be m or M character
+            if self.ansi_escape_sequence[-1] not in ("m", "M"):
+                self.payload.append(str(self.ansi_escape_sequence))
+                return
+            # SGR
+            idx = 0
+            values = [0, 0, 0]
+            temp_word = ""
+            press = False
+            for i in range(3, length + 1):
+                ch = self.ansi_escape_sequence[i]
+                if idx < 2:
+                    if ch == ";":
+                        values[idx] = int(temp_word, 10)
+                        idx += 1
+                        temp_word = ""
+                        continue
+                elif ch in ("m", "M"):
+                    values[idx] = int(temp_word, 10)
+                    if ch == "M":
+                        press = True
+                    break
+                temp_word += ch
+            # msft
+            # lmb 0x1 rmb 0x2, lmb2 0x4 lmb3 0x8 lmb4 0x10
+            # linux
+            # lmb 0, rmb 2, middle 1, wheel up 64 + 0, wheel down 64 + 1
+            # move 32 + key
+            # shift   4
+            # meta    8
+            # control 16
+            # print(f"0X{values[0]:X} 0X{values[1]:X} 0x{values[2]:X}, press={press}", file=sys.stderr)
+            mouse_event = MouseEvent.from_sgr_csi(values[0], values[1], values[2], press)
+            if mouse_event:
+                self.payload.append(mouse_event)
+            return
+
+        # normal - TODO
+        # self.payload.extend(str(self.ansi_escape_sequence))
+        len_aes = len(self.ansi_escape_sequence)
+        if len_aes == 3:
+            third_char = ord(self.ansi_escape_sequence[2])
+            vk_code = 0
+            char = b"\x00"
+            wchar = ""
+            if third_char == 65:
+                # A - Cursor Up
+                vk_code = VirtualKeyCodes.VK_UP
+            elif third_char == 66:
+                # B - Cursor Down
+                vk_code = VirtualKeyCodes.VK_DOWN
+            elif third_char == 67:
+                # C - Cursor Right
+                vk_code = VirtualKeyCodes.VK_RIGHT
+            elif third_char == 68:
+                # D - Cursor Left
+                vk_code = VirtualKeyCodes.VK_LEFT
+            else:
+                self.payload.append(str(self.input_raw))
+                return
+            self.payload.append(
+                KeyEvent(
+                    key_down=True,
+                    repeat_count=1,
+                    vk_code=vk_code,
+                    vs_code=vk_code,
+                    char=char,
+                    wchar=wchar,
+                    control_key_state=0,
+                )
+            )
+        elif len_aes == 4:
+            # 1 ~ Home
+            # 2 ~ Insert
+            # 3 ~ Delete
+            # 4 ~ End
+            # 5 ~ PageUp
+            # 6 ~ PageDown
+            pass
+        elif len_aes == 5:
+            # 1 1 ~ F1
+            # ....
+            # 1 5 ~ F5
+            # 1 7 ~ F6
+            # 1 8 ~ F7
+            # 1 9 ~ F8
+            # 2 0 ~ F9
+            # 2 1 ~ F10
+            # 2 3 ~ F11
+            # 2 3 ~ F12
+            pass
+
+        self.payload.append(str(self.input_raw))
+        return
+
+    def parse_keyboard(self):
+        if len(self.input_raw) > 1:
+            # skip for now
+            self.payload.append(str(self.input_raw))
+            return
+        wchar = self.input_raw[0]
+        if wchar.isprintable() is False:
+            # skip for now
+            self.payload.append(str(self.input_raw))
+            return
+        # https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+        # key a is for both upper and lower case
+        # vk_code = wchar.lower()
+        self.payload.append(
+            KeyEvent(
+                key_down=True,
+                repeat_count=1,
+                vk_code=VirtualKeyCodes.from_ascii(ord(wchar)),
+                vs_code=ord(wchar),
+                char=wchar.encode(),
+                wchar=wchar,
+                control_key_state=0,
+            )
+        )
+        return
+
+    def read(self, count: int = 1):
+        # ESC [ followed by any number in range 0x30-0x3f, then any between 0x20-0x2f, and final byte 0x40-0x7e
+        # TODO: this should be limited so if one pastes long, long text this wont create arbitrary size buffer
+        ready = self.selector.select(self.selector_timeout_s)
+        if not ready:
+            return None
+
+        ch = self.input.read(self.read_count)
+        while ch is not None and len(ch) > 0:
+            self.input_raw.extend(ch)
+            ch = self.input.read(self.read_count)
+
+        if len(self.input_raw) > 0:
+            for i in range(0, len(self.input_raw)):
+                ch = self.input_raw[i]
+                if self.state != self.State.Default:
+                    ord_ch = ord(ch)
+                    if 0x20 <= ord_ch <= 0x7F:
+                        if self.state == self.State.Escape:
+                            if ch == "[":
+                                self.ansi_escape_sequence.append(ch)
+                                self.state = self.State.CSI_Bytes
+                                continue
+                        elif self.state == self.State.CSI_Bytes:
+                            if 0x30 <= ord_ch <= 0x3F:
+                                self.ansi_escape_sequence.append(ch)
+                                continue
+                            elif 0x40 <= ord_ch <= 0x7E:
+                                # implicit IntermediateBytes
+                                self.ansi_escape_sequence.append(ch)
+                                self.parse()
+                                self.state = self.State.Default
+                                continue
+                    # parse what we had collected so far, since we failed check above
+                    self.parse()
+                    self.state = self.State.Default
+                    # intentionally fall through to regular parse
+                # check if escape code
+                if ch == "\x1B":
+                    self.ansi_escape_sequence.clear()
+                    self.ansi_escape_sequence.append(ch)
+                    self.state = self.State.Escape
+                    continue
+
+                # pass input to handler
+                # here goes key, but what about ctrl, shift etc.? these are regular AsciiChar equivalents
+                # no key up, only key down, is there \x sequence to enable extended? should be imho
+                self.parse_keyboard()
+                pass
+            # DEBUG - don't do "".join, as the sequences are not printable
+            # self.payload.append(str(self.input_raw))
+            self.input_raw.clear()
+
+            if len(self.payload) > 0:
+                payload = self.payload
+                self.payload = deque()
+                return payload
+
+        return None

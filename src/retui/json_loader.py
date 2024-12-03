@@ -15,17 +15,17 @@ FUNCTION_THIS_ARG = "##this"
 KEY_POST_CALLBACKS = "post_callbacks"
 
 
-def register_app_dict(name, app_dict):
+def _register_app_dict(name, app_dict):
     register_mapping_dict(name, app_dict)
 
 
-def __callback_wrapper(function, *args):
+def _callback_wrapper(function, *args):
     print(f"{function} - type({type(function)})")
     print(f"{args} - type({type(args)})")
     function(*args)
 
 
-def __post_callback(this_json, this):
+def _post_callback(this_json, this):
     post_callbacks = this_json.get(KEY_POST_CALLBACKS)
     if post_callbacks:
         for callback in post_callbacks:
@@ -54,7 +54,7 @@ def __post_callback(this_json, this):
                         raise Exception("Dict is not implemented.")
                     else:
                         raise Exception("Unsupported args type.")
-            __callback_wrapper(fun, *args)
+            _callback_wrapper(fun, *args)
 
 
 def app_from_json(
@@ -66,7 +66,7 @@ def app_from_json(
     encoding: str = "UTF-8",
 ):
     if app_dict_name and app_dict:
-        register_app_dict(app_dict_name, app_dict)
+        _register_app_dict(app_dict_name, app_dict)
 
     with open(filename, "r", encoding=encoding) as f:
         app_json = json.load(f)
@@ -128,7 +128,7 @@ def app_from_json(
                 if parent is None:
                     raise Exception(f"Given parent_id: '{parent_id}' doesnt match already defined id of widget")
             parent.add_widget(widget)
-            __post_callback(widget_json, widget)
+            _post_callback(widget_json, widget)
 
-        __post_callback(app_json, app)
+        _post_callback(app_json, app)
         return app
