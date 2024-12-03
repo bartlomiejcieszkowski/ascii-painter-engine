@@ -2,21 +2,13 @@ import dataclasses
 import logging
 from typing import Tuple, Union
 
-from . import (
-    APP_THEME,
-    KeyEvent,
-    MouseEvent,
-    Rectangle,
-    TerminalColor,
-    TerminalWidget,
-    Theme,
-    VirtualKeyCodes,
-    json_convert,
-)
-from .default_themes import ThemePoint
-from .defaults import default_value
-from .enums import DimensionsFlag, Dock, TextAlign, WordWrap
-from .mapping import official_widget
+from retui import _APP_THEME, TerminalWidget, Theme
+from retui.base import Rectangle, TerminalColor, json_convert
+from retui.default_themes import ThemePoint
+from retui.defaults import default_value
+from retui.enums import DimensionsFlag, Dock, TextAlign, WordWrap
+from retui.input_handling import KeyEvent, MouseEvent, VirtualKeyCodes
+from retui.mapping import official_widget
 
 _log = logging.getLogger(__name__)
 
@@ -243,7 +235,7 @@ class BorderWidget(TerminalWidget):
         self.border[ThemePoint.MIDDLE].color = color
 
     def border_get_point(self, idx: int):
-        return self.border[idx] if self.border else APP_THEME.border[idx]
+        return self.border[idx] if self.border else _APP_THEME.border[idx]
 
     def border_get_top(self, width_middle, title):
         if title is None:
@@ -290,7 +282,7 @@ class BorderWidget(TerminalWidget):
         if self.borderless is False:
             width_inner -= 2
         self.app.brush.move_cursor(row=y)
-        offset_str = self.app.brush.move_right(x)
+        offset_str = self.app.brush.str_right(x)
 
         # Top border
         if self.borderless is False:

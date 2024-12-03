@@ -1,10 +1,11 @@
 from abc import ABC
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum, auto
+from os import PathLike
 from typing import Union
 
-from . import Color, ColorBits, TerminalColor
-from .utils.strings import StringHelper
+from retui.base import Color, ColorBits, TerminalColor
+from retui.utils.strings import StringHelper
 
 
 @dataclass
@@ -187,7 +188,7 @@ class CssParser:
     # https://www.w3.org/TR/css-syntax-3/#parsing-overview
 
     @staticmethod
-    def parse(file_name: str, selectors: Selectors) -> Selectors:
+    def parse(file_name: PathLike[str], selectors: Union[Selectors, None]) -> Selectors:
         if selectors is None:
             selectors = Selectors()
         with open(file_name, "r") as f:
@@ -242,7 +243,7 @@ class CssParser:
                                 # '*{'
                                 #   ^
                                 state = CssParserState.open_sect
-                                # ommit increment - we will hit the switch for {
+                                # omit increment - we will hit the switch for {
                                 continue
                             # elif c != ' ':
                             #    word += c
