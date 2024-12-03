@@ -2,6 +2,10 @@
 Python TUI library
 """
 
+__version__ = "0.1.0"
+__author__ = "Bartlomiej Cieszkowski <bartlomiej.cieszkowski@gmail.com>"
+__license__ = "MIT"
+
 import asyncio
 import concurrent.futures
 import ctypes
@@ -26,20 +30,11 @@ from .enums import DimensionsFlag, Dock, TextAlign, WordWrap
 from .input_handling import VirtualKeyCodes
 from .mapping import log_widgets
 from .theme import Selectors
-
-__version__ = "0.1.0"
-__author__ = "Bartlomiej Cieszkowski <bartlomiej.cieszkowski@gmail.com>"
-__license__ = "MIT"
+from .utils import is_windows
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
-logger = logging.getLogger(__name__)
-
-
-def add_window_logger(level: int = logging.DEBUG) -> logging.StreamHandler:
-    # TODO move functionality from debug_print here
-    pass
-
+_log = logging.getLogger(__name__)
 
 # TASK LIST:
 # TODO: Percent handling inside Pane - guess will need to add start_x, start_y + width height taken from parent
@@ -51,11 +46,6 @@ def add_window_logger(level: int = logging.DEBUG) -> logging.StreamHandler:
 # You can have extra line of console, which won't be fully visible - as w/a just don't use last line
 # If new size is greater, then fill with new lines, so we won't be drawing in the middle of screen
 
-
-def is_windows() -> bool:
-    return os.name == "nt"
-
-
 if is_windows():
     import msvcrt
 else:
@@ -63,8 +53,13 @@ else:
     import termios
 
 
+def add_window_logger(level: int = logging.DEBUG) -> logging.StreamHandler:
+    # TODO move functionality from debug_print here
+    pass
+
+
 class ConsoleBuffer:
-    _buffer_cached = None
+    _cached = None
 
     def __init__(self, width, height, symbol, debug):
         self.width = width
@@ -92,11 +87,11 @@ class ConsoleBuffer:
 
     @staticmethod
     def get_buffer(width, height, symbol=" ", debug=True):
-        if ConsoleBuffer._buffer_cached and ConsoleBuffer._buffer_cached.same(width, height, symbol, debug):
-            return ConsoleBuffer._buffer_cached.buffer
+        if ConsoleBuffer._cached and ConsoleBuffer._cached.same(width, height, symbol, debug):
+            return ConsoleBuffer._cached.buffer
 
-        ConsoleBuffer._buffer_cached = ConsoleBuffer(width, height, symbol, debug)
-        return ConsoleBuffer._buffer_cached.buffer
+        ConsoleBuffer._cached = ConsoleBuffer(width, height, symbol, debug)
+        return ConsoleBuffer._cached.buffer
 
 
 def json_convert(key, value):
@@ -667,7 +662,7 @@ class ConsoleWidget(ABC):
 
         # Should this throw failure up? Eg no space? display whole screen - resize screen?
         if not self.parent.dock_add(self.dock, size):
-            logger.critical(
+            _log.critical(
                 f"Dock size exceeded - fix the widget defintions - "
                 f"parent: {self.parent.identifier} - {parent_docked},"
                 f"child: {self.identifier} - {dimensions}"
@@ -796,7 +791,7 @@ class LinuxConsole(Console):
         self.prev_fl = fcntl.fcntl(sys.stdin, fcntl.F_GETFL)
         new_fl = self.prev_fl | os.O_NONBLOCK
         fcntl.fcntl(sys.stdin, fcntl.F_SETFL, new_fl)
-        logger.debug(f"stdin fl: 0x{self.prev_fl:X} -> 0x{new_fl:X}")
+        _log.debug(f"stdin fl: 0x{self.prev_fl:X} -> 0x{new_fl:X}")
         self.prev_tc = termios.tcgetattr(sys.stdin)
         new_tc = termios.tcgetattr(sys.stdin)
         # manipulating lflag
@@ -811,9 +806,9 @@ class LinuxConsole(Console):
         new_tc[6][termios.VMIN] = 0
         new_tc[6][termios.VTIME] = 0
         termios.tcsetattr(sys.stdin, termios.TCSANOW, new_tc)  # TCSADRAIN?
-        logger.debug(f"stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}")
-        logger.debug(f"stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}")
-        logger.debug(f"stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}")
+        _log.debug(f"stdin lflags: 0x{self.prev_tc[3]:X} -> 0x{new_tc[3]:X}")
+        _log.debug(f"stdin cc VMIN: 0x{self.prev_tc[6][termios.VMIN]} -> 0x{new_tc[6][termios.VMIN]}")
+        _log.debug(f"stdin cc VTIME: 0x{self.prev_tc[6][termios.VTIME]} -> 0x{new_tc[6][termios.VTIME]}")
 
         self.input_interpreter = InputInterpreter(sys.stdin)
 
@@ -869,18 +864,6 @@ class LinuxConsole(Console):
         return True
 
 
-def no_print(fmt, *args):
-    pass
-
-
-def demo_fun(app):
-    app.demo_event.wait(app.demo_time_s)
-    print(f"DEMO MODE - {app.demo_time_s}s - END")
-    if app.demo_event.is_set():
-        return
-    app.running = False
-
-
 class App:
     def __init__(self, title=None, debug: bool = False):
         self.title = title
@@ -919,7 +902,15 @@ class App:
 
         # asyncio
         self.thread_pool_executor = None
-        logger.info("App init done")
+        _log.info("App init done")
+
+    @staticmethod
+    def demo_run(app):
+        app.demo_event.wait(app.demo_time_s)
+        print(f"DEMO MODE - {app.demo_time_s}s - END")
+        if app.demo_event.is_set():
+            return
+        app.running = False
 
     def init_asyncio(self):
         self.thread_pool_executor = concurrent.futures.ThreadPoolExecutor()
@@ -954,7 +945,7 @@ class App:
 
     def debug_print(self, text, end="\n", row_off=-1):
         if self.debug:
-            logger.debug(text)
+            _log.debug(text)
             # TODO
             row = (0 if row_off >= 0 else self.console.rows) + row_off
             self.brush.move_cursor(row=row)
@@ -1011,7 +1002,7 @@ class App:
                 self.handle_events(event)
             elif isinstance(event, MouseEvent):
                 # we could use mask here, but then we will handle holding right button and
-                # pressing/releasing left button and other combinations and frankly I don't want to
+                # pressing/releasing left button and other combinations, and frankly I don't want to
                 # if (event.button_state & 0x1) == 0x1 and event.event_flags == 0:
                 # widget = None
                 # if event.button == event.button.LMB:
@@ -1022,7 +1013,7 @@ class App:
 
                 self.brush.move_cursor(row=(self.console.rows + off) - 1)
                 if widget:
-                    logger.debug(
+                    _log.debug(
                         f"x: {event.coordinates[0]} y: {event.coordinates[1]} "
                         f"button:{event.button} press:{event.pressed} widget:{widget}"
                     )
@@ -1080,7 +1071,7 @@ class App:
         self.init_asyncio()
 
         if self.debug:
-            log_widgets(logger.debug)
+            log_widgets(_log.debug)
 
         if self.emulate_screen_dimensions:
             self.console.rows = self.emulate_screen_dimensions[0]
@@ -1095,7 +1086,7 @@ class App:
 
         if self.demo_time_s and self.demo_time_s > 0:
             self.demo_event = threading.Event()
-            self.demo_thread = threading.Thread(target=demo_fun, args=(self,))
+            self.demo_thread = threading.Thread(target=App.demo_run, args=(self,))
             self.demo_thread.start()
             if isinstance(self.console, WindowsConsole):
                 self.console.blocking_input(False)

@@ -21,7 +21,7 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 
-logger = logging.getLogger()
+_log = logging.getLogger()
 
 sys.path.append(os.path.abspath("./src/"))
 
@@ -108,15 +108,15 @@ def main():
     for status, test_name, e in test_status:
         i += 1
         name_state = "PASS" if status == 0 else "FAIL"
-        logger.info(f'[{name_state}] {i:3d}: "{test_name}" - exception? {e is not None} status: {status}')
+        _log.info(f'[{name_state}] {i:3d}: "{test_name}" - exception? {e is not None} status: {status}')
         if e:
-            logger.critical(f"{e[0]} {type(e[1])}")
+            _log.critical(f"{e[0]} {type(e[1])}")
             for i in reversed(range(0, len(e[1]))):
-                logger.critical(f"{e[1][i]}")
+                _log.critical(f"{e[1][i]}")
         if status != 0:
             ret = -1
 
-    logger.info(f"ExitCode:{ret}")
+    _log.info(f"ExitCode:{ret}")
     sys.exit(ret)
 
 

@@ -1,15 +1,14 @@
 import importlib
 
-APP_DICT = {}
+_APP_DICT = {}
 _OFFICIAL_WIDGET_DICT = {}
 _APP_WIDGET_DICT = {}
-
-MODULES_DICT = {}
+_MODULES_DICT = {}
 
 
 def register_mapping_dict(name, app_dict):
-    global APP_DICT
-    APP_DICT[name] = app_dict
+    global _APP_DICT
+    _APP_DICT[name] = app_dict
 
 
 def official_widget(cls):
@@ -34,26 +33,33 @@ def log_widgets(log_fn=print):
 
 
 def get_widget_class(name: str):
-    return _APP_WIDGET_DICT.get(name, _OFFICIAL_WIDGET_DICT.get(name, None))
+    widget_class = _APP_WIDGET_DICT.get(name, None)
+    if widget_class is None:
+        widget_class = _OFFICIAL_WIDGET_DICT.get(name, None)
+    return widget_class
 
 
-def import_widget_class(name: str, ctx_globals):
-    # TODO: use official_widget()
-    # New widgets are registered in _APP_WIDGET_DICT
-    # using full name
-    # Modules imported are also cached
-    # As they might provide more widgets
-    global MODULES_DICT
+def import_widget_class(name: str, ctx_globals: dict):
+    """
+    New widgets are registered in _APP_WIDGET_DICT using full name.
+    Imported modules are also cached as they might provide more widgets.
+
+    :param name: widget class name e.g. sample_app.widgets.CustomWidget
+    :param ctx_globals: application globals, usually globals()
+    :return widget class
+    """
+
+    global _MODULES_DICT
     last_dot = name.rfind(".")
     if last_dot >= 0 and last_dot + 1 < len(name):
         module_name, class_name = name.rsplit(".", 1)
 
-        m = MODULES_DICT.get(module_name, None)
+        m = _MODULES_DICT.get(module_name, None)
         if m is None:
             m = importlib.import_module(module_name)
             if m is None:
                 return None
-            MODULES_DICT[module_name] = m
+            _MODULES_DICT[module_name] = m
 
         # now try to get class
         cls = getattr(m, class_name)
@@ -76,7 +82,7 @@ def is_mapping(value):
 def get_mapping(value):
     path = value[2:]
     steps = path.split("#")
-    curr_dict = APP_DICT
+    curr_dict = _APP_DICT
     for step in steps[:-1]:
         curr_dict = curr_dict.get(step, None)
         if curr_dict is None:
