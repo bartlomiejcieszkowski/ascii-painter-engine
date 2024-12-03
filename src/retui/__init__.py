@@ -23,7 +23,7 @@ from collections import deque
 from enum import Enum, Flag, IntEnum, auto
 from typing import Union
 
-from .base import Color, ColorBits, ConsoleColor, Point, Rectangle
+from .base import Color, ColorBits, Point, Rectangle, TerminalColor
 from .default_themes import DefaultThemes
 from .defaults import default_value
 from .enums import DimensionsFlag, Dock, TextAlign, WordWrap
@@ -565,7 +565,7 @@ class InputInterpreter:
         return None
 
 
-class ConsoleWidget(ABC):
+class TerminalWidget(ABC):
     @classmethod
     def from_dict(cls, **kwargs):
         return cls(
@@ -711,10 +711,10 @@ class ConsoleWidget(ABC):
     def dock_add(self, dock: Dock, size: int) -> bool:
         raise NotImplementedError("You can't dock inside this class")
 
-    def get_widget(self, column: int, row: int) -> Union["ConsoleWidget", None]:
+    def get_widget(self, column: int, row: int) -> Union["TerminalWidget", None]:
         return self if self.contains_point(column, row) else None
 
-    def get_widget_by_id(self, identifier: str) -> Union["ConsoleWidget", None]:
+    def get_widget_by_id(self, identifier: str) -> Union["TerminalWidget", None]:
         return self if self.identifier == identifier else None
 
     def handle(self, event):
@@ -735,7 +735,7 @@ class ConsoleWidget(ABC):
         )
 
 
-class Console:
+class Terminal:
     @abstractmethod
     def get_brush(self):
         pass
@@ -780,7 +780,7 @@ class Console:
             print(f"\033]2;{title}\007")
 
 
-class LinuxConsole(Console):
+class LinuxTerminal(Terminal):
     def get_brush(self):
         return Brush(self.vt_supported)
 
@@ -828,7 +828,7 @@ class LinuxConsole(Console):
 
     @staticmethod
     def window_change_handler(signum, frame):
-        LinuxConsole.window_change_event_ctx.window_change_event()
+        LinuxTerminal.window_change_event_ctx.window_change_event()
 
     def window_change_event(self):
         # inject special input on stdin?
@@ -836,8 +836,8 @@ class LinuxConsole(Console):
 
     def interactive_mode(self):
         self.is_interactive_mode = True
-        LinuxConsole.window_change_event_ctx = self
-        signal.signal(signal.SIGWINCH, LinuxConsole.window_change_handler)
+        LinuxTerminal.window_change_event_ctx = self
+        signal.signal(signal.SIGWINCH, LinuxTerminal.window_change_handler)
         # ctrl-z not allowed
         signal.signal(signal.SIGTSTP, signal.SIG_IGN)
         # enable mouse - xterm, sgr1006
@@ -870,12 +870,12 @@ class App:
         self.identifier = "App"
 
         if is_windows():
-            self.console = WindowsConsole(self)
+            self.terminal = WindowsTerminal(self)
         else:
-            self.console = LinuxConsole(self)
+            self.terminal = LinuxTerminal(self)
         self.widgets = []
-        self.brush = self.console.get_brush()
-        self.debug_colors = ConsoleColor()
+        self.brush = self.terminal.get_brush()
+        self.debug_colors = TerminalColor()
         self.running = False
 
         self.docked_dimensions = Rectangle()
@@ -947,27 +947,27 @@ class App:
         if self.debug:
             _log.debug(text)
             # TODO
-            row = (0 if row_off >= 0 else self.console.rows) + row_off
+            row = (0 if row_off >= 0 else self.terminal.rows) + row_off
             self.brush.move_cursor(row=row)
             print(self.debug_colors)
             self.brush.print(text, end=end, color=self.debug_colors)
 
     def clear(self, reuse=True):
-        self.dimensions.width, self.dimensions.height = self.console.update_size()
+        self.dimensions.width, self.dimensions.height = self.terminal.update_size()
         if reuse:
             self.brush.move_cursor(0, 0)
-        for line in ConsoleBuffer.get_buffer(self.console.columns, self.console.rows, " ", debug=False):
+        for line in ConsoleBuffer.get_buffer(self.terminal.columns, self.terminal.rows, " ", debug=False):
             print(line, end="\n", flush=True)  # TODO: Would it be ok to just flush after for?
         self._update_size = True
 
-    def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
+    def get_widget(self, column: int, row: int) -> Union[TerminalWidget, None]:
         for idx in range(len(self.widgets) - 1, -1, -1):
             widget = self.widgets[idx].get_widget(column, row)
             if widget:
                 return widget
         return None
 
-    def get_widget_by_id(self, identifier) -> Union[ConsoleWidget, None]:
+    def get_widget_by_id(self, identifier) -> Union[TerminalWidget, None]:
         for idx in range(0, len(self.widgets)):
             widget = self.widgets[idx].get_widget_by_id(identifier)
             if widget:
@@ -1011,7 +1011,7 @@ class App:
                 #    widget = self.handle_click(event)
                 widget = self.handle_click(event)
 
-                self.brush.move_cursor(row=(self.console.rows + off) - 1)
+                self.brush.move_cursor(row=(self.terminal.rows + off) - 1)
                 if widget:
                     _log.debug(
                         f"x: {event.coordinates[0]} y: {event.coordinates[1]} "
@@ -1021,11 +1021,11 @@ class App:
                 self.debug_print(event, row_off=-4)
             elif isinstance(event, SizeChangeEvent):
                 self.clear()
-                self.debug_print(f"size: {self.console.columns:3}x{self.console.rows:3}", row_off=-2)
+                self.debug_print(f"size: {self.terminal.columns:3}x{self.terminal.rows:3}", row_off=-2)
             elif isinstance(event, KeyEvent):
                 self.debug_print(event, row_off=-3)
             else:
-                self.brush.move_cursor(row=(self.console.rows + off) - 0, column=col)
+                self.brush.move_cursor(row=(self.terminal.rows + off), column=col)
                 debug_string = f'type={type(event)} event="{event}", '
                 # col = len(debug_string)
                 self.debug_print(debug_string, row_off=-1)
@@ -1053,7 +1053,7 @@ class App:
             for widget in self.widgets:
                 widget.draw(force=force)
             self._redraw = False
-        self.brush.move_cursor(row=self.console.rows - 1)
+        self.brush.move_cursor(row=self.terminal.rows - 1)
 
     def update_dimensions(self):
         self._update_size = False
@@ -1074,11 +1074,11 @@ class App:
             log_widgets(_log.debug)
 
         if self.emulate_screen_dimensions:
-            self.console.rows = self.emulate_screen_dimensions[0]
-            self.console.columns = self.emulate_screen_dimensions[1]
+            self.terminal.rows = self.emulate_screen_dimensions[0]
+            self.terminal.columns = self.emulate_screen_dimensions[1]
 
         if self.title:
-            self.console.set_title(self.title)
+            self.terminal.set_title(self.title)
 
         if self.handle_sigint:
             App.signal_sigint_ctx = self
@@ -1088,14 +1088,14 @@ class App:
             self.demo_event = threading.Event()
             self.demo_thread = threading.Thread(target=App.demo_run, args=(self,))
             self.demo_thread.start()
-            if isinstance(self.console, WindowsConsole):
-                self.console.blocking_input(False)
+            if isinstance(self.terminal, WindowsTerminal):
+                self.terminal.blocking_input(False)
 
         self.running = True
 
         self.clear(reuse=False)
 
-        self.console.interactive_mode()
+        self.terminal.interactive_mode()
 
         self.brush.cursor_hide()
         self.handle_events([SizeChangeEvent()])
@@ -1109,7 +1109,7 @@ class App:
             self.demo_thread.join()
 
         # Move to the end, so we won't end up writing in middle of screen
-        self.brush.move_cursor(self.console.rows - 1)
+        self.brush.move_cursor(self.terminal.rows - 1)
         self.brush.cursor_show()
         return 0
 
@@ -1121,28 +1121,28 @@ class App:
             self.draw()
 
             # this is blocking
-            if not self.console.read_events(self.handle_events_callback, self):
+            if not self.terminal.read_events(self.handle_events_callback, self):
                 break
         # await asyncio.sleep(0.1)
 
     def color_mode(self, enable=True) -> bool:
         if enable:
-            success = self.console.set_color_mode(enable)
+            success = self.terminal.set_color_mode(enable)
             self.brush.color_mode(success)
             if success:
                 # self.brush.color_mode(enable)
-                self.debug_colors = ConsoleColor(Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8))
+                self.debug_colors = TerminalColor(Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8))
         else:
-            self.debug_colors = ConsoleColor()
+            self.debug_colors = TerminalColor()
             self.brush.color_mode(enable)
-            success = self.console.set_color_mode(enable)
+            success = self.terminal.set_color_mode(enable)
         return success
 
-    def add_widget(self, widget: ConsoleWidget) -> None:
+    def add_widget(self, widget: TerminalWidget) -> None:
         widget.parent = self
         self.widgets.append(widget)
 
-    def add_widget_after(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
+    def add_widget_after(self, widget: TerminalWidget, widget_on_list: TerminalWidget) -> bool:
         try:
             idx = self.widgets.index(widget_on_list)
         except ValueError:
@@ -1152,7 +1152,7 @@ class App:
         self.widgets.insert(idx + 1, widget)
         return True
 
-    def add_widget_before(self, widget: ConsoleWidget, widget_on_list: ConsoleWidget) -> bool:
+    def add_widget_before(self, widget: TerminalWidget, widget_on_list: TerminalWidget) -> bool:
         try:
             idx = self.widgets.index(widget_on_list)
         except ValueError:
@@ -1163,7 +1163,7 @@ class App:
         return True
 
 
-class WindowsConsole(Console):
+class WindowsTerminal(Terminal):
     def get_brush(self):
         return Brush(self.vt_supported)
 
@@ -1325,7 +1325,7 @@ class WindowsConsole(Console):
 class Theme:
     class Colors:
         def __init__(self):
-            self.text = ConsoleColor(Color(0, ColorBits.Bit24))
+            self.text = TerminalColor(Color(0, ColorBits.Bit24))
 
         @classmethod
         def monokai(cls):
@@ -1391,7 +1391,7 @@ APP_THEME = Theme.default_theme()
 class Brush:
     def __init__(self, use_color=True):
         self.file = sys.stdout
-        self.console_color = ConsoleColor()
+        self.console_color = TerminalColor()
         self.use_color = use_color
         # TODO: this comes from vt_supported, we override it with color_mode
 
@@ -1412,7 +1412,7 @@ class Brush:
             return ""
         return f"\x1B[48;{int(self.console_color.background.bits)};{self.console_color.background.color}m"
 
-    def color(self, console_color: ConsoleColor, check_last=False):
+    def color(self, console_color: TerminalColor, check_last=False):
         if self.console_color == console_color:
             return ""
         ret_val = self.reset_color()
@@ -1420,7 +1420,7 @@ class Brush:
         ret_val += self.background_color(console_color.background, check_last)
         return ret_val
 
-    def print(self, *args, sep=" ", end="", color: Union[ConsoleColor, None] = None):
+    def print(self, *args, sep=" ", end="", color: Union[TerminalColor, None] = None):
         # print(f"sep: {sep} end: {end}, color: {color} args: {args}")
         if color is None or color.no_color():
             print(*args, sep=sep, end=end, file=self.file, flush=True)

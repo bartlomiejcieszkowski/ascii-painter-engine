@@ -4,11 +4,11 @@ from typing import Tuple, Union
 
 from . import (
     APP_THEME,
-    ConsoleColor,
-    ConsoleWidget,
     KeyEvent,
     MouseEvent,
     Rectangle,
+    TerminalColor,
+    TerminalWidget,
     Theme,
     VirtualKeyCodes,
     json_convert,
@@ -147,7 +147,7 @@ class Text:
 
 
 @official_widget
-class BorderWidget(ConsoleWidget):
+class BorderWidget(TerminalWidget):
     @classmethod
     def from_dict(cls, **kwargs):
         return cls(
@@ -207,8 +207,8 @@ class BorderWidget(ConsoleWidget):
         if border_str:
             self.border_from_str(border_str)
         if border_color:
-            if not isinstance(border_color, ConsoleColor):
-                raise Exception(f"border_color needs to be of type {ConsoleColor}, got {type(border_color)}")
+            if not isinstance(border_color, TerminalColor):
+                raise Exception(f"border_color needs to be of type {TerminalColor}, got {type(border_color)}")
             self.set_color(border_color)
         # None implies use theme
 
@@ -514,7 +514,7 @@ class Pane(BorderWidget):
         for widget in self.widgets:
             widget.update_dimensions()
 
-    def get_widget(self, column: int, row: int) -> Union[ConsoleWidget, None]:
+    def get_widget(self, column: int, row: int) -> Union[TerminalWidget, None]:
         for idx in range(len(self.widgets) - 1, -1, -1):
             widget = self.widgets[idx].get_widget(column, row)
             if widget:
@@ -522,7 +522,7 @@ class Pane(BorderWidget):
 
         return super().get_widget(column, row)
 
-    def get_widget_by_id(self, identifier: str) -> Union["ConsoleWidget", None]:
+    def get_widget_by_id(self, identifier: str) -> Union["TerminalWidget", None]:
         widget = super().get_widget_by_id(identifier)
         if widget:
             return widget
