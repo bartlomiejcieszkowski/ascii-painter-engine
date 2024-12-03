@@ -20,6 +20,7 @@ class MockApp:
     widgets: list
     docked_dimensions: Rectangle = None
     last_dimensions: Rectangle = None
+    dock: Dock = Dock.FILL
 
     def dock_add(self, dock: Dock, size: int) -> bool:
         return True

@@ -18,7 +18,7 @@ from .defaults import default_value
 from .enums import DimensionsFlag, Dock, TextAlign, WordWrap
 from .mapping import official_widget
 
-logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 class Text:

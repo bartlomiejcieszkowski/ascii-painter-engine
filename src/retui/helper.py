@@ -7,7 +7,6 @@ from . import (  # noqa: F401
     ConsoleColor,
     ConsoleWidget,
     mapping,
-    no_print,
     widgets,
 )
 from .mapping import get_mapping, is_mapping, register_mapping_dict
@@ -121,7 +120,7 @@ def app_from_json(
             widget_id = widget_json.get("id", None)
             if widget_id:
                 widget_id_dict[widget_id] = widget
-            # if has id - add it to dict
+
             parent = app
             parent_id = widget_json.get("parent_id", None)
             if parent_id:
