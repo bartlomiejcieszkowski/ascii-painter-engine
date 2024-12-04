@@ -2,10 +2,9 @@
 from pathlib import Path
 
 import retui
+import retui.default_themes
 from retui.theme import CssParser
 from retui.widgets import Pane, TextBox
-from src.retui import DefaultThemes
-from src.retui.default_themes import DefaultThemesType
 
 
 def test(handle_sigint=True, demo_time_s=None, title=None):
@@ -42,7 +41,9 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
 
     widget = TextBox(app=app, x=0, y=0, height=3, width=10)
     widget.text = "Sample text in pane"
-    widget.border_from_str(DefaultThemes.get_theme_border_str(DefaultThemesType.DOUBLE_LINE))
+    widget.border_from_str(
+        retui.default_themes.DefaultThemes.get_theme_border_str(retui.default_themes.DefaultThemesType.DOUBLE_LINE)
+    )
     widget.set_color(test_color)
     pane.add_widget(widget)
 
