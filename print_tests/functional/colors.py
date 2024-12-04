@@ -35,7 +35,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None) -> int:
     brush.print("THIS ONE SHOULD BE INVERTED ONE ABOVE", color=test_color, end="\n")
     brush.print(test_color, color=test_color, end="\n")
 
-    brush.print("This", "should", "have test color,", color=test_color)
+    brush.print("This", "should", "have test color,", sep=" ", color=test_color)
     print(" and this should have default terminal color")
     if demo_time_s:
         time.sleep(demo_time_s)

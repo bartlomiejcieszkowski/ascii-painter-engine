@@ -41,6 +41,8 @@ line-length = 120
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
+    "--ignore=print_tests",
+    "--ignore=print_test.py"
 ]
 pythonpath="src"
 
