@@ -2,7 +2,7 @@
 Python TUI library
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Bartlomiej Cieszkowski <bartlomiej.cieszkowski@gmail.com>"
 __license__ = "MIT"
 
@@ -36,6 +36,7 @@ _log = logging.getLogger(__name__)
 # TODO: Redraw only when covered - blinking over ssh in tmux - temporary: redraw only on size change
 # TODO: trim line to screen width on debug prints
 # TODO: Relative dimensions, 1 Top 80 percent, 2nd bottom 20 percent - got 1 free line..
+# TODO: soft border and docked widget - see docked_dimensions generation
 
 # Notes:
 # You can have extra line of console, which won't be fully visible - as w/a just don't use last line
@@ -112,12 +113,12 @@ class TerminalWidget(ABC):
         parent_docked = self.parent.inner_dimensions(docked=True)
         parent_inner = self.parent.inner_dimensions(docked=False)
 
-        size = 0
-
         if DimensionsFlag.RelativeHeight in self.dimensionsFlag and self.dock in [Dock.BOTTOM, Dock.TOP]:
-            size = dimensions.height = (dimensions.height * parent_inner.height) // 100
+            dimensions.height = (dimensions.height * parent_inner.height) // 100
         elif DimensionsFlag.RelativeWidth in self.dimensionsFlag and self.dock in [Dock.LEFT, Dock.RIGHT]:
-            size = dimensions.width = (dimensions.width * parent_inner.width) // 100
+            dimensions.width = (dimensions.width * parent_inner.width) // 100
+
+        # TODO: check for overflow, if it goes past terminal width it will wrap around at next line
 
         if self.dock is Dock.FILL:
             dimensions = dataclasses.replace(parent_docked)
@@ -125,8 +126,6 @@ class TerminalWidget(ABC):
             dimensions.x = parent_docked.x
             dimensions.y = parent_docked.y
             dimensions.width = parent_docked.width
-            # TODO: Docked, with relative height/width, eg. Dock.TOP with 80%
-            # TODO: check height? or overflow?
         elif self.dock is Dock.BOTTOM:
             dimensions.x = parent_docked.x
             dimensions.y = parent_docked.y + parent_docked.height - dimensions.height
@@ -143,7 +142,7 @@ class TerminalWidget(ABC):
             raise Exception(f"Invalid dock {self.dock}")
 
         # Should this throw failure up? Eg no space? display whole screen - resize screen?
-        if not self.parent.dock_add(self.dock, size):
+        if not self.parent.dock_add(self.dock, dimensions):
             _log.critical(
                 f"Dock size exceeded - fix the widget defintions - "
                 f"parent: {self.parent.identifier} - {parent_docked},"
@@ -299,7 +298,6 @@ class App:
             # TODO
             row = (0 if row_off >= 0 else self.terminal.rows) + row_off
             self.brush.move_cursor(row=row)
-            print(self.debug_colors)
             self.brush.print(text, end=end, color=self.debug_colors)
 
     def clear(self, reuse=True):
@@ -309,7 +307,7 @@ class App:
         for line in retui.terminal.TerminalBuffer.get_buffer(
             self.terminal.columns, self.terminal.rows, " ", debug=False
         ):
-            print(line, end="\n", flush=True)  # TODO: Would it be ok to just flush after for?
+            self.brush.print(line, end="\n")
         self._update_size = True
 
     def get_widget(self, column: int, row: int) -> Union[TerminalWidget, None]:
@@ -391,7 +389,7 @@ class App:
 
     def signal_sigint(self):
         self.running = False
-        # TODO: read_events is blocking, sos this one needs to be somehow inject, otherwise we wait for first new event
+        # TODO: read_events is blocking, so this one needs to be somehow inject, otherwise we wait for first new event
         # works accidentally - as releasing ctrl-c cause key event ;)
 
     def demo_mode(self, time_s):
@@ -612,20 +610,16 @@ class Brush:
         ret_val += self.background_color(console_color.background, check_last)
         return ret_val
 
-    def print(self, *args, sep=" ", end="", color: Union[TerminalColor, None] = None):
-        # print(f"sep: {sep} end: {end}, color: {color} args: {args}")
+    def print(self, *args, sep="", end="", color: Union[TerminalColor, None] = None, flush=True):
         if color is None or color.no_color():
-            print(*args, sep=sep, end=end, file=self.file, flush=True)
+            print(*args, sep=sep, end=end, file=self.file, flush=flush)
         else:
             color = self.color(color)
-            print(color)
-            print(
-                color + " ".join(map(str, args)) + self.RESET,
-                sep=sep,
-                end=end,
-                file=self.file,
-                flush=True,
-            )
+            if color != "":
+                print(color, end="", file=self.file)
+            print(*args, sep=sep, end="", file=self.file)
+            print(self.RESET, sep=sep, end=end, file=self.file, flush=flush)
+            self.console_color.reset()
 
     def set_foreground(self, color):
         fg_color = self.foreground_color(color)

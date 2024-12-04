@@ -1,16 +1,10 @@
 import dataclasses
 from dataclasses import dataclass
 
-from retui import (
-    Color,
-    ColorBits,
-    ConsoleColor,
-    DefaultThemes,
-    Dock,
-    Rectangle,
-    TextAlign,
-)
+from retui import DefaultThemes
+from retui.base import Color, ColorBits, Rectangle, TerminalColor
 from retui.default_themes import DefaultThemesType
+from retui.enums import Dock, TextAlign
 from retui.widgets import Pane, TextBox
 
 
@@ -95,7 +89,7 @@ def test_sample_main(handle_sigint=True, demo_time_s=None, title=None):
     pane.title = "Bigger Pane"
     app.add_widget(pane)
 
-    test_color = ConsoleColor(Color(13, ColorBits.Bit8), Color(7, ColorBits.Bit8))
+    test_color = TerminalColor(Color(13, ColorBits.Bit8), Color(7, ColorBits.Bit8))
 
     widget = TextBox(app=app, x=0, y=0, height=3, width=10, dock=Dock.NONE, text_align=TextAlign.BottomRight)
     widget.text = "Sample text in pane"

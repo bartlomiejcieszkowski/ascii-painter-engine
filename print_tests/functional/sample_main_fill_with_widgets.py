@@ -31,7 +31,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             dimensions=DimensionsFlag.FillWidth,
             text="The pane has 10 height.\nAnd is docked to BOTTOM so it should"
             " create nice bar at bottom.\nText alignment is Middle Right\n",
-            text_align=TextAlign.MiddleRight,
+            text_align=TextAlign.MiddleCenter,
         )
     )
 

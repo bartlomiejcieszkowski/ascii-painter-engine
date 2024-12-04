@@ -478,17 +478,17 @@ class Pane(BorderWidget):
             for widget in self.widgets:
                 widget.draw()
 
-    def dock_add(self, dock: Dock, size: int) -> bool:
+    def dock_add(self, dock: Dock, dimensions: Rectangle) -> bool:
         if dock is Dock.TOP:
-            self.docked_dimensions.y += size
-            self.docked_dimensions.height -= size
+            self.docked_dimensions.y += dimensions.height
+            self.docked_dimensions.height -= dimensions.height
         elif dock is Dock.BOTTOM:
-            self.docked_dimensions.height -= size
+            self.docked_dimensions.height -= dimensions.height
         elif dock is Dock.LEFT:
-            self.docked_dimensions.x += size
-            self.docked_dimensions.width -= size
+            self.docked_dimensions.x += dimensions.width
+            self.docked_dimensions.width -= dimensions.width
         elif dock is Dock.RIGHT:
-            self.docked_dimensions.width -= size
+            self.docked_dimensions.width -= dimensions.width
 
         return not self.docked_dimensions.negative()
 
