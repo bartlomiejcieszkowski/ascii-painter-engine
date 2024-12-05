@@ -3,10 +3,10 @@ import logging
 from typing import Tuple, Union
 
 from retui import _APP_THEME, TerminalWidget, Theme
-from retui.base import Rectangle, TerminalColor, json_convert
+from retui.base import Rectangle, TerminalColor
 from retui.default_themes import ThemePoint
 from retui.defaults import default_value
-from retui.enums import DimensionsFlag, Dock, TextAlign, WordWrap
+from retui.enums import Dock, TextAlign, WordWrap
 from retui.input_handling import KeyEvent, MouseEvent, VirtualKeyCodes
 from retui.mapping import official_widget
 
@@ -142,51 +142,19 @@ class Text:
 class BorderWidget(TerminalWidget):
     @classmethod
     def from_dict(cls, **kwargs):
-        return cls(
-            app=kwargs.pop("app"),
-            identifier=kwargs.pop("id", None),
-            x=kwargs.pop("x"),
-            y=kwargs.pop("y"),
-            width=kwargs.pop("width"),
-            height=kwargs.pop("height"),
-            dock=json_convert("dock", kwargs.pop("dock", None)),
-            dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
-            tab_index=kwargs.pop("tab_index", default_value("tab_index")),
-            borderless=kwargs.pop("borderless", False),
-            border_str=kwargs.pop("border_str", None),
-            border_color=kwargs.pop("border_color", None),
-            soft_border=kwargs.pop("soft_border", default_value("soft_border")),
-            title=kwargs.pop("title", ""),
-        )
+        return cls(**kwargs)
 
     def __init__(
         self,
-        app,
-        identifier: Union[str, None] = None,
-        x: int = 0,
-        y: int = 0,
-        width: int = 0,
-        height: int = 0,
-        dock: Dock = default_value("dock"),
-        dimensions: DimensionsFlag = default_value("dimensions"),
-        tab_index: int = default_value("tab_index"),
         borderless: bool = False,
+        soft_border: bool = default_value("soft_border"),
+        title: str = "",
         border_str=None,
         border_color=None,
-        soft_border=default_value("soft_border"),
-        title="",
+        **kwargs,
     ):
-        super().__init__(
-            app=app,
-            identifier=identifier,
-            x=x,
-            y=y,
-            width=width,
-            height=height,
-            dock=dock,
-            dimensions=dimensions,
-            tab_index=tab_index,
-        )
+        super().__init__(**kwargs)
+
         self.soft_border = soft_border
         self.borderless = borderless
         self.title = title
@@ -346,62 +314,16 @@ class BorderWidget(TerminalWidget):
 class TextBox(BorderWidget):
     @classmethod
     def from_dict(cls, **kwargs):
-        return cls(
-            app=kwargs.pop("app"),
-            identifier=kwargs.pop("id", None),
-            x=kwargs.pop("x"),
-            y=kwargs.pop("y"),
-            width=kwargs.pop("width"),
-            height=kwargs.pop("height"),
-            dock=json_convert("dock", kwargs.pop("dock", default_value("dock"))),
-            dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
-            tab_index=kwargs.pop("tab_index", default_value("tab_index")),
-            borderless=kwargs.pop("borderless", False),
-            text=kwargs.pop("text", ""),
-            border_str=kwargs.pop("border_str", None),
-            border_color=kwargs.pop("border_color", None),
-            soft_border=kwargs.pop("soft_border", default_value("soft_border")),
-            title=kwargs.pop("title", ""),
-            text_align=json_convert("text_align", kwargs.pop("text_align", None)),
-            text_wrap=json_convert("text_wrap", kwargs.pop("text_wrap", None)),
-        )
+        return cls(**kwargs)
 
     def __init__(
         self,
-        app,
-        identifier: Union[str, None] = None,
-        x: int = 0,
-        y: int = 0,
-        width: int = 0,
-        height: int = 0,
-        dock: Dock = default_value("dock"),
-        dimensions: DimensionsFlag = default_value("dimensions"),
-        tab_index: int = default_value("tab_index"),
-        borderless: bool = False,
         text: str = "",
-        border_str=None,
-        border_color=None,
-        soft_border=default_value("soft_border"),
-        title="",
         text_align: TextAlign = default_value("text_align"),
         text_wrap: WordWrap = default_value("text_wrap"),
+        **kwargs,
     ):
-        super().__init__(
-            app=app,
-            identifier=identifier,
-            x=x,
-            y=y,
-            width=width,
-            height=height,
-            dock=dock,
-            dimensions=dimensions,
-            tab_index=tab_index,
-            borderless=borderless,
-            border_str=border_str,
-            border_color=border_color,
-            soft_border=soft_border,
-            title=title,
-        )
+        super().__init__(**kwargs)
         self._text = Text(text=text, text_align=text_align, text_wrap=text_wrap)
         self.text_align = text_align
         self.text_wrap = text_wrap
@@ -423,53 +345,10 @@ class TextBox(BorderWidget):
 class Pane(BorderWidget):
     @classmethod
     def from_dict(cls, **kwargs):
-        return cls(
-            app=kwargs.pop("app"),
-            identifier=kwargs.pop("id", None),
-            x=kwargs.pop("x"),
-            y=kwargs.pop("y"),
-            width=kwargs.pop("width"),
-            height=kwargs.pop("height"),
-            dock=json_convert("dock", kwargs.pop("dock", None)),
-            dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
-            borderless=kwargs.pop("borderless", False),
-            border_str=kwargs.pop("border_str", None),
-            border_color=kwargs.pop("border_color", None),
-            soft_border=kwargs.pop("soft_border", default_value("soft_border")),
-            title=kwargs.pop("title", ""),
-        )
+        return cls(**kwargs)
 
-    def __init__(
-        self,
-        app,
-        identifier: Union[str, None] = None,
-        x: int = 0,
-        y: int = 0,
-        width: int = 0,
-        height: int = 0,
-        dock: Dock = default_value("dock"),
-        dimensions: DimensionsFlag = default_value("dimensions"),
-        borderless: bool = False,
-        border_str=None,
-        border_color=None,
-        soft_border=default_value("soft_border"),
-        title="",
-    ):
-        super().__init__(
-            app=app,
-            identifier=identifier,
-            x=x,
-            y=y,
-            width=width,
-            height=height,
-            dock=dock,
-            dimensions=dimensions,
-            borderless=borderless,
-            border_str=border_str,
-            border_color=border_color,
-            soft_border=soft_border,
-            title=title,
-        )
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.widgets = []
 
     def draw(self, force: bool = False):
@@ -529,56 +408,19 @@ class Pane(BorderWidget):
 
 @official_widget
 class Button(TextBox):
-    def __init__(
-        self,
-        app,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-        dock: Dock,
-        dimensions: DimensionsFlag = default_value("dimensions"),
-        tab_index: int = default_value("tab_index"),
-        borderless: bool = False,
-        text: str = "",
-        border_str=None,
-        border_color=None,
-        click_handler=None,
-        text_align=TextAlign.MiddleCenter,
-    ):
+    @classmethod
+    def from_dict(cls, **kwargs):
+        return cls(**kwargs)
+
+    def __init__(self, click_handler=None, **kwargs):
         """
         Init function
-        :param app:
-        :param x:
-        :param y:
-        :param width:
-        :param height:
-        :param dock:
-        :param dimensions:
-        :param tab_index:
-        :param borderless:
-        :param text:
-        :param border_str:
-        :param border_color:
         :param click_handler: function signature should be def click_handler(this: Button) -> bool:
          where return value is True if handled
+        :param kwargs see TextBox
         """
-        super().__init__(
-            app=app,
-            x=x,
-            y=y,
-            width=width,
-            height=height,
-            dock=dock,
-            dimensions=dimensions,
-            tab_index=tab_index,
-            borderless=borderless,
-            text=text,
-            border_str=border_str,
-            border_color=border_color,
-            title="",
-            text_align=text_align,
-        )
+        super().__init__(**kwargs)
+
         if click_handler is not None and not callable(click_handler):
             raise Exception(
                 f"click_handler needs to be callable! click_handler: {click_handler}, type({click_handler})"
@@ -605,74 +447,10 @@ class Button(TextBox):
 class WriteBox(TextBox):
     @classmethod
     def from_dict(cls, **kwargs):
-        return cls(
-            app=kwargs.pop("app"),
-            identifier=kwargs.pop("id", None),
-            x=kwargs.pop("x"),
-            y=kwargs.pop("y"),
-            width=kwargs.pop("width"),
-            height=kwargs.pop("height"),
-            dock=json_convert("dock", kwargs.pop("dock", None)),
-            dimensions=json_convert("dimensions", kwargs.pop("dimensions", None)),
-            tab_index=kwargs.pop("tab_index", default_value("tab_index")),
-            borderless=kwargs.pop("borderless", False),
-            text=kwargs.pop("text", ""),
-            border_str=kwargs.pop("border_str", None),
-            border_color=kwargs.pop("border_color", None),
-            title=kwargs.pop("title", ""),
-        )
+        return cls(**kwargs)
 
-    def __init__(
-        self,
-        app,
-        identifier: Union[str, None] = None,
-        x: int = 0,
-        y: int = 0,
-        width: int = 0,
-        height: int = 0,
-        dock: Dock = default_value("dock"),
-        dimensions: DimensionsFlag = default_value("dimensions"),
-        tab_index: int = default_value("tab_index"),
-        borderless: bool = False,
-        text: str = "",
-        border_str=None,
-        border_color=None,
-        title="",
-    ):
-        """
-        Init function
-        :param app:
-        :param x:
-        :param y:
-        :param width:
-        :param height:
-        :param dock:
-        :param dimensions:
-        :param tab_index:
-        :param borderless:
-        :param text:
-        :param border_str:
-        :param border_color:
-        :param click_handler: function signature should be def click_handler(this: Button) -> bool:
-         where return value is True if handled
-        """
-        super().__init__(
-            app=app,
-            identifier=identifier,
-            x=x,
-            y=y,
-            width=width,
-            height=height,
-            dock=dock,
-            dimensions=dimensions,
-            tab_index=tab_index,
-            borderless=borderless,
-            text=text,
-            border_str=border_str,
-            border_color=border_color,
-            title=title,
-            text_align=default_value("text_align"),
-        )
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def write(self, text, append: bool = True):
         if isinstance(text, bytes):
@@ -690,61 +468,17 @@ class WriteBox(TextBox):
 class HorizontalLine(BorderWidget):
     @classmethod
     def from_dict(cls, **kwargs):
-        return cls(
-            app=kwargs.pop("app"),
-            identifier=kwargs.pop("id", None),
-            x=kwargs.pop("x"),
-            y=kwargs.pop("y"),
-            width=kwargs.pop("width"),
-            height=kwargs.pop("height"),
-            dock=json_convert("dock", kwargs.pop("dock", default_value("dock"))),
-            dimensions=DimensionsFlag.FillWidth,
-            tab_index=kwargs.pop("tab_index", default_value("tab_index")),
-            borderless=kwargs.pop("borderless", False),
-            border_str=kwargs.pop("border_str", None),
-            border_color=kwargs.pop("border_color", None),
-            soft_border=kwargs.pop("soft_border", default_value("soft_border")),
-            title=kwargs.pop("title", ""),
-            text_align=json_convert("text_align", kwargs.pop("text_align", None)),
-            text_wrap=json_convert("text_wrap", kwargs.pop("text_wrap", None)),
-        )
+        return cls(**kwargs)
 
     def __init__(
         self,
-        app,
-        identifier: Union[str, None] = None,
-        x: int = 0,
-        y: int = 0,
-        width: int = 0,
-        height: int = 0,
-        dock: Dock = default_value("dock"),
-        dimensions: DimensionsFlag = DimensionsFlag.FillWidth,
-        tab_index: int = default_value("tab_index"),
-        borderless: bool = False,
         text: str = "",
-        border_str=None,
-        border_color=None,
-        soft_border=default_value("soft_border"),
-        title="",
         text_align: TextAlign = default_value("text_align"),
         text_wrap: WordWrap = default_value("text_wrap"),
+        **kwargs,
     ):
-        super().__init__(
-            app=app,
-            identifier=identifier,
-            x=x,
-            y=y,
-            width=width,
-            height=height,
-            dock=dock,
-            dimensions=dimensions,
-            tab_index=tab_index,
-            borderless=borderless,
-            border_str=border_str,
-            border_color=border_color,
-            soft_border=soft_border,
-            title=title,
-        )
+        super().__init__(**kwargs)
+
         self._text = Text(text=text, text_align=text_align, text_wrap=text_wrap)
         self.text_align = text_align
         self.text_wrap = text_wrap
