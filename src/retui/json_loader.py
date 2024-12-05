@@ -1,5 +1,7 @@
 import json
 
+from retui.base import json_convert
+
 from . import (  # noqa: F401
     App,
     Color,
@@ -57,6 +59,13 @@ def _post_callback(this_json, this):
             _callback_wrapper(fun, *args)
 
 
+def dict_value_convert(key, dictionary):
+    param = dictionary.pop(key, None)
+    if param:
+        param = json_convert(key, param)
+        dictionary[key] = param
+
+
 def app_from_json(
     filename,
     ctx_globals=None,
@@ -92,7 +101,7 @@ def app_from_json(
                 if is_mapping(value):
                     widget_json[key] = get_mapping(value)
 
-            widget_type = widget_json.get("type", None)
+            widget_type = widget_json.pop("type", None)
             if isinstance(widget_type, str):
                 widget_class = mapping.get_widget_class(widget_type)
                 if widget_class is None:
@@ -115,18 +124,31 @@ def app_from_json(
                 )
                 widget_json["border_color"] = TerminalColor(fg_color, bg_color)
 
-            widget = widget_class.from_dict(**widget_json)
+            for key in list(widget_json.keys()):
+                if key.startswith("_"):
+                    widget_json.pop(key, None)
 
-            widget_id = widget_json.get("id", None)
+            widget_id = widget_json.pop("id", None)
             if widget_id:
-                widget_id_dict[widget_id] = widget
+                widget_json["identifier"] = widget_id
 
-            parent = app
-            parent_id = widget_json.get("parent_id", None)
+            parent_id = widget_json.pop("parent_id", None)
             if parent_id:
                 parent = widget_id_dict.get(parent_id, None)
                 if parent is None:
                     raise Exception(f"Given parent_id: '{parent_id}' doesnt match already defined id of widget")
+            else:
+                parent = app
+
+            dict_value_convert("dimensions", widget_json)
+            dict_value_convert("dock", widget_json)
+
+            # dimensionsFlag is a string failure
+            widget = widget_class.from_dict(**widget_json)
+
+            if widget_id:
+                widget_id_dict[widget_id] = widget
+
             parent.add_widget(widget)
             _post_callback(widget_json, widget)
 

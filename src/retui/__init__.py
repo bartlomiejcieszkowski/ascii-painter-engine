@@ -20,7 +20,7 @@ from typing import Union
 import retui.input_handling
 import retui.terminal
 import retui.terminal.base
-from retui.base import Color, ColorBits, Point, Rectangle, TerminalColor, json_convert
+from retui.base import Color, ColorBits, Point, Rectangle, TerminalColor
 from retui.default_themes import DefaultThemes
 from retui.defaults import default_value
 from retui.enums import DimensionsFlag, Dock
@@ -51,19 +51,7 @@ def add_window_logger(level: int = logging.DEBUG) -> logging.StreamHandler:
 class TerminalWidget(ABC):
     @classmethod
     def from_dict(cls, **kwargs):
-        return cls(
-            app=kwargs.pop("app"),
-            identifier=kwargs.pop("id", None),
-            x=kwargs.pop("x"),
-            y=kwargs.pop("y"),
-            width=kwargs.pop("width"),
-            height=kwargs.pop("height"),
-            dock=json_convert("dock", kwargs.pop("dock", default_value("dock"))),
-            dimensions=json_convert("dimensions", kwargs.pop("dimensions", default_value("dimensions"))),
-            tab_index=kwargs.pop("tab_index", default_value("tab_index")),
-            scroll_horizontal=kwargs.pop("scroll_horizontal", default_value("scroll_horizontal")),
-            scroll_vertical=kwargs.pop("scroll_vertical", default_value("scroll_vertical")),
-        )
+        return cls(**kwargs)
 
     def __init__(
         self,
@@ -76,6 +64,7 @@ class TerminalWidget(ABC):
         dock: Dock = default_value("dock"),
         dimensions: DimensionsFlag = default_value("dimensions"),
         tab_index: int = default_value("tab_index"),
+        tab_stop: bool = default_value("tab_stop"),
         scroll_horizontal: bool = default_value("scroll_horizontal"),
         scroll_vertical: bool = default_value("scroll_vertical"),
     ):
@@ -90,6 +79,7 @@ class TerminalWidget(ABC):
         self.parent = None
         self.handlers = {}
         self.tab_index = tab_index
+        self.tab_stop = tab_stop
         self.scroll_horizontal = scroll_horizontal
         self.scroll_vertical = scroll_vertical
         # register handlers here
