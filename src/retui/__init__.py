@@ -2,7 +2,7 @@
 Python TUI library
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __author__ = "Bartlomiej Cieszkowski <bartlomiej.cieszkowski@gmail.com>"
 __license__ = "MIT"
 
@@ -179,7 +179,7 @@ class TerminalWidget(ABC):
         self.last_dimensions = dimensions
         self._redraw = True
 
-    def dock_add(self, dock: Dock, size: int) -> bool:
+    def dock_add(self, dock: Dock, dimensions: Rectangle) -> bool:
         raise NotImplementedError("You can't dock inside this class")
 
     def get_widget(self, column: int, row: int) -> Union["TerminalWidget", None]:
@@ -265,17 +265,17 @@ class App:
             return self.docked_dimensions
         return self.dimensions
 
-    def dock_add(self, dock: Dock, size: int) -> bool:
+    def dock_add(self, dock: Dock, dimensions: Rectangle) -> bool:
         if dock is Dock.TOP:
-            self.docked_dimensions.y += size
-            self.docked_dimensions.height -= size
+            self.docked_dimensions.y += dimensions.height
+            self.docked_dimensions.height -= dimensions.height
         elif dock is Dock.BOTTOM:
-            self.docked_dimensions.height -= size
+            self.docked_dimensions.height -= dimensions.height
         elif dock is Dock.LEFT:
-            self.docked_dimensions.x += size
-            self.docked_dimensions.width -= size
+            self.docked_dimensions.x += dimensions.width
+            self.docked_dimensions.width -= dimensions.width
         elif dock is Dock.RIGHT:
-            self.docked_dimensions.width -= size
+            self.docked_dimensions.width -= dimensions.width
         elif dock is Dock.FILL:
             # all available docked space is consumed
             self.docked_dimensions.update(0, 0, 0, 0)
