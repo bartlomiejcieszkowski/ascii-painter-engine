@@ -16,7 +16,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         height=80,
         width=80,
         dock=retui.enums.Dock.NONE,
-        dimensions=retui.enums.DimensionsFlag.Relative,
+        dimensions=retui.enums.DimensionsFlag.RELATIVE,
     )
 
     # TODO: something something anchor?

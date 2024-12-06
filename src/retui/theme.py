@@ -35,7 +35,7 @@ def css_color_to_color(string: str):
             value = b & 0xFF + ((g & 0xFF) << 8) + ((r & 0xFF) << 16)
 
     if value:
-        return Color(value, ColorBits.Bit24)
+        return Color(value, ColorBits.BIT_24)
     return None
 
 
@@ -71,23 +71,23 @@ class Attributes:
 
 class Selectors(ABC):
     class Type(Enum):
-        Universal = auto()
-        Element = auto()
-        Id = auto()
-        Class = auto()
-        # ElementClass = auto()
-        Unsupported = auto()
+        UNIVERSAL = auto()
+        ELEMENT = auto()
+        ID = auto()
+        CLASS = auto()
+        # ELEMENT_CLASS = auto()
+        UNSUPPORTED = auto()
 
         @classmethod
         def from_name(cls, name: str):
             if name == "*":
-                return cls.Universal
+                return cls.UNIVERSAL
             elif name.startswith("#"):
-                return cls.Id
+                return cls.ID
             elif name.startswith("."):
-                return cls.Class
+                return cls.CLASS
             # place to log
-            return cls.Unsupported
+            return cls.UNSUPPORTED
 
     property_handlers = {
         "background-color": Attributes.handle_background_color,
@@ -114,7 +114,7 @@ class Selectors(ABC):
             # div p, div -> ["div p", "div"] so if we were to handle them properly it is still some parsing to do
             print(f"adding: {selector} {{ {prop}: {value}; }}")
             selector_type = self.Type.from_name(selector)
-            if selector_type == self.Type.Unsupported:
+            if selector_type == self.Type.UNSUPPORTED:
                 continue
             attributes = Attributes.from_prop(prop, value)
             if attributes is None:
@@ -126,26 +126,26 @@ class Selectors(ABC):
             print(f"invalid selector - {selector_type} {name} - attributes: {attributes}")
             return
         try:
-            if selector_type == self.Type.Universal:
+            if selector_type == self.Type.UNIVERSAL:
                 if self.universal_selector is None:
                     self.universal_selector = attributes
                 else:
                     self.universal_selector += attributes
-            elif selector_type == self.Type.Id:
+            elif selector_type == self.Type.ID:
                 selector_attributes = self.id_selectors.get(name)
                 if selector_attributes:
                     selector_attributes += attributes
                 else:
                     selector_attributes = attributes
                 self.id_selectors[name] = selector_attributes
-            elif selector_type == self.Type.Class:
+            elif selector_type == self.Type.CLASS:
                 selector_attributes = self.class_selectors.get(name)
                 if selector_attributes:
                     selector_attributes += attributes
                 else:
                     selector_attributes = attributes
                 self.class_selectors[name] = selector_attributes
-            elif selector_type == self.Type.Element:
+            elif selector_type == self.Type.ELEMENT:
                 selector_attributes = self.selectors.get(name)
                 if selector_attributes:
                     selector_attributes += attributes
@@ -178,13 +178,13 @@ class Selectors(ABC):
 
 
 class CssParserState(IntEnum):
-    selector = 0
-    open_sect = 1
-    property = 2
-    value = 3
-    colon = 4
-    semi_colon = 5
-    comment = 6
+    SELECTOR = 0
+    OPEN_SECTION = 1
+    PROPERTY = 2
+    VALUE = 3
+    COLON = 4
+    SEMI_COLON = 5
+    COMMENT = 6
 
 
 class CssParser:
@@ -196,8 +196,8 @@ class CssParser:
         if selectors is None:
             selectors = Selectors()
         with open(file_name, "r") as f:
-            last_state = CssParserState.selector
-            state = CssParserState.selector
+            last_state = CssParserState.SELECTOR
+            state = CssParserState.SELECTOR
             selector = None
             prop = None
             failed = None
@@ -211,7 +211,7 @@ class CssParser:
                 while idx < end:
                     c = line[idx]
                     # big switch goes here
-                    if state == CssParserState.comment:
+                    if state == CssParserState.COMMENT:
                         if c == "*":
                             # hope
                             if idx + 1 < end:
@@ -234,19 +234,19 @@ class CssParser:
                                 # comment start
                                 # store state and skip /*
                                 last_state = state
-                                state = CssParserState.comment
+                                state = CssParserState.COMMENT
                                 idx += 2
                                 continue
 
                     if c in non_printables:
                         c = " "
 
-                    if state == CssParserState.selector:
+                    if state == CssParserState.SELECTOR:
                         if len(word) > 0:
                             if c == "{":
                                 # '*{'
                                 #   ^
-                                state = CssParserState.open_sect
+                                state = CssParserState.OPEN_SECTION
                                 # omit increment - we will hit the switch for {
                                 continue
                             # elif c != ' ':
@@ -266,7 +266,7 @@ class CssParser:
                             word += c
                         idx += 1
                         continue
-                    elif state == CssParserState.open_sect:
+                    elif state == CssParserState.OPEN_SECTION:
                         # if c == ' ':
                         #
                         #    # skipping spaces
@@ -274,21 +274,21 @@ class CssParser:
                         if c == "{":
                             selector = word
                             word = ""
-                            state = CssParserState.property
+                            state = CssParserState.PROPERTY
                             pass
                         else:
                             failed = Exception(f'{line_num}: state: {state} - got "{c}" - line: "{line}"')
                             break
                         idx += 1
                         continue
-                    elif state == CssParserState.property:
+                    elif state == CssParserState.PROPERTY:
                         if c == ":":
-                            state = CssParserState.colon
+                            state = CssParserState.COLON
                             continue
                         elif c == "}":
                             # reset word
                             word = ""
-                            state = CssParserState.selector
+                            state = CssParserState.SELECTOR
                         # elif c == ' ':
                         #     # yes, i know that this will remove spaces
                         #     pass
@@ -296,11 +296,11 @@ class CssParser:
                             word += c
                         idx += 1
                         continue
-                    elif state == CssParserState.colon:
+                    elif state == CssParserState.COLON:
                         if c == ":":
                             prop = word
                             word = ""
-                            state = CssParserState.value
+                            state = CssParserState.VALUE
                         # elif c == ' ':
                         #    pass
                         else:
@@ -308,21 +308,21 @@ class CssParser:
                             break
                         idx += 1
                         continue
-                    elif state == CssParserState.value:
+                    elif state == CssParserState.VALUE:
                         # if c == ' ':
                         #    pass
                         if c == ";":
-                            state = CssParserState.semi_colon
+                            state = CssParserState.SEMI_COLON
                             continue
                         else:
                             word += c
                         idx += 1
                         continue
-                    elif state == CssParserState.semi_colon:
+                    elif state == CssParserState.SEMI_COLON:
                         if c == ";":
                             value = word
                             word = ""
-                            state = CssParserState.property
+                            state = CssParserState.PROPERTY
                             prop = " ".join(prop.split())
                             value = " ".join(value.split())
                             selector_split = StringHelper.split_trim(selector, ",")
@@ -350,7 +350,7 @@ class CssParser:
 class Theme:
     class Colors:
         def __init__(self):
-            self.text = TerminalColor(Color(0, ColorBits.Bit24))
+            self.text = TerminalColor(Color(0, ColorBits.BIT_24))
 
         @classmethod
         def monokai(cls):

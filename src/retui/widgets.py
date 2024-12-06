@@ -51,11 +51,11 @@ class Text:
 
     @staticmethod
     def get_word_wrap_function(word_wrap: WordWrap):
-        if word_wrap == WordWrap.Trim:
+        if word_wrap == WordWrap.TRIM:
             return Text.word_wrap_trim
-        elif word_wrap == WordWrap.Wrap:
+        elif word_wrap == WordWrap.WRAP:
             return Text.word_wrap_wrap
-        elif word_wrap == WordWrap.WrapWordEnd:
+        elif word_wrap == WordWrap.WRAP_WORD_END:
             return Text.word_wrap_word_end
         else:
             return None
@@ -195,9 +195,9 @@ class TerminalWidget(ABC):
         parent_docked = self.parent.inner_dimensions(docked=True)
         parent_inner = self.parent.inner_dimensions(docked=False)
 
-        if DimensionsFlag.RelativeHeight in self.dimensionsFlag and self.dock in [Dock.BOTTOM, Dock.TOP]:
+        if DimensionsFlag.RELATIVE_HEIGHT in self.dimensionsFlag and self.dock in [Dock.BOTTOM, Dock.TOP]:
             dimensions.height = (dimensions.height * parent_inner.height) // 100
-        elif DimensionsFlag.RelativeWidth in self.dimensionsFlag and self.dock in [Dock.LEFT, Dock.RIGHT]:
+        elif DimensionsFlag.RELATIVE_WIDTH in self.dimensionsFlag and self.dock in [Dock.LEFT, Dock.RIGHT]:
             dimensions.width = (dimensions.width * parent_inner.width) // 100
 
         # TODO: check for overflow, if it goes past terminal width it will wrap around at next line
@@ -235,15 +235,15 @@ class TerminalWidget(ABC):
     def calculate_dimensions(self):
         dimensions = self.dimensions_copy(last=False)
         parent_dimensions = self.parent.inner_dimensions(docked=False)
-        if DimensionsFlag.RelativeWidth in self.dimensionsFlag:
+        if DimensionsFlag.RELATIVE_WIDTH in self.dimensionsFlag:
             dimensions.width = (dimensions.width * parent_dimensions.width) // 100
-        elif DimensionsFlag.FillWidth in self.dimensionsFlag:
+        elif DimensionsFlag.FILL_WIDTH in self.dimensionsFlag:
             dimensions.width = parent_dimensions.width
 
-        if DimensionsFlag.RelativeHeight in self.dimensionsFlag:
+        if DimensionsFlag.RELATIVE_HEIGHT in self.dimensionsFlag:
             # concern about rows - 1
             dimensions.height = (dimensions.height * parent_dimensions.height) // 100
-        elif DimensionsFlag.FillHeight in self.dimensionsFlag:
+        elif DimensionsFlag.FILL_HEIGHT in self.dimensionsFlag:
             dimensions.height = parent_dimensions.height
 
         dimensions.translate_coordinates(parent_dimensions)

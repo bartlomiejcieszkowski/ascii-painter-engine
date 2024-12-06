@@ -14,7 +14,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         height=80,
         width=100,
         dock=retui.enums.Dock.FILL,
-        dimensions=retui.enums.DimensionsFlag.Fill,
+        dimensions=retui.enums.DimensionsFlag.FILL,
     )
     pane.title = "Test"
 
@@ -25,7 +25,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         height=20,
         width=40,
         dock=retui.enums.Dock.LEFT,
-        dimensions=retui.enums.DimensionsFlag.FillHeightRelativeWidth,
+        dimensions=retui.enums.DimensionsFlag.FILL_HEIGHT_RELATIVE_WIDTH,
     )
     widget.text = f"1st float {widget}"
     pane.add_widget(widget)
@@ -43,7 +43,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         height=30,
         width=60,
         dock=retui.enums.Dock.LEFT,
-        dimensions=retui.enums.DimensionsFlag.FillHeightRelativeWidth,
+        dimensions=retui.enums.DimensionsFlag.FILL_HEIGHT_RELATIVE_WIDTH,
     )
     widget.text = f"2nd float {widget}"
     pane.add_widget(widget)
@@ -61,7 +61,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         height=20,
         width=30,
         dock=retui.enums.Dock.LEFT,
-        dimensions=retui.enums.DimensionsFlag.FillHeightRelativeWidth,
+        dimensions=retui.enums.DimensionsFlag.FILL_HEIGHT_RELATIVE_WIDTH,
     )
     widget.text = f"3rd float {widget}"
     pane.add_widget(widget)

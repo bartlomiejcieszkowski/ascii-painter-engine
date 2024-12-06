@@ -72,7 +72,6 @@ def app_from_json(
     with open(filename, "r", encoding=encoding) as f:
         app_json = json.load(f)
 
-        # TODO: validate
         app = retui.App(debug=debug)
         title = app_json["name"]
         if "title" in app_json:

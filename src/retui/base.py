@@ -7,9 +7,9 @@ import retui.enums
 
 
 class ColorBits(IntEnum):
-    Bit8 = 5
-    Bit24 = 2
-    BitNone = 0
+    BIT_8 = 5
+    BIT_24 = 2
+    BIT_NONE = 0
 
 
 @dataclass
@@ -19,10 +19,10 @@ class Color:
 
     @classmethod
     def default(cls):
-        return cls(-1, ColorBits.BitNone)
+        return cls(-1, ColorBits.BIT_NONE)
 
     def none(self):
-        return self.bits == ColorBits.BitNone
+        return self.bits == ColorBits.BIT_NONE
 
 
 @dataclass()
@@ -117,24 +117,24 @@ def json_convert(key, value):
         if isinstance(value, retui.enums.Dock):
             return value
         if value is None:
-            value = "None"
+            value = "NONE"
         value = retui.enums.Dock[value]
     elif key == "dimensions":
         if isinstance(value, retui.enums.DimensionsFlag):
             return value
         if value is None:
-            value = "Absolute"
+            value = "ABSOLUTE"
         value = retui.enums.DimensionsFlag[value]
     elif key == "text_align":
         if isinstance(value, retui.enums.TextAlign):
             return value
         if value is None:
-            value = "TopLeft"
+            value = "TOP_LEFT"
         value = retui.enums.TextAlign[value]
     elif key == "text_wrap":
         if isinstance(value, retui.enums.WordWrap):
             return value
         if value is None:
-            value = "Wrap"
+            value = "WRAP"
         value = retui.enums.WordWrap[value]
     return value

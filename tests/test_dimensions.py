@@ -89,9 +89,9 @@ def test_sample_main(handle_sigint=True, demo_time_s=None, title=None):
     pane.title = "Bigger Pane"
     app.add_widget(pane)
 
-    test_color = TerminalColor(Color(13, ColorBits.Bit8), Color(7, ColorBits.Bit8))
+    test_color = TerminalColor(Color(13, ColorBits.BIT_8), Color(7, ColorBits.BIT_8))
 
-    widget = TextBox(app=app, x=0, y=0, height=3, width=10, dock=Dock.NONE, text_align=TextAlign.BottomRight)
+    widget = TextBox(app=app, x=0, y=0, height=3, width=10, dock=Dock.NONE, text_align=TextAlign.BOTTOM_RIGHT)
     widget.text = "Sample text in pane"
     widget.border_from_str(DefaultThemes.get_theme_border_str(DefaultThemesType.DOUBLE_TOP))
     widget.set_color(test_color)
@@ -104,7 +104,7 @@ def test_sample_main(handle_sigint=True, demo_time_s=None, title=None):
         height=3,
         width=25,
         dock=Dock.NONE,
-        text_align=TextAlign.BottomRight,
+        text_align=TextAlign.BOTTOM_RIGHT,
     )
     widget.text = "TextBox without borders"
     widget.borderless = True
