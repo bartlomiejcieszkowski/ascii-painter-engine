@@ -2,7 +2,7 @@
 Python TUI library
 """
 
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 __author__ = "Bartlomiej Cieszkowski <bartlomiej.cieszkowski@gmail.com>"
 __license__ = "MIT"
 
