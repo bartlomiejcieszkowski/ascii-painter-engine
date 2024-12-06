@@ -165,11 +165,12 @@ class App(retui.widgets.Pane):
     signal_sigint_ctx = None
 
     @staticmethod
-    def signal_sigint_handler(signum, frame):
-        App.signal_sigint_ctx.signal_sigint()
+    def signal_handler(signum, frame):
+        App.signal_sigint_ctx.signal_handle(signum, frame)
 
-    def signal_sigint(self):
+    def signal_handle(self, signum, frame):
         self.running = False
+        _log.debug(f"Signum: {signum}")
         # TODO: read_events is blocking, so this one needs to be somehow inject, otherwise we wait for first new event
         # works accidentally - as releasing ctrl-c cause key event ;)
 
@@ -215,7 +216,7 @@ class App(retui.widgets.Pane):
 
         if self.handle_sigint:
             App.signal_sigint_ctx = self
-            signal.signal(signal.SIGINT, App.signal_sigint_handler)
+            signal.signal(signal.SIGINT, App.signal_handler)
 
         if self.demo_time_s and self.demo_time_s > 0:
             self.demo_event = threading.Event()
@@ -277,7 +278,6 @@ class Brush:
         self.file = sys.stdout
         self.console_color = TerminalColor()
         self.use_color = use_color
-        # TODO: this comes from vt_supported, we override it with color_mode
 
     RESET = "\x1B[0m"
 
