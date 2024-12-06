@@ -14,7 +14,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             height=10,
             width=10,
             dock=Dock.TOP,
-            dimensions=DimensionsFlag.Relative,
+            dimensions=DimensionsFlag.RELATIVE,
         )
     )
 
@@ -24,7 +24,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             height=10,
             width=10,
             dock=Dock.BOTTOM,
-            dimensions=DimensionsFlag.Relative,
+            dimensions=DimensionsFlag.RELATIVE,
         )
     )
 
@@ -34,7 +34,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             height=10,
             width=10,
             dock=Dock.LEFT,
-            dimensions=DimensionsFlag.Relative,
+            dimensions=DimensionsFlag.RELATIVE,
         )
     )
 
@@ -44,7 +44,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             height=10,
             width=10,
             dock=Dock.RIGHT,
-            dimensions=DimensionsFlag.Relative,
+            dimensions=DimensionsFlag.RELATIVE,
         )
     )
 
@@ -55,7 +55,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         height=12,
         width=31,
         dock=Dock.FILL,
-        dimensions=DimensionsFlag.Fill,
+        dimensions=DimensionsFlag.FILL,
     )
     # dimensions should be ignored for Fill
     pane.title = "Test"
@@ -68,11 +68,11 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             height=4,
             width=20,
             dock=Dock.FILL,
-            dimensions=DimensionsFlag.Fill,
+            dimensions=DimensionsFlag.FILL,
             text="The pane is surrounded by 10% panes and has 'FILL'.\n"
             "So it should be nicely centered\n"
             "Text alignment is Middle Right\n",
-            text_align=TextAlign.MiddleRight,
+            text_align=TextAlign.MIDDLE_RIGHT,
         )
     )
 

@@ -265,7 +265,7 @@ class App(retui.widgets.Pane):
             self.brush.color_mode(success)
             if success:
                 # self.brush.color_mode(enable)
-                self.debug_colors = TerminalColor(Color(14, ColorBits.Bit8), Color(4, ColorBits.Bit8))
+                self.debug_colors = TerminalColor(Color(14, ColorBits.BIT_8), Color(4, ColorBits.BIT_8))
         else:
             self.debug_colors = TerminalColor()
             self.brush.color_mode(enable)

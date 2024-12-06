@@ -15,7 +15,7 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         height=80,
         width=80,
         dock=Dock.FILL,
-        dimensions=DimensionsFlag.Fill,
+        dimensions=DimensionsFlag.FILL,
     )
     # dimensions should be ignored for Fill
     pane.title = "Test"
@@ -28,10 +28,10 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             height=10,
             width=20,
             dock=Dock.BOTTOM,
-            dimensions=DimensionsFlag.FillWidth,
+            dimensions=DimensionsFlag.FILL_WIDTH,
             text="The pane has 10 height.\nAnd is docked to BOTTOM so it should"
             " create nice bar at bottom.\nText alignment is Middle Right\n",
-            text_align=TextAlign.MiddleCenter,
+            text_align=TextAlign.MIDDLE_CENTER,
         )
     )
 
@@ -43,10 +43,10 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             height=4,
             width=20,
             dock=Dock.RIGHT,
-            dimensions=DimensionsFlag.Absolute,
+            dimensions=DimensionsFlag.ABSOLUTE,
             text="The pane has 20 width.\nIt is docked to the RIGHT so"
             "so this should go above bottom bar.\nText alignment is Middle Right\n",
-            text_align=TextAlign.MiddleRight,
+            text_align=TextAlign.MIDDLE_RIGHT,
         )
     )
 

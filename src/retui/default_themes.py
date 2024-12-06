@@ -13,7 +13,6 @@ class ThemePoint:
     BOTTOM_RIGHT = 8
 
 
-# TODO Two different imports, so we cant match it when using default theme - move defaulttheme to separate file
 class DefaultThemesType(Enum):
     DOUBLE_TOP = auto()
     SIMPLE = auto()

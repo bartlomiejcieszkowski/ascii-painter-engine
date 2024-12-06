@@ -164,9 +164,9 @@ class InputInterpreter:
     # lmb 0, rmb 2, middle 1, wheel up 64 + 0, wheel down 64 + 1
 
     class State(Enum):
-        Default = 0
-        Escape = 1
-        CSI_Bytes = 2
+        DEFAULT = 0
+        ESCAPE = 1
+        CSI_BYTES = 2
 
     # this class should
     # receive data
@@ -180,7 +180,7 @@ class InputInterpreter:
 
     def __init__(self, readable_input):
         self.input = readable_input
-        self.state = self.State.Default
+        self.state = self.State.DEFAULT
         self.input_raw = []
         self.ansi_escape_sequence = []
         self.payload = deque()
@@ -344,15 +344,15 @@ class InputInterpreter:
         if len(self.input_raw) > 0:
             for i in range(0, len(self.input_raw)):
                 ch = self.input_raw[i]
-                if self.state != self.State.Default:
+                if self.state != self.State.DEFAULT:
                     ord_ch = ord(ch)
                     if 0x20 <= ord_ch <= 0x7F:
-                        if self.state == self.State.Escape:
+                        if self.state == self.State.ESCAPE:
                             if ch == "[":
                                 self.ansi_escape_sequence.append(ch)
-                                self.state = self.State.CSI_Bytes
+                                self.state = self.State.CSI_BYTES
                                 continue
-                        elif self.state == self.State.CSI_Bytes:
+                        elif self.state == self.State.CSI_BYTES:
                             if 0x30 <= ord_ch <= 0x3F:
                                 self.ansi_escape_sequence.append(ch)
                                 continue
@@ -360,17 +360,17 @@ class InputInterpreter:
                                 # implicit IntermediateBytes
                                 self.ansi_escape_sequence.append(ch)
                                 self.parse()
-                                self.state = self.State.Default
+                                self.state = self.State.DEFAULT
                                 continue
                     # parse what we had collected so far, since we failed check above
                     self.parse()
-                    self.state = self.State.Default
+                    self.state = self.State.DEFAULT
                     # intentionally fall through to regular parse
                 # check if escape code
                 if ch == "\x1B":
                     self.ansi_escape_sequence.clear()
                     self.ansi_escape_sequence.append(ch)
-                    self.state = self.State.Escape
+                    self.state = self.State.ESCAPE
                     continue
 
                 # pass input to handler
