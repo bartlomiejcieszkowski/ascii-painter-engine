@@ -4,7 +4,8 @@ from enum import Enum, IntEnum, auto
 from os import PathLike
 from typing import Union
 
-from retui.base import Color, ColorBits, TerminalColor
+from retui.base import Color, ColorBits, Point, TerminalColor
+from retui.default_themes import DefaultThemes
 from retui.utils.strings import StringHelper
 
 
@@ -341,3 +342,68 @@ class CssParser:
                 raise failed
 
         return selectors
+
+
+class Theme:
+    class Colors:
+        def __init__(self):
+            self.text = TerminalColor(Color(0, ColorBits.Bit24))
+
+        @classmethod
+        def monokai(cls):
+            # cyan = 0x00B9D7
+            # gold_brown = 0xABAA98
+            # green = 0x82CDB9
+            # off_white = 0xF5F5F5
+            # orange = 0xF37259
+            # pink = 0xFF3D70
+            # pink_magenta = 0xF7208B
+            # yellow = 0xF9F5C2
+            pass
+
+    def __init__(self, border: list[Point]):
+        # border string
+        # 155552
+        # 600007
+        # 600007
+        # 388884
+        # where the string is in form
+        # '012345678'
+
+        # validate border
+        self.border = []
+        if len(border) >= 9:
+            for i in range(0, 9):
+                if not isinstance(border[i], Point):
+                    break
+                self.border.append(border[i])
+
+        if len(self.border) < 9:
+            # invalid border TODO
+            self.border = 9 * [Point(" ")]
+
+        self.selectors = Selectors()
+
+    def set_color(self, color):
+        for i in range(0, 9):
+            self.border[i].color = color
+
+    def border_inside_set_color(self, color):
+        self.border[0].color = color
+
+    @staticmethod
+    def border_from_str(border_str: str) -> list[Point]:
+        border = []
+        if len(border_str) < 9:
+            raise Exception(f"border_str must have at least len of 9 - got {len(border_str)}")
+        for i in range(0, 9):
+            border.append(Point(border_str[i]))
+        return border
+
+    @classmethod
+    def default_theme(cls):
+        return cls(border=_DEFAULT_THEME_BORDER)
+
+
+_DEFAULT_THEME_BORDER = Theme.border_from_str(DefaultThemes.get_default_theme_border_str())
+_APP_THEME = Theme.default_theme()

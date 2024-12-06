@@ -1,4 +1,4 @@
-import retui
+import retui.enums
 from retui.widgets import Pane, TextBox
 
 
@@ -13,8 +13,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=1,
         height=80,
         width=100,
-        dock=retui.Dock.FILL,
-        dimensions=retui.DimensionsFlag.Fill,
+        dock=retui.enums.Dock.FILL,
+        dimensions=retui.enums.DimensionsFlag.Fill,
     )
     pane.title = "Test"
 
@@ -24,8 +24,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=20,
         width=40,
-        dock=retui.Dock.LEFT,
-        dimensions=retui.DimensionsFlag.FillHeightRelativeWidth,
+        dock=retui.enums.Dock.LEFT,
+        dimensions=retui.enums.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"1st float {widget}"
     pane.add_widget(widget)
@@ -42,8 +42,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=30,
         width=60,
-        dock=retui.Dock.LEFT,
-        dimensions=retui.DimensionsFlag.FillHeightRelativeWidth,
+        dock=retui.enums.Dock.LEFT,
+        dimensions=retui.enums.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"2nd float {widget}"
     pane.add_widget(widget)
@@ -60,8 +60,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=20,
         width=30,
-        dock=retui.Dock.LEFT,
-        dimensions=retui.DimensionsFlag.FillHeightRelativeWidth,
+        dock=retui.enums.Dock.LEFT,
+        dimensions=retui.enums.DimensionsFlag.FillHeightRelativeWidth,
     )
     widget.text = f"3rd float {widget}"
     pane.add_widget(widget)
