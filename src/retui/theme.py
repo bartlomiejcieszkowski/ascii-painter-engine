@@ -1,3 +1,4 @@
+import logging
 from abc import ABC
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum, auto
@@ -7,6 +8,8 @@ from typing import Union
 from retui.base import Color, ColorBits, Point, TerminalColor
 from retui.default_themes import DefaultThemes
 from retui.utils.strings import StringHelper
+
+_log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -379,7 +382,7 @@ class Theme:
                 self.border.append(border[i])
 
         if len(self.border) < 9:
-            # invalid border TODO
+            _log.error(f"Invalid border passed - {border}, setting border to spaces.")
             self.border = 9 * [Point(" ")]
 
         self.selectors = Selectors()
