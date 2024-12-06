@@ -2,7 +2,7 @@
 Python TUI library
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __author__ = "Bartlomiej Cieszkowski <bartlomiej.cieszkowski@gmail.com>"
 __license__ = "MIT"
 
@@ -13,22 +13,17 @@ import logging
 import signal
 import sys
 import threading
-from abc import ABC
 from collections import deque
 from typing import Union
 
 import retui.input_handling
 import retui.terminal
 import retui.terminal.base
-from retui.base import Color, ColorBits, Point, Rectangle, TerminalColor
-from retui.default_themes import DefaultThemes
-from retui.defaults import default_value
-from retui.enums import DimensionsFlag, Dock
+import retui.widgets
+from retui.base import Color, ColorBits, TerminalColor
 from retui.mapping import log_widgets
-from retui.theme import Selectors
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
-
 _log = logging.getLogger(__name__)
 
 # TASK LIST:
@@ -48,178 +43,20 @@ def add_window_logger(level: int = logging.DEBUG) -> logging.StreamHandler:
     pass
 
 
-class TerminalWidget(ABC):
-    @classmethod
-    def from_dict(cls, **kwargs):
-        return cls(**kwargs)
-
-    def __init__(
-        self,
-        app,
-        identifier: Union[str, None] = None,
-        x: int = 0,
-        y: int = 0,
-        width: int = 0,
-        height: int = 0,
-        dock: Dock = default_value("dock"),
-        dimensions: DimensionsFlag = default_value("dimensions"),
-        tab_index: int = default_value("tab_index"),
-        tab_stop: bool = default_value("tab_stop"),
-        scroll_horizontal: bool = default_value("scroll_horizontal"),
-        scroll_vertical: bool = default_value("scroll_vertical"),
-    ):
-        if identifier is None:
-            identifier = f"{type(self).__qualname__}_{hash(self):x}"
-        # TODO: check if it is unique
-        self.identifier = identifier
-        self.dimensions = Rectangle(x=x, y=y, width=width, height=height)
-        self.dock = dock
-        self.app = app
-        self.dimensionsFlag = dimensions
-        self.parent = None
-        self.handlers = {}
-        self.tab_index = tab_index
-        self.tab_stop = tab_stop
-        self.scroll_horizontal = scroll_horizontal
-        self.scroll_vertical = scroll_vertical
-        # register handlers here
-        # when handling click - cache what was there to speed up lookup - invalidate on re-draw
-        # iterate in reverse order on widgets - the order on widget list determines Z order
-        # - higher idx covers lower one
-        self.last_dimensions = Rectangle(0, 0, 0, 0)
-
-        # internals
-        self._redraw = True
-        self._update_size = True
-
-    def dimensions_copy(self, last: bool):
-        """
-        Creates shallow copy of dimensions
-        """
-        return dataclasses.replace(self.last_dimensions if last else self.dimensions)
-
-    def calculate_dimensions_docked(self):
-        dimensions = self.dimensions_copy(last=False)
-        parent_docked = self.parent.inner_dimensions(docked=True)
-        parent_inner = self.parent.inner_dimensions(docked=False)
-
-        if DimensionsFlag.RelativeHeight in self.dimensionsFlag and self.dock in [Dock.BOTTOM, Dock.TOP]:
-            dimensions.height = (dimensions.height * parent_inner.height) // 100
-        elif DimensionsFlag.RelativeWidth in self.dimensionsFlag and self.dock in [Dock.LEFT, Dock.RIGHT]:
-            dimensions.width = (dimensions.width * parent_inner.width) // 100
-
-        # TODO: check for overflow, if it goes past terminal width it will wrap around at next line
-
-        if self.dock is Dock.FILL:
-            dimensions = dataclasses.replace(parent_docked)
-        elif self.dock is Dock.TOP:
-            dimensions.x = parent_docked.x
-            dimensions.y = parent_docked.y
-            dimensions.width = parent_docked.width
-        elif self.dock is Dock.BOTTOM:
-            dimensions.x = parent_docked.x
-            dimensions.y = parent_docked.y + parent_docked.height - dimensions.height
-            dimensions.width = parent_docked.width
-        elif self.dock is Dock.LEFT:
-            dimensions.x = parent_docked.x
-            dimensions.y = parent_docked.y
-            dimensions.height = parent_docked.height
-        elif self.dock is Dock.RIGHT:
-            dimensions.x = parent_docked.x + parent_docked.width - dimensions.width
-            dimensions.y = parent_docked.y
-            dimensions.height = parent_docked.height
-        else:
-            raise Exception(f"Invalid dock {self.dock}")
-
-        # Should this throw failure up? Eg no space? display whole screen - resize screen?
-        if not self.parent.dock_add(self.dock, dimensions):
-            _log.critical(
-                f"Dock size exceeded - fix the widget defintions - "
-                f"parent: {self.parent.identifier} - {parent_docked},"
-                f"child: {self.identifier} - {dimensions}"
-            )
-        return dimensions
-
-    def calculate_dimensions(self):
-        dimensions = self.dimensions_copy(last=False)
-        parent_dimensions = self.parent.inner_dimensions(docked=False)
-        if DimensionsFlag.RelativeWidth in self.dimensionsFlag:
-            dimensions.width = (dimensions.width * parent_dimensions.width) // 100
-        elif DimensionsFlag.FillWidth in self.dimensionsFlag:
-            dimensions.width = parent_dimensions.width
-
-        if DimensionsFlag.RelativeHeight in self.dimensionsFlag:
-            # concern about rows - 1
-            dimensions.height = (dimensions.height * parent_dimensions.height) // 100
-        elif DimensionsFlag.FillHeight in self.dimensionsFlag:
-            dimensions.height = parent_dimensions.height
-
-        dimensions.translate_coordinates(parent_dimensions)
-        return dimensions
-
-    def update_dimensions(self):
-        self._update_size = False
-        # update dimensions is separate, so we separate drawing logic, so if one implement own widget
-        # doesn't have to remember to call update_dimensions every time or do it incorrectly
-
-        if self.dock is not Dock.NONE:
-            dimensions = self.calculate_dimensions_docked()
-        else:
-            dimensions = self.calculate_dimensions()
-            # TODO: Not enough FLAGS
-            # if Alignment.Left in self.dock:
-            #     x += self.parent.inner_x()
-            # elif Alignment.Right in self.dock:
-            #     x = self.parent.inner_x() + self.parent.inner_width() - width - x
-            # if Alignment.Top in self.dock:
-            #     y += self.parent.inner_y()
-            # elif Alignment.Bottom in self.dock:
-            #     y = self.parent.inner_y() + self.parent.inner_height() - height - y
-
-        self.last_dimensions = dimensions
-        self._redraw = True
-
-    def dock_add(self, dock: Dock, dimensions: Rectangle) -> bool:
-        raise NotImplementedError("You can't dock inside this class")
-
-    def get_widget(self, column: int, row: int) -> Union["TerminalWidget", None]:
-        return self if self.contains_point(column, row) else None
-
-    def get_widget_by_id(self, identifier: str) -> Union["TerminalWidget", None]:
-        return self if self.identifier == identifier else None
-
-    def handle(self, event):
-        # guess we should pass also unknown args
-        # raise Exception('handle')
-        pass
-
-    def draw(self, force: bool = False):
-        self._redraw = False
-
-    def contains_point(self, column: int, row: int):
-        return self.last_dimensions.contains_point(column, row)
-
-    def __str__(self):
-        return (
-            f"[{self.dimensions}"
-            f"dock:{self.dock} dimensions:{self.dimensionsFlag} type:{type(self)} 0x{hash(self):X}]"
-        )
-
-
-class App:
-    def __init__(self, title=None, debug: bool = False):
-        self.title = title
-        self.identifier = "App"
+class App(retui.widgets.Pane):
+    def __init__(self, debug: bool = False, **kwargs):
+        if kwargs.get("borderless", None) is None:
+            kwargs["borderless"] = True
+        if kwargs.get("identifier", None) is None:
+            kwargs["identifier"] = "App"
+        kwargs["app"] = None
+        super().__init__(**kwargs)
 
         self.terminal = retui.terminal.get_terminal(self)
-        self.widgets = []
         self.brush = Brush(self.terminal.vt_supported)
         self.debug_colors = TerminalColor()
-        self.running = False
 
-        self.docked_dimensions = Rectangle()
-        self.dimensions = Rectangle()
-        self.last_dimensions = Rectangle()
+        self.running = False
         self.handle_sigint = True
 
         self.mouse_lmb_state = 0
@@ -231,13 +68,6 @@ class App:
         self.demo_event = None
         self.emulate_screen_dimensions = None
         self.debug = debug
-
-        self._redraw = True
-        self._update_size = True
-
-        # Scrollable attributes
-        self.scroll_horizontal = False
-        self.scroll_vertical = False
 
         # asyncio
         self.thread_pool_executor = None
@@ -257,31 +87,6 @@ class App:
     def register_tasks(self):
         pass
 
-    def dimensions_copy(self, last: bool):
-        return dataclasses.replace(self.last_dimensions if last else self.dimensions)
-
-    def inner_dimensions(self, docked: bool) -> Rectangle:
-        if docked:
-            return self.docked_dimensions
-        return self.dimensions
-
-    def dock_add(self, dock: Dock, dimensions: Rectangle) -> bool:
-        if dock is Dock.TOP:
-            self.docked_dimensions.y += dimensions.height
-            self.docked_dimensions.height -= dimensions.height
-        elif dock is Dock.BOTTOM:
-            self.docked_dimensions.height -= dimensions.height
-        elif dock is Dock.LEFT:
-            self.docked_dimensions.x += dimensions.width
-            self.docked_dimensions.width -= dimensions.width
-        elif dock is Dock.RIGHT:
-            self.docked_dimensions.width -= dimensions.width
-        elif dock is Dock.FILL:
-            # all available docked space is consumed
-            self.docked_dimensions.update(0, 0, 0, 0)
-
-        return not self.docked_dimensions.negative()
-
     def debug_print(self, text, end="\n", row_off=-1):
         if self.debug:
             _log.debug(text)
@@ -299,20 +104,6 @@ class App:
         ):
             self.brush.print(line, end="\n")
         self._update_size = True
-
-    def get_widget(self, column: int, row: int) -> Union[TerminalWidget, None]:
-        for idx in range(len(self.widgets) - 1, -1, -1):
-            widget = self.widgets[idx].get_widget(column, row)
-            if widget:
-                return widget
-        return None
-
-    def get_widget_by_id(self, identifier) -> Union[TerminalWidget, None]:
-        for idx in range(0, len(self.widgets)):
-            widget = self.widgets[idx].get_widget_by_id(identifier)
-            if widget:
-                return widget
-        return None
 
     def handle_click(self, event: retui.input_handling.MouseEvent):
         # naive cache - based on clicked point
@@ -389,6 +180,7 @@ class App:
         self.emulate_screen_dimensions = (height, width)
 
     def draw(self, force: bool = False):
+        # TODO evaluate need
         if force or self._redraw:
             for widget in self.widgets:
                 widget.draw(force=force)
@@ -398,8 +190,9 @@ class App:
     def update_dimensions(self):
         self._update_size = False
         # TODO For APP always use current - is this correct assumption?
-        self.docked_dimensions = self.dimensions_copy(last=False)
         self.last_dimensions = self.dimensions_copy(last=False)
+        self._inner_dimensions = self.calculate_inner_dimensions()
+        self.docked_dimensions = dataclasses.replace(self._inner_dimensions)
         for widget in self.widgets:
             widget.update_dimensions()
         self._redraw = True
@@ -477,95 +270,6 @@ class App:
             self.brush.color_mode(enable)
             success = self.terminal.set_color_mode(enable)
         return success
-
-    def add_widget(self, widget: TerminalWidget) -> None:
-        widget.parent = self
-        self.widgets.append(widget)
-
-    def add_widget_after(self, widget: TerminalWidget, widget_on_list: TerminalWidget) -> bool:
-        try:
-            idx = self.widgets.index(widget_on_list)
-        except ValueError:
-            return False
-
-        widget.parent = self
-        self.widgets.insert(idx + 1, widget)
-        return True
-
-    def add_widget_before(self, widget: TerminalWidget, widget_on_list: TerminalWidget) -> bool:
-        try:
-            idx = self.widgets.index(widget_on_list)
-        except ValueError:
-            return False
-
-        widget.parent = self
-        self.widgets.insert(idx, widget)
-        return True
-
-
-class Theme:
-    class Colors:
-        def __init__(self):
-            self.text = TerminalColor(Color(0, ColorBits.Bit24))
-
-        @classmethod
-        def monokai(cls):
-            # cyan = 0x00B9D7
-            # gold_brown = 0xABAA98
-            # green = 0x82CDB9
-            # off_white = 0xF5F5F5
-            # orange = 0xF37259
-            # pink = 0xFF3D70
-            # pink_magenta = 0xF7208B
-            # yellow = 0xF9F5C2
-            pass
-
-    def __init__(self, border: list[Point]):
-        # border string
-        # 155552
-        # 600007
-        # 600007
-        # 388884
-        # where the string is in form
-        # '012345678'
-
-        # validate border
-        self.border = []
-        if len(border) >= 9:
-            for i in range(0, 9):
-                if not isinstance(border[i], Point):
-                    break
-                self.border.append(border[i])
-
-        if len(self.border) < 9:
-            # invalid border TODO
-            self.border = 9 * [Point(" ")]
-
-        self.selectors = Selectors()
-
-    def set_color(self, color):
-        for i in range(0, 9):
-            self.border[i].color = color
-
-    def border_inside_set_color(self, color):
-        self.border[0].color = color
-
-    @staticmethod
-    def border_from_str(border_str: str) -> list[Point]:
-        border = []
-        if len(border_str) < 9:
-            raise Exception(f"border_str must have at least len of 9 - got {len(border_str)}")
-        for i in range(0, 9):
-            border.append(Point(border_str[i]))
-        return border
-
-    @classmethod
-    def default_theme(cls):
-        return cls(border=_DEFAULT_THEME_BORDER)
-
-
-_DEFAULT_THEME_BORDER = Theme.border_from_str(DefaultThemes.get_default_theme_border_str())
-_APP_THEME = Theme.default_theme()
 
 
 class Brush:

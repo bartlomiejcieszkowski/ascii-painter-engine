@@ -1,12 +1,13 @@
 import dataclasses
 import logging
+from abc import ABC
 from typing import Tuple, Union
 
-from retui import _APP_THEME, TerminalWidget, Theme
+import retui.theme
 from retui.base import Rectangle, TerminalColor
 from retui.default_themes import ThemePoint
 from retui.defaults import default_value
-from retui.enums import Dock, TextAlign, WordWrap
+from retui.enums import DimensionsFlag, Dock, TextAlign, WordWrap
 from retui.input_handling import KeyEvent, MouseEvent, VirtualKeyCodes
 from retui.mapping import official_widget
 
@@ -139,6 +140,165 @@ class Text:
 
 
 @official_widget
+class TerminalWidget(ABC):
+    @classmethod
+    def from_dict(cls, **kwargs):
+        return cls(**kwargs)
+
+    def __init__(
+        self,
+        app,
+        identifier: Union[str, None] = None,
+        x: int = 0,
+        y: int = 0,
+        width: int = 0,
+        height: int = 0,
+        dock: Dock = default_value("dock"),
+        dimensions: DimensionsFlag = default_value("dimensions"),
+        tab_index: int = default_value("tab_index"),
+        tab_stop: bool = default_value("tab_stop"),
+        scroll_horizontal: bool = default_value("scroll_horizontal"),
+        scroll_vertical: bool = default_value("scroll_vertical"),
+    ):
+        if identifier is None:
+            identifier = f"{type(self).__qualname__}_{hash(self):x}"
+        # TODO: check if it is unique
+        self.identifier = identifier
+        self.dimensions = Rectangle(x=x, y=y, width=width, height=height)
+        self.dock = dock
+        self.app = app
+        self.dimensionsFlag = dimensions
+        self.parent = None
+        self.handlers = {}
+        self.tab_index = tab_index
+        self.tab_stop = tab_stop
+        self.scroll_horizontal = scroll_horizontal
+        self.scroll_vertical = scroll_vertical
+        # register handlers here
+        # when handling click - cache what was there to speed up lookup - invalidate on re-draw
+        # iterate in reverse order on widgets - the order on widget list determines Z order
+        # - higher idx covers lower one
+        self.last_dimensions = Rectangle()
+
+        # internals
+        self._redraw = True
+        self._update_size = True
+
+    def dimensions_copy(self, last: bool):
+        """
+        Creates shallow copy of dimensions
+        """
+        return dataclasses.replace(self.last_dimensions if last else self.dimensions)
+
+    def calculate_dimensions_docked(self):
+        dimensions = self.dimensions_copy(last=False)
+        parent_docked = self.parent.inner_dimensions(docked=True)
+        parent_inner = self.parent.inner_dimensions(docked=False)
+
+        if DimensionsFlag.RelativeHeight in self.dimensionsFlag and self.dock in [Dock.BOTTOM, Dock.TOP]:
+            dimensions.height = (dimensions.height * parent_inner.height) // 100
+        elif DimensionsFlag.RelativeWidth in self.dimensionsFlag and self.dock in [Dock.LEFT, Dock.RIGHT]:
+            dimensions.width = (dimensions.width * parent_inner.width) // 100
+
+        # TODO: check for overflow, if it goes past terminal width it will wrap around at next line
+
+        if self.dock is Dock.FILL:
+            dimensions = dataclasses.replace(parent_docked)
+        elif self.dock is Dock.TOP:
+            dimensions.x = parent_docked.x
+            dimensions.y = parent_docked.y
+            dimensions.width = parent_docked.width
+        elif self.dock is Dock.BOTTOM:
+            dimensions.x = parent_docked.x
+            dimensions.y = parent_docked.y + parent_docked.height - dimensions.height
+            dimensions.width = parent_docked.width
+        elif self.dock is Dock.LEFT:
+            dimensions.x = parent_docked.x
+            dimensions.y = parent_docked.y
+            dimensions.height = parent_docked.height
+        elif self.dock is Dock.RIGHT:
+            dimensions.x = parent_docked.x + parent_docked.width - dimensions.width
+            dimensions.y = parent_docked.y
+            dimensions.height = parent_docked.height
+        else:
+            raise Exception(f"Invalid dock {self.dock}")
+
+        # Should this throw failure up? Eg no space? display whole screen - resize screen?
+        if not self.parent.dock_add(self.dock, dimensions):
+            _log.critical(
+                f"Dock size exceeded - fix the widget defintions - "
+                f"parent: {self.parent.identifier} - {parent_docked},"
+                f"child: {self.identifier} - {dimensions}"
+            )
+        return dimensions
+
+    def calculate_dimensions(self):
+        dimensions = self.dimensions_copy(last=False)
+        parent_dimensions = self.parent.inner_dimensions(docked=False)
+        if DimensionsFlag.RelativeWidth in self.dimensionsFlag:
+            dimensions.width = (dimensions.width * parent_dimensions.width) // 100
+        elif DimensionsFlag.FillWidth in self.dimensionsFlag:
+            dimensions.width = parent_dimensions.width
+
+        if DimensionsFlag.RelativeHeight in self.dimensionsFlag:
+            # concern about rows - 1
+            dimensions.height = (dimensions.height * parent_dimensions.height) // 100
+        elif DimensionsFlag.FillHeight in self.dimensionsFlag:
+            dimensions.height = parent_dimensions.height
+
+        dimensions.translate_coordinates(parent_dimensions)
+        return dimensions
+
+    def update_dimensions(self):
+        self._update_size = False
+        # update dimensions is separate, so we separate drawing logic, so if one implement own widget
+        # doesn't have to remember to call update_dimensions every time or do it incorrectly
+
+        if self.dock is not Dock.NONE:
+            dimensions = self.calculate_dimensions_docked()
+        else:
+            dimensions = self.calculate_dimensions()
+            # TODO: Not enough FLAGS
+            # if Alignment.Left in self.dock:
+            #     x += self.parent.inner_x()
+            # elif Alignment.Right in self.dock:
+            #     x = self.parent.inner_x() + self.parent.inner_width() - width - x
+            # if Alignment.Top in self.dock:
+            #     y += self.parent.inner_y()
+            # elif Alignment.Bottom in self.dock:
+            #     y = self.parent.inner_y() + self.parent.inner_height() - height - y
+
+        self.last_dimensions = dimensions
+        self._redraw = True
+
+    def dock_add(self, dock: Dock, dimensions: Rectangle) -> bool:
+        raise NotImplementedError("You can't dock inside this class")
+
+    def get_widget(self, column: int, row: int) -> Union["TerminalWidget", None]:
+        return self if self.contains_point(column, row) else None
+
+    def get_widget_by_id(self, identifier: str) -> Union["TerminalWidget", None]:
+        return self if self.identifier == identifier else None
+
+    def handle(self, event):
+        # guess we should pass also unknown args
+        # raise Exception('handle')
+        pass
+
+    def draw(self, force: bool = False):
+        self._redraw = False
+
+    def contains_point(self, column: int, row: int):
+        return self.last_dimensions.contains_point(column, row)
+
+    def __str__(self):
+        return (
+            f"[{self.dimensions}"
+            f"dock:{self.dock} dimensions:{self.dimensionsFlag} type:{type(self)} 0x{hash(self):X}]"
+        )
+
+
+@official_widget
 class BorderWidget(TerminalWidget):
     @classmethod
     def from_dict(cls, **kwargs):
@@ -193,7 +353,7 @@ class BorderWidget(TerminalWidget):
         return self.docked_dimensions if docked else self._inner_dimensions
 
     def border_from_str(self, border_str: str):
-        self.border = Theme.border_from_str(border_str)
+        self.border = retui.theme.Theme.border_from_str(border_str)
 
     def set_color(self, color):
         for i in range(0, 9):
@@ -203,7 +363,7 @@ class BorderWidget(TerminalWidget):
         self.border[ThemePoint.MIDDLE].color = color
 
     def border_get_point(self, idx: int):
-        return self.border[idx] if self.border else _APP_THEME.border[idx]
+        return self.border[idx] if self.border else retui.theme._APP_THEME.border[idx]
 
     def border_get_top(self, width_middle, title):
         if title is None:
@@ -368,6 +528,9 @@ class Pane(BorderWidget):
             self.docked_dimensions.width -= dimensions.width
         elif dock is Dock.RIGHT:
             self.docked_dimensions.width -= dimensions.width
+        elif dock is Dock.FILL:
+            # all available docked space is consumed
+            self.docked_dimensions.update(0, 0, 0, 0)
 
         return not self.docked_dimensions.negative()
 
@@ -379,6 +542,27 @@ class Pane(BorderWidget):
         widget.parent = self
         self.widgets.append(widget)
 
+    def add_widget_after(self, widget: TerminalWidget, widget_on_list: TerminalWidget) -> bool:
+        try:
+            idx = self.widgets.index(widget_on_list)
+        except ValueError:
+            return False
+
+        widget.parent = self
+        self.widgets.insert(idx + 1, widget)
+        # TODO ut to check if it will fail if the widget is last widget
+        return True
+
+    def add_widget_before(self, widget: TerminalWidget, widget_on_list: TerminalWidget) -> bool:
+        try:
+            idx = self.widgets.index(widget_on_list)
+        except ValueError:
+            return False
+
+        widget.parent = self
+        self.widgets.insert(idx, widget)
+        return True
+
     def update_dimensions(self):
         super().update_dimensions()
 
@@ -386,12 +570,16 @@ class Pane(BorderWidget):
             widget.update_dimensions()
 
     def get_widget(self, column: int, row: int) -> Union[TerminalWidget, None]:
-        for idx in range(len(self.widgets) - 1, -1, -1):
-            widget = self.widgets[idx].get_widget(column, row)
-            if widget:
-                return widget
+        match = super().get_widget(column, row)
 
-        return super().get_widget(column, row)
+        if match:
+            # this widget contains point, check child widgets, e.g. button in a pane
+            for idx in range(len(self.widgets) - 1, -1, -1):
+                widget = self.widgets[idx].get_widget(column, row)
+                if widget:
+                    return widget
+
+        return match
 
     def get_widget_by_id(self, identifier: str) -> Union["TerminalWidget", None]:
         widget = super().get_widget_by_id(identifier)

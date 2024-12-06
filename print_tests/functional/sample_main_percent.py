@@ -1,4 +1,5 @@
 import retui
+import retui.enums
 from retui.widgets import Pane
 
 
@@ -14,8 +15,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
         y=0,
         height=80,
         width=80,
-        dock=retui.Dock.NONE,
-        dimensions=retui.DimensionsFlag.Relative,
+        dock=retui.enums.Dock.NONE,
+        dimensions=retui.enums.DimensionsFlag.Relative,
     )
 
     # TODO: something something anchor?

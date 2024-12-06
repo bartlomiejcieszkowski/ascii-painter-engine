@@ -1,24 +1,16 @@
 import json
 
-from retui.base import json_convert
-
-from . import (  # noqa: F401
-    App,
-    Color,
-    ColorBits,
-    TerminalColor,
-    TerminalWidget,
-    mapping,
-    widgets,
-)
-from .mapping import get_mapping, is_mapping, register_mapping_dict
+import retui
+import retui.mapping
+import retui.widgets
+from retui.base import Color, ColorBits, TerminalColor, json_convert
 
 FUNCTION_THIS_ARG = "##this"
 KEY_POST_CALLBACKS = "post_callbacks"
 
 
 def _register_app_dict(name, app_dict):
-    register_mapping_dict(name, app_dict)
+    retui.mapping.register_mapping_dict(name, app_dict)
 
 
 def _callback_wrapper(function, *args):
@@ -33,8 +25,8 @@ def _post_callback(this_json, this):
         for callback in post_callbacks:
             print(callback)
             for key, value in callback.items():
-                if is_mapping(value):
-                    callback[key] = get_mapping(value)
+                if retui.mapping.is_mapping(value):
+                    callback[key] = retui.mapping.get_mapping(value)
 
             fun = callback.get("function", None)
             args = None
@@ -45,8 +37,8 @@ def _post_callback(this_json, this):
                         args = []
                         # replace __this__
                         for arg in callback_args:
-                            if is_mapping(arg):
-                                arg = get_mapping(arg)
+                            if retui.mapping.is_mapping(arg):
+                                arg = retui.mapping.get_mapping(arg)
                             if isinstance(arg, str):
                                 if arg == FUNCTION_THIS_ARG:
                                     args.append(this)
@@ -81,7 +73,7 @@ def app_from_json(
         app_json = json.load(f)
 
         # TODO: validate
-        app = App(debug=debug)
+        app = retui.App(debug=debug)
         title = app_json["name"]
         if "title" in app_json:
             if len(app_json["title"]) > 0:
@@ -98,17 +90,17 @@ def app_from_json(
                 continue
             # mapping app dict values
             for key, value in widget_json.items():
-                if is_mapping(value):
-                    widget_json[key] = get_mapping(value)
+                if retui.mapping.is_mapping(value):
+                    widget_json[key] = retui.mapping.get_mapping(value)
 
             widget_type = widget_json.pop("type", None)
             if isinstance(widget_type, str):
-                widget_class = mapping.get_widget_class(widget_type)
+                widget_class = retui.mapping.get_widget_class(widget_type)
                 if widget_class is None:
-                    widget_class = mapping.import_widget_class(widget_type, ctx_globals)
+                    widget_class = retui.mapping.import_widget_class(widget_type, ctx_globals)
                     if widget_class is None:
                         raise Exception(f"Unknown widget type: '{widget_type}'")
-            elif issubclass(type(widget_type), TerminalWidget):
+            elif issubclass(type(widget_type), retui.widgets.TerminalWidget):
                 widget_class = widget_type
             else:
                 raise Exception(f"widget[{widget_json['id']}] is of type: {type(widget_type)}")
