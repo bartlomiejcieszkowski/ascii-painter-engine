@@ -2,8 +2,8 @@ import retui.enums
 from retui.widgets import Pane, TextBox
 
 
-def test(handle_sigint=True, demo_time_s=None, title=None):
-    app = retui.App()
+def test(handle_sigint=True, demo_time_s=None, title=None, debug=False) -> int:
+    app = retui.App(debug=debug)
     app.title = title
     app.color_mode()
 
@@ -82,3 +82,5 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
     app.demo_mode(demo_time_s)
 
     app.run()
+
+    return 0

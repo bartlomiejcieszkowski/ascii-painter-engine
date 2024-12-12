@@ -4,7 +4,7 @@ import time
 import retui
 
 
-def test(handle_sigint=True, demo_time_s=None, title=None) -> int:
+def test(handle_sigint=True, demo_time_s=None, title=None, debug=False) -> int:
     print(title)
     cv = retui.App()
     if cv.color_mode() is False:
@@ -39,6 +39,8 @@ def test(handle_sigint=True, demo_time_s=None, title=None) -> int:
     print(" and this should have default terminal color")
     if demo_time_s:
         time.sleep(demo_time_s)
+
+    return 0
 
 
 if __name__ == "__main__":

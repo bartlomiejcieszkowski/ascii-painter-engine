@@ -84,7 +84,7 @@ def sample_app_wrap(app: App):
     # raise Exception("STOP HERE")
 
 
-def test(handle_sigint=True, demo_time_s=None, title=None):
+def test(handle_sigint=True, demo_time_s=None, title=None, debug=False) -> int:
     print(title)
     working_directory = Path(__file__).parent
     apps = [("json/sample_app_wrap.json", sample_app_wrap)]
@@ -95,7 +95,9 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
             data = json.load(f)
             for widget in data["widgets"]:
                 print(widget)
-        app = json_loader.app_from_json(filename, globals(), app_dict={"post": sample_app_wrap})
+        app = json_loader.app_from_json(filename, globals(), app_dict={"post": sample_app_wrap}, debug=debug)
         app.handle_sigint = handle_sigint
         app.demo_mode(demo_time_s)
         app.run()
+
+    return 0

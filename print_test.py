@@ -64,11 +64,11 @@ def diagnostics_end():
         gc.enable()
 
 
-def test_run(module_name, demo_time_s, title):
+def test_run(module_name, demo_time_s, title, debug):
     print(module_name)
     sys.path.append(os.path.abspath(os.path.join(os.path.abspath(__file__), os.pardir, "..")))
     x = importlib.import_module(f"print_tests.functional.{module_name}")
-    x.test(demo_time_s=demo_time_s, title=title)
+    x.test(demo_time_s=demo_time_s, title=title, debug=debug)
 
 
 def main():
@@ -78,9 +78,11 @@ def main():
     parser = argparse.ArgumentParser(description="Run tests.")
     parser.add_argument("--auto", action="store_true", help="runs test and ends it")
     parser.add_argument("--auto-time", type=int, help="demo time", default=5)
+    parser.add_argument("--debug", action="store_true")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--test", "-t", choices=tests_list, nargs="+")
     group.add_argument("--all", action="store_true", help="runs ALL available tests")
+
     args = parser.parse_args()
 
     demo_time_s = None
@@ -96,7 +98,7 @@ def main():
         title = f"Test {idx+1}/{len(tests_list)} - {tests_list[idx]}"
         diagnostics_start()
         try:
-            test_run(tests_list[idx], demo_time_s, title)
+            test_run(tests_list[idx], demo_time_s, title, args.debug)
             test_status.append((0, tests_list[idx], None))
         except Exception as e:
             tb = traceback.format_tb(e.__traceback__)

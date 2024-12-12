@@ -4,7 +4,7 @@ from pathlib import Path
 from retui.theme import CssParser
 
 
-def test(handle_sigint=True, demo_time_s=None, title=None):
+def test(handle_sigint=True, demo_time_s=None, title=None, debug=False) -> int:
     print(title)
     working_directory = Path(__file__).parent
     files = [
@@ -14,3 +14,5 @@ def test(handle_sigint=True, demo_time_s=None, title=None):
     for file in files:
         selectors = CssParser.parse(working_directory / file, None)
         print(selectors)
+
+    return 0
