@@ -1,4 +1,4 @@
-from enum import Enum, Flag, IntEnum, auto
+from enum import Enum, IntEnum, IntFlag, auto
 
 
 class TabIndex:
@@ -31,7 +31,7 @@ class Dock(Enum):
     FILL = auto()
 
 
-class DimensionsFlag(Flag):
+class DimensionsFlag(IntFlag):
     ABSOLUTE = 0
     RELATIVE_WIDTH = 1
     RELATIVE_HEIGHT = 2

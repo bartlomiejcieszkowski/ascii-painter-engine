@@ -1,6 +1,6 @@
 import selectors
 from collections import deque
-from enum import Enum, Flag, IntEnum
+from enum import Enum, IntEnum, IntFlag
 
 from retui.base import TerminalEvent
 from retui.input_handling.enums import VirtualKeyCodes
@@ -12,17 +12,17 @@ class MouseEvent(TerminalEvent):
 
     dwButtonState_to_Buttons = [[0, 0], [1, 2], [2, 1]]
 
-    class Buttons(IntEnum):
+    class Button(IntEnum):
         LMB = 0
         RMB = 2
         MIDDLE = 1
         WHEEL_UP = 64
         WHEEL_DOWN = 65
 
-    class ControlKeys(Flag):
+    class ControlKeys(IntFlag):
         LEFT_CTRL = 0x8
 
-    def __init__(self, x, y, button: Buttons, pressed: bool, control_key_state, hover: bool):
+    def __init__(self, x, y, button: Button, pressed: bool, control_key_state, hover: bool):
         super().__init__()
         self.coordinates = (x, y)
         self.button = button
@@ -52,7 +52,7 @@ class MouseEvent(TerminalEvent):
                 return cls(
                     mouse_event_record.dwMousePosition.X,
                     mouse_event_record.dwMousePosition.Y,
-                    MouseEvent.Buttons(MouseEvent.Buttons.WHEEL_UP + ((mouse_event_record.dwButtonState >> 31) & 0x1)),
+                    MouseEvent.Button(MouseEvent.Button.WHEEL_UP + ((mouse_event_record.dwButtonState >> 31) & 0x1)),
                     True,
                     None,
                     False,
@@ -88,7 +88,7 @@ class MouseEvent(TerminalEvent):
                 event = cls(
                     mouse_event_record.dwMousePosition.X,
                     mouse_event_record.dwMousePosition.Y,
-                    MouseEvent.Buttons(button),
+                    MouseEvent.Button(button),
                     press,
                     None,
                     hover,
@@ -123,7 +123,7 @@ class MouseEvent(TerminalEvent):
 
         # remove ctrl button
         button_hex = button_hex & (0xFFFFFFFF - 0x10)
-        button = MouseEvent.Buttons(button_hex)
+        button = MouseEvent.Button(button_hex)
         # sgr - 1-based
         if y < 2:
             return None
